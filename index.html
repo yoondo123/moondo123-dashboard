@@ -3,35 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MOONDO123 FC온라인 전적</title>
+  <title>MOONDO FC온라인 전적</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
   <style>
     * { box-sizing: border-box; }
     :root {
-      --bg: #08111f;
-      --panel: #111b2b;
-      --panel-2: #0d1726;
-      --line: #2b3d58;
-      --head: #1b2a3e;
+      --bg: #060d19;
+      --panel: rgba(12, 24, 40, .84);
+      --panel-2: rgba(10, 21, 36, .92);
+      --line: rgba(92, 247, 176, .24);
+      --line-blue: rgba(83, 154, 255, .22);
+      --head: rgba(20, 35, 57, .96);
       --text: #f7fbff;
-      --muted: #9fb3ce;
-      --blue: #63b3ff;
-      --green: #55d879;
+      --muted: #9fb1d1;
+      --blue: #6cb7ff;
+      --green: #35f0b2;
       --red: #ff6875;
       --gold: #ffd166;
     }
     body {
       margin: 0;
       min-height: 100vh;
-      background: var(--bg);
+      background:
+        radial-gradient(circle at 20% 5%, rgba(53, 240, 178, .16), transparent 28%),
+        radial-gradient(circle at 82% 18%, rgba(73, 139, 255, .13), transparent 30%),
+        linear-gradient(145deg, #050b15 0%, #081120 52%, #040910 100%);
       color: var(--text);
-      font-family: Arial, "Malgun Gothic", sans-serif;
+      font-family: "Pretendard", "SUIT", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+      letter-spacing: 0;
     }
     main {
       width: min(1160px, calc(100% - 40px));
       margin: 0 auto;
-      padding: 28px 0 56px;
+      padding: 30px 0 34px;
     }
     header, .topbar {
       display: flex;
@@ -41,28 +46,35 @@
     }
     header { margin-bottom: 24px; }
     h1, h2, p { margin: 0; }
-    h1 { font-size: clamp(26px, 4vw, 38px); line-height: 1.08; }
+    h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.08; color: #d9fff2; }
     h2 { margin: 28px 0 14px; font-size: clamp(22px, 3vw, 28px); }
     a { color: var(--blue); text-decoration: none; }
     button, input {
       height: 42px;
       border: 1px solid var(--line);
-      border-radius: 4px;
+      border-radius: 8px;
       font: inherit;
     }
     input {
       width: 220px;
       padding: 0 12px;
-      background: #f8fafc;
-      color: #111827;
+      background: rgba(7, 15, 28, .9);
+      color: var(--text);
+      outline: none;
+    }
+    input:focus {
+      border-color: rgba(53, 240, 178, .62);
+      box-shadow: 0 0 0 3px rgba(53, 240, 178, .08);
     }
     button {
       padding: 0 16px;
-      background: #2f6fed;
+      background: linear-gradient(135deg, #1f7a52, #256f95);
       color: white;
       cursor: pointer;
+      font-weight: 800;
+      box-shadow: 0 10px 26px rgba(23, 190, 150, .18);
     }
-    button.secondary { background: #34445d; }
+    button.secondary { background: rgba(24, 38, 59, .95); box-shadow: none; }
     .muted { color: var(--muted); }
     .ok { color: var(--green); }
     .bad { color: var(--red); }
@@ -70,8 +82,10 @@
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 12px;
       padding: 18px;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, .25), inset 0 1px 0 rgba(255, 255, 255, .03);
+      backdrop-filter: blur(12px);
     }
     .login-row {
       display: flex;
@@ -85,8 +99,8 @@
       align-items: center;
       min-height: 68px;
       overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 6px;
+      border: 1px solid var(--line-blue);
+      border-radius: 10px;
       background: var(--panel-2);
     }
     .live-name {
@@ -99,7 +113,7 @@
       height: 68px;
       display: grid;
       place-items: center;
-      background: #f1f5f9;
+      background: linear-gradient(180deg, #f8fbff, #dfe8f3);
       color: #07111f;
       font-size: 32px;
       font-weight: 900;
@@ -110,6 +124,7 @@
       text-align: right;
       font-size: 22px;
       font-weight: 900;
+      text-shadow: 0 0 16px rgba(255, 209, 102, .35);
     }
     .status-dot {
       display: inline-block;
@@ -128,8 +143,9 @@
       min-height: 96px;
       padding: 15px;
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 12px;
       background: var(--panel-2);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03);
     }
     .stat strong {
       display: block;
@@ -146,14 +162,15 @@
     .table-wrap {
       width: 100%;
       overflow-x: auto;
-      border: 1px solid var(--line);
-      border-radius: 4px;
+      border: 1px solid var(--line-blue);
+      border-radius: 12px;
+      background: rgba(8, 17, 31, .65);
     }
     table {
       width: 100%;
       min-width: 760px;
       border-collapse: collapse;
-      background: var(--panel);
+      background: transparent;
     }
     th, td {
       border-bottom: 1px solid var(--line);
@@ -164,7 +181,14 @@
     }
     th:last-child, td:last-child { border-right: 0; }
     tr:last-child td { border-bottom: 0; }
-    th { background: var(--head); }
+    th { background: var(--head); color: #d9fff2; }
+    footer {
+      margin-top: 34px;
+      text-align: center;
+      color: #6f8db8;
+      font-size: 12px;
+      font-style: italic;
+    }
     .mobile-note { display: none; }
     @media (max-width: 760px) {
       main { width: min(100% - 24px, 1160px); padding: 18px 0 44px; }
@@ -182,6 +206,8 @@
       .live-name { padding: 0 12px; font-size: 17px; }
       .live-score { height: 58px; font-size: 26px; }
       .mobile-note { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }
+      .panel { padding: 14px; border-radius: 12px; }
+      h2 { margin-top: 24px; }
     }
     @media (max-width: 430px) {
       .grid { grid-template-columns: 1fr; }
@@ -193,7 +219,7 @@
   <main>
     <header>
       <div>
-        <h1>MOONDO123 FC온라인 전적</h1>
+        <h1>MOONDO FC온라인 전적</h1>
         <p class="muted">실시간 경기와 최근 기록을 10초마다 갱신합니다.</p>
       </div>
       <a href="./admin.html">관리자 페이지</a>
@@ -232,6 +258,30 @@
           <div class="live-score" id="liveOppScore">-</div>
           <div class="live-name" id="liveOpponent">상대 OCR 대기</div>
           <div class="live-time" id="liveTime">시간 OCR 대기</div>
+        </div>
+      </div>
+
+      <h2>누적 전적</h2>
+      <div class="grid">
+        <div class="stat">
+          <span class="muted">전체</span>
+          <strong id="lifetimeRecord">0승 0무 0패</strong>
+          <small id="lifetimeMeta">회원 탈퇴 전까지 유지</small>
+        </div>
+        <div class="stat">
+          <span class="muted">전체 경기</span>
+          <strong id="lifetimeMatches">0</strong>
+          <small id="lifetimeWinRate">승률 0.0%</small>
+        </div>
+        <div class="stat">
+          <span class="muted">누적 FC</span>
+          <strong id="lifetimeFc">0</strong>
+          <small>승리 1회당 15 FC</small>
+        </div>
+        <div class="stat">
+          <span class="muted">현재 티어</span>
+          <strong id="lifetimeTier">-</strong>
+          <small id="lifetimeScore">점수 0</small>
         </div>
       </div>
 
@@ -297,6 +347,7 @@
         <tbody id="rankingList"></tbody>
       </table>
     </div>
+    <footer>made by yoondo</footer>
   </main>
 
   <script>
@@ -371,6 +422,13 @@
 
     function winRate(stats) {
       return stats.matches ? ((stats.wins / stats.matches) * 100).toFixed(1) : '0.0';
+    }
+
+    function profileStats(profile) {
+      const wins = Number(profile.wins || 0);
+      const draws = Number(profile.draws || 0);
+      const losses = Number(profile.losses || 0);
+      return { wins, draws, losses, matches: wins + draws + losses };
     }
 
     function resultLabel(result) {
@@ -480,6 +538,11 @@
       const weekStart = weeklyResetDate();
       const profile = statsMap[currentUser.username] || {};
 
+      const lifetimeRes = await supabaseClient
+        .from('game_history')
+        .select('*')
+        .eq('username', currentUser.username);
+
       const todayRes = await supabaseClient
         .from('game_history')
         .select('*')
@@ -492,8 +555,19 @@
         .eq('username', currentUser.username)
         .gte('created_at', weeklyResetIso());
 
+      let lifetime = summarizeMatches(lifetimeRes.data || []);
+      if (!lifetime.matches) {
+        lifetime = profileStats(profile);
+      }
       const today = summarizeMatches(todayRes.data || []);
       const week = summarizeMatches(weekRes.data || []);
+
+      document.getElementById('lifetimeRecord').innerText = `${lifetime.wins}승 ${lifetime.draws}무 ${lifetime.losses}패`;
+      document.getElementById('lifetimeMatches').innerText = lifetime.matches;
+      document.getElementById('lifetimeWinRate').innerText = `승률 ${winRate(lifetime)}%`;
+      document.getElementById('lifetimeFc').innerText = fcFromWins(lifetime.wins);
+      document.getElementById('lifetimeTier').innerText = profile.tier || '-';
+      document.getElementById('lifetimeScore').innerText = `점수 ${profile.score ?? 0}`;
 
       document.getElementById('todayRecord').innerText = `${today.wins}승 ${today.draws}무 ${today.losses}패`;
       document.getElementById('todayMatches').innerText = today.matches;
