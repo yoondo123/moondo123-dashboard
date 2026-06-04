@@ -2,13 +2,12 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>MOONDO123 관리자</title>
-
+  <title>MOONDO123 관리자 로그인</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
 </head>
-
 <body style="background:#081225;color:white;font-family:Arial;padding:30px;">
+
   <h1>MOONDO123 관리자</h1>
 
   <input id="adminId" placeholder="아이디" value="admin">
@@ -31,7 +30,6 @@
         .limit(1);
 
       if (error) {
-        console.error(error);
         result.innerText = '오류 : ' + error.message;
         return;
       }
@@ -42,9 +40,9 @@
       }
 
       localStorage.setItem('admin_login', 'true');
-      alert('로그인 성공');
-      location.href = './index.html';
+      location.href = './admin-dashboard.html';
     }
   </script>
+
 </body>
 </html>
