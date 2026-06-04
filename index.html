@@ -7,376 +7,213 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
   <style>
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
-
-* { box-sizing: border-box; }
-
-:root {
-  --bg: #0d0c09;
-  --panel: rgba(31, 28, 22, .82);
-  --panel-2: rgba(20, 18, 14, .94);
-  --line: rgba(214, 185, 132, .22);
-  --line-strong: rgba(229, 198, 143, .38);
-  --head: rgba(46, 39, 28, .94);
-  --text: #f7f0df;
-  --muted: #b8aa91;
-  --blue: #d8b56d;
-  --green: #6ee7a8;
-  --red: #ff7777;
-  --gold: #f0c36a;
-  --shadow: 0 18px 50px rgba(0, 0, 0, .36);
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at 50% -10%, rgba(208, 164, 93, .22), transparent 34%),
-    radial-gradient(circle at 12% 12%, rgba(238, 205, 148, .10), transparent 25%),
-    linear-gradient(180deg, #17130d 0%, #0f0e0b 48%, #070706 100%);
-  color: var(--text);
-  font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
-  font-size: 13px;
-  letter-spacing: -.25px;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.016) 1px, transparent 1px);
-  background-size: 38px 38px;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.7), transparent 72%);
-}
-
-main {
-  position: relative;
-  width: min(920px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 14px 0 24px;
-}
-
-header, .topbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-header {
-  margin-bottom: 14px;
-  padding: 2px 0;
-}
-
-h1, h2, p { margin: 0; }
-
-h1 {
-  font-size: clamp(24px, 3vw, 32px);
-  line-height: 1.02;
-  color: #fff7e8;
-  letter-spacing: -1.3px;
-  font-weight: 950;
-  text-shadow: 0 0 28px rgba(216, 181, 109, .28);
-}
-
-h2 {
-  margin: 18px 0 9px;
-  font-size: clamp(16px, 2vw, 19px);
-  line-height: 1.15;
-  letter-spacing: -.8px;
-  font-weight: 900;
-  color: #fff1d4;
-}
-
-a {
-  color: #d8b56d;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 800;
-  opacity: .95;
-}
-
-a:hover { color: #fff3d4; }
-
-.muted {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.ok { color: var(--green); }
-.bad { color: var(--red); }
-.hidden { display: none !important; }
-
-button, input {
-  height: 34px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  font: inherit;
-  font-size: 12px;
-}
-
-input {
-  width: 200px;
-  padding: 0 12px;
-  background: rgba(12, 11, 9, .78);
-  color: var(--text);
-  outline: none;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
-}
-
-input::placeholder { color: rgba(184, 170, 145, .72); }
-
-input:focus {
-  border-color: rgba(216, 181, 109, .75);
-  box-shadow: 0 0 0 4px rgba(216, 181, 109, .13);
-}
-
-button {
-  padding: 0 14px;
-  background: linear-gradient(135deg, #d8b56d, #8a682d);
-  color: #14100a;
-  cursor: pointer;
-  font-weight: 900;
-  box-shadow: 0 10px 24px rgba(216, 181, 109, .18);
-}
-
-button:hover { filter: brightness(1.08); }
-
-button.secondary {
-  background: rgba(23, 21, 16, .95);
-  color: #f7f0df;
-  border-color: rgba(216, 181, 109, .35);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
-}
-
-.panel {
-  background: linear-gradient(180deg, rgba(38, 33, 24, .88), rgba(17, 16, 13, .94));
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 13px;
-  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.06);
-  backdrop-filter: blur(16px);
-}
-
-.login-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 12px;
-}
-
-.live-card {
-  display: grid;
-  grid-template-columns: minmax(110px, 1fr) 56px 56px minmax(120px, 1fr) 98px;
-  align-items: center;
-  min-height: 54px;
-  overflow: hidden;
-  border: 1px solid rgba(216, 181, 109, .28);
-  border-radius: 14px;
-  background: linear-gradient(180deg, rgba(22, 20, 16, .98), rgba(10, 10, 8, .98));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
-}
-
-.live-name {
-  padding: 0 13px;
-  font-size: clamp(14px, 1.8vw, 17px);
-  font-weight: 900;
-  word-break: keep-all;
-  letter-spacing: -.45px;
-}
-
-.live-score {
-  height: 54px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(180deg, #f4ead8, #d7c3a0);
-  color: #17120b;
-  font-size: 23px;
-  font-weight: 950;
-}
-
-.live-time {
-  padding: 0 12px;
-  color: var(--gold);
-  text-align: right;
-  font-size: 15px;
-  line-height: 1.18;
-  font-weight: 950;
-  text-shadow: 0 0 16px rgba(240, 195, 106, .22);
-}
-
-.status-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 6px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 14px rgba(110, 231, 168, .65);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.stat {
-  min-height: 73px;
-  padding: 11px 12px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background:
-    radial-gradient(circle at 15% 0%, rgba(216, 181, 109, .13), transparent 42%),
-    linear-gradient(180deg, rgba(25, 23, 18, .96), rgba(12, 12, 10, .96));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.055);
-}
-
-.stat strong {
-  display: block;
-  margin-top: 5px;
-  font-size: clamp(19px, 2.4vw, 24px);
-  line-height: 1.08;
-  font-weight: 950;
-  letter-spacing: -.8px;
-  color: #fff8ea;
-}
-
-.stat small {
-  display: block;
-  margin-top: 5px;
-  color: var(--gold);
-  font-size: 10.5px;
-  line-height: 1.2;
-  font-weight: 850;
-}
-
-.table-wrap {
-  width: 100%;
-  overflow-x: auto;
-  border: 1px solid rgba(216, 181, 109, .26);
-  border-radius: 14px;
-  background: rgba(10, 10, 8, .72);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.045);
-}
-
-table {
-  width: 100%;
-  min-width: 720px;
-  border-collapse: collapse;
-  background: transparent;
-}
-
-th, td {
-  border-bottom: 1px solid rgba(216, 181, 109, .16);
-  border-right: 1px solid rgba(216, 181, 109, .14);
-  padding: 8px 8px;
-  text-align: center;
-  white-space: nowrap;
-  font-size: 11.5px;
-}
-
-th:last-child, td:last-child { border-right: 0; }
-tr:last-child td { border-bottom: 0; }
-
-th {
-  background: rgba(43, 36, 25, .96);
-  color: #f8ead0;
-  font-size: 11px;
-  font-weight: 900;
-}
-
-td {
-  color: rgba(247, 240, 223, .94);
-  font-weight: 700;
-}
-
-footer {
-  margin-top: 22px;
-  text-align: center;
-  color: rgba(184, 170, 145, .6);
-  font-size: 11px;
-  font-style: italic;
-}
-
-.mobile-note { display: none; }
-
-@media (max-width: 760px) {
-  main {
-    width: min(100% - 22px, 920px);
-    padding: 12px 0 28px;
-  }
-
-  header, .topbar {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .login-row input, .login-row button { width: 100%; }
-
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px;
-  }
-
-  .live-card {
-    grid-template-columns: 1fr 48px 48px 1fr;
-    min-height: 50px;
-  }
-
-  .live-time {
-    grid-column: 1 / -1;
-    height: 34px;
-    display: grid;
-    place-items: center end;
-    border-top: 1px solid rgba(216, 181, 109, .18);
-    font-size: 13px;
-  }
-
-  .live-name {
-    padding: 0 10px;
-    font-size: 13.5px;
-  }
-
-  .live-score {
-    height: 50px;
-    font-size: 20px;
-  }
-
-  .mobile-note {
-    display: block;
-    margin-top: 7px;
-    color: var(--muted);
-    font-size: 11.5px;
-  }
-
-  .panel {
-    padding: 11px;
-    border-radius: 16px;
-  }
-
-  h1 { font-size: 24px; }
-  h2 { margin-top: 16px; }
-
-  .stat {
-    min-height: 70px;
-    padding: 10px;
-  }
-
-  .stat strong { font-size: 19px; }
-}
-
-@media (max-width: 430px) {
-  main { width: min(100% - 18px, 920px); }
-  .grid { grid-template-columns: 1fr; }
-  .stat { min-height: 66px; }
-  table { min-width: 650px; }
-}
-</style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #060d19;
+      --panel: rgba(12, 24, 40, .84);
+      --panel-2: rgba(10, 21, 36, .92);
+      --line: rgba(92, 247, 176, .24);
+      --line-blue: rgba(83, 154, 255, .22);
+      --head: rgba(20, 35, 57, .96);
+      --text: #f7fbff;
+      --muted: #9fb1d1;
+      --blue: #6cb7ff;
+      --green: #35f0b2;
+      --red: #ff6875;
+      --gold: #ffd166;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 5%, rgba(53, 240, 178, .16), transparent 28%),
+        radial-gradient(circle at 82% 18%, rgba(73, 139, 255, .13), transparent 30%),
+        linear-gradient(145deg, #050b15 0%, #081120 52%, #040910 100%);
+      color: var(--text);
+      font-family: "Pretendard", "SUIT", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+    main {
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 30px 0 34px;
+    }
+    header, .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    header { margin-bottom: 24px; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.08; color: #d9fff2; }
+    h2 { margin: 28px 0 14px; font-size: clamp(22px, 3vw, 28px); }
+    a { color: var(--blue); text-decoration: none; }
+    button, input {
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font: inherit;
+    }
+    input {
+      width: 220px;
+      padding: 0 12px;
+      background: rgba(7, 15, 28, .9);
+      color: var(--text);
+      outline: none;
+    }
+    input:focus {
+      border-color: rgba(53, 240, 178, .62);
+      box-shadow: 0 0 0 3px rgba(53, 240, 178, .08);
+    }
+    button {
+      padding: 0 16px;
+      background: linear-gradient(135deg, #1f7a52, #256f95);
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+      box-shadow: 0 10px 26px rgba(23, 190, 150, .18);
+    }
+    button.secondary { background: rgba(24, 38, 59, .95); box-shadow: none; }
+    .muted { color: var(--muted); }
+    .ok { color: var(--green); }
+    .bad { color: var(--red); }
+    .hidden { display: none !important; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, .25), inset 0 1px 0 rgba(255, 255, 255, .03);
+      backdrop-filter: blur(12px);
+    }
+    .login-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .live-card {
+      display: grid;
+      grid-template-columns: minmax(140px, 1fr) 78px 78px minmax(160px, 1fr) 130px;
+      align-items: center;
+      min-height: 68px;
+      overflow: hidden;
+      border: 1px solid var(--line-blue);
+      border-radius: 10px;
+      background: var(--panel-2);
+    }
+    .live-name {
+      padding: 0 20px;
+      font-size: clamp(18px, 2.5vw, 25px);
+      font-weight: 800;
+      word-break: keep-all;
+    }
+    .live-score {
+      height: 68px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, #f8fbff, #dfe8f3);
+      color: #07111f;
+      font-size: 32px;
+      font-weight: 900;
+    }
+    .live-time {
+      padding: 0 14px;
+      color: var(--gold);
+      text-align: right;
+      font-size: 22px;
+      font-weight: 900;
+      text-shadow: 0 0 16px rgba(255, 209, 102, .35);
+    }
+    .status-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .stat {
+      min-height: 96px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel-2);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03);
+    }
+    .stat strong {
+      display: block;
+      margin-top: 8px;
+      font-size: clamp(23px, 3vw, 30px);
+      line-height: 1.15;
+    }
+    .stat small {
+      display: block;
+      margin-top: 8px;
+      color: var(--gold);
+      font-weight: 700;
+    }
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line-blue);
+      border-radius: 12px;
+      background: rgba(8, 17, 31, .65);
+    }
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      background: transparent;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      padding: 12px 10px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    th:last-child, td:last-child { border-right: 0; }
+    tr:last-child td { border-bottom: 0; }
+    th { background: var(--head); color: #d9fff2; }
+    footer {
+      margin-top: 34px;
+      text-align: center;
+      color: #6f8db8;
+      font-size: 12px;
+      font-style: italic;
+    }
+    .mobile-note { display: none; }
+    @media (max-width: 760px) {
+      main { width: min(100% - 24px, 1160px); padding: 18px 0 44px; }
+      header, .topbar { flex-direction: column; }
+      .login-row input, .login-row button { width: 100%; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .live-card { grid-template-columns: 1fr 56px 56px 1fr; }
+      .live-time {
+        grid-column: 1 / -1;
+        height: 44px;
+        display: grid;
+        place-items: center end;
+        border-top: 1px solid var(--line);
+      }
+      .live-name { padding: 0 12px; font-size: 17px; }
+      .live-score { height: 58px; font-size: 26px; }
+      .mobile-note { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }
+      .panel { padding: 14px; border-radius: 12px; }
+      h2 { margin-top: 24px; }
+    }
+    @media (max-width: 430px) {
+      .grid { grid-template-columns: 1fr; }
+      .stat { min-height: 82px; }
+    }
+  </style>
 </head>
 <body>
   <main>
@@ -477,11 +314,11 @@ footer {
         <table>
           <thead>
             <tr>
-              <th>결과</th>
-              <th>점수 변화</th>
-              <th>경기 후 점수</th>
-              <th>경기 후 순위</th>
               <th>날짜</th>
+              <th>전적</th>
+              <th>경기수</th>
+              <th>승률</th>
+              <th>FC</th>
             </tr>
           </thead>
           <tbody id="recentList"></tbody>
@@ -527,6 +364,40 @@ footer {
       return formatLocalDate(new Date());
     }
 
+    function dateFromLocalKey(dateKey) {
+      const [y, m, d] = dateKey.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function startOfLocalDay(date = new Date()) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
+    function rolling7StartDate() {
+      const d = startOfLocalDay();
+      d.setDate(d.getDate() - 6);
+      return d;
+    }
+
+    function rolling7StartIso() {
+      return rolling7StartDate().toISOString();
+    }
+
+    function rolling7StartKey() {
+      return formatLocalDate(rolling7StartDate());
+    }
+
+    function last7DateKeys() {
+      const start = rolling7StartDate();
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        return formatLocalDate(d);
+      });
+    }
+
     function weeklyResetDate() {
       const d = new Date();
       d.setHours(0, 0, 0, 0);
@@ -555,6 +426,10 @@ footer {
       return d.toISOString();
     }
 
+    function isOnOrAfterDateKey(dateKey, minDateKey) {
+      return dateFromLocalKey(dateKey) >= dateFromLocalKey(minDateKey);
+    }
+
     async function sha256(text) {
       const bytes = new TextEncoder().encode(text);
       const hash = await crypto.subtle.digest('SHA-256', bytes);
@@ -577,6 +452,77 @@ footer {
         acc.matches += 1;
         return acc;
       }, { wins: 0, draws: 0, losses: 0, matches: 0 });
+    }
+
+    function emptyStats() {
+      return { wins: 0, draws: 0, losses: 0, matches: 0 };
+    }
+
+    function summarizeSessions(rows) {
+      return (rows || []).reduce((acc, row) => {
+        const wins = Number(row.wins || 0);
+        const draws = Number(row.draws || 0);
+        const losses = Number(row.losses || 0);
+        acc.wins += wins;
+        acc.draws += draws;
+        acc.losses += losses;
+        acc.matches += Number(row.matches ?? (wins + draws + losses));
+        return acc;
+      }, emptyStats());
+    }
+
+    function groupHistoryByDay(rows) {
+      const grouped = {};
+      (rows || []).forEach(row => {
+        const key = row.created_at ? formatLocalDate(new Date(row.created_at)) : todayDate();
+        if (!grouped[key]) grouped[key] = emptyStats();
+        const result = normalizeResult(row.result);
+        if (result === 'win') grouped[key].wins += 1;
+        if (result === 'draw') grouped[key].draws += 1;
+        if (result === 'loss') grouped[key].losses += 1;
+        grouped[key].matches += 1;
+      });
+      return grouped;
+    }
+
+    function groupSessionsByDay(rows) {
+      const grouped = {};
+      (rows || []).forEach(row => {
+        const key = row.session_date || (row.created_at ? formatLocalDate(new Date(row.created_at)) : todayDate());
+        if (!grouped[key]) grouped[key] = emptyStats();
+        const wins = Number(row.wins || 0);
+        const draws = Number(row.draws || 0);
+        const losses = Number(row.losses || 0);
+        grouped[key].wins += wins;
+        grouped[key].draws += draws;
+        grouped[key].losses += losses;
+        grouped[key].matches += Number(row.matches ?? (wins + draws + losses));
+      });
+      return grouped;
+    }
+
+    function dailyStatsFromMaps(dateKey, historyMap, sessionMap) {
+      const history = historyMap[dateKey];
+      if (history && history.matches > 0) return history;
+      return sessionMap[dateKey] || emptyStats();
+    }
+
+    async function loadUserHistory(username, sinceIso) {
+      let query = supabaseClient
+        .from('game_history')
+        .select('*')
+        .eq('username', username);
+      if (sinceIso) query = query.gte('created_at', sinceIso);
+      return query.order('created_at', { ascending: false });
+    }
+
+    async function loadUserSessions(username, sinceDateKey) {
+      let query = supabaseClient
+        .from('daily_sessions')
+        .select('*')
+        .eq('username', username);
+      if (sinceDateKey) query = query.gte('session_date', sinceDateKey);
+      return query.order('session_date', { ascending: false });
     }
 
     function fcFromWins(wins) {
@@ -701,36 +647,34 @@ footer {
       const weekStart = weeklyResetDate();
       const profile = statsMap[currentUser.username] || {};
 
-      const lifetimeRes = await supabaseClient
-        .from('game_history')
-        .select('*')
-        .eq('username', currentUser.username);
+      const [historyRes, sessionRes, todayHistoryRes, todaySessionRes, weekHistoryRes, weekSessionRes] = await Promise.all([
+        loadUserHistory(currentUser.username, rolling7StartIso()),
+        loadUserSessions(currentUser.username, rolling7StartKey()),
+        loadUserHistory(currentUser.username, startOfTodayIso()),
+        loadUserSessions(currentUser.username, todayDate()),
+        loadUserHistory(currentUser.username, weeklyResetIso()),
+        loadUserSessions(currentUser.username, weekStart),
+      ]);
 
-      const todayRes = await supabaseClient
-        .from('game_history')
-        .select('*')
-        .eq('username', currentUser.username)
-        .gte('created_at', startOfTodayIso());
+      const history7 = summarizeMatches(historyRes.data || []);
+      const sessions7 = summarizeSessions(sessionRes.data || []);
+      let lifetime = history7.matches ? history7 : sessions7;
+      if (!lifetime.matches) lifetime = profileStats(profile);
 
-      const weekRes = await supabaseClient
-        .from('game_history')
-        .select('*')
-        .eq('username', currentUser.username)
-        .gte('created_at', weeklyResetIso());
+      const todayHistory = summarizeMatches(todayHistoryRes.data || []);
+      const todaySessions = summarizeSessions(todaySessionRes.data || []);
+      const today = todayHistory.matches ? todayHistory : todaySessions;
 
-      let lifetime = summarizeMatches(lifetimeRes.data || []);
-      if (!lifetime.matches) {
-        lifetime = profileStats(profile);
-      }
-      const today = summarizeMatches(todayRes.data || []);
-      const week = summarizeMatches(weekRes.data || []);
+      const weekHistory = summarizeMatches(weekHistoryRes.data || []);
+      const weekSessions = summarizeSessions(weekSessionRes.data || []);
+      const week = weekHistory.matches ? weekHistory : weekSessions;
 
       document.getElementById('lifetimeRecord').innerText = `${lifetime.wins}승 ${lifetime.draws}무 ${lifetime.losses}패`;
       document.getElementById('lifetimeMatches').innerText = lifetime.matches;
       document.getElementById('lifetimeWinRate').innerText = `승률 ${winRate(lifetime)}%`;
       document.getElementById('lifetimeFc').innerText = fcFromWins(lifetime.wins);
       document.getElementById('lifetimeTier').innerText = profile.tier || '-';
-      document.getElementById('lifetimeScore').innerText = `점수 ${profile.score ?? 0}`;
+      document.getElementById('lifetimeScore').innerText = `최근 7일 합산 · 점수 ${profile.score ?? 0}`;
 
       document.getElementById('todayRecord').innerText = `${today.wins}승 ${today.draws}무 ${today.losses}패`;
       document.getElementById('todayMatches').innerText = today.matches;
@@ -745,49 +689,66 @@ footer {
 
     async function loadRecent() {
       if (!currentUser) return;
-      const { data, error } = await supabaseClient
-        .from('game_history')
-        .select('*')
-        .eq('username', currentUser.username)
-        .gte('created_at', daysAgoIso(7))
-        .order('created_at', { ascending: false })
-        .limit(50);
-
       const tbody = document.getElementById('recentList');
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="5">오류: ${error.message}</td></tr>`;
+      const [historyRes, sessionRes] = await Promise.all([
+        loadUserHistory(currentUser.username, rolling7StartIso()),
+        loadUserSessions(currentUser.username, rolling7StartKey()),
+      ]);
+
+      const historyRows = historyRes.data || [];
+      const sessionRows = sessionRes.data || [];
+      if (historyRes.error && sessionRows.length === 0) {
+        const message = historyRes.error.message;
+        tbody.innerHTML = `<tr><td colspan="5">오류: ${message}</td></tr>`;
         return;
       }
-      if (!data || data.length === 0) {
+
+      const historyMap = groupHistoryByDay(historyRows);
+      const sessionMap = groupSessionsByDay(sessionRows);
+      const rows = last7DateKeys().map(dateKey => ({
+        dateKey,
+        ...dailyStatsFromMaps(dateKey, historyMap, sessionMap),
+      }));
+
+      if (!rows.some(row => row.matches > 0)) {
         tbody.innerHTML = '<tr><td colspan="5">최근 7일 경기 기록이 없습니다.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = data.map(row => `
+      tbody.innerHTML = rows.map(row => `
         <tr>
-          <td>${resultLabel(row.result)}</td>
-          <td>${row.score_change ?? 0}</td>
-          <td>${row.score_after ?? '-'}</td>
-          <td>${row.rank_after ?? '-'}</td>
-          <td>${row.created_at ? new Date(row.created_at).toLocaleString() : ''}</td>
+          <td>${row.dateKey}</td>
+          <td>${row.wins}승 ${row.draws}무 ${row.losses}패</td>
+          <td>${row.matches}</td>
+          <td>${winRate(row)}%</td>
+          <td>${fcFromWins(row.wins)}</td>
         </tr>
       `).join('');
     }
 
     async function loadRanking(statsMap) {
-      const { data, error } = await supabaseClient
-        .from('game_history')
-        .select('*')
-        .gte('created_at', daysAgoIso(1));
-
       const tbody = document.getElementById('rankingList');
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="10">오류: ${error.message}</td></tr>`;
+      const [historyRes, sessionRes] = await Promise.all([
+        supabaseClient
+          .from('game_history')
+          .select('*')
+          .gte('created_at', startOfTodayIso()),
+        supabaseClient
+          .from('daily_sessions')
+          .select('*')
+          .eq('session_date', todayDate()),
+      ]);
+
+      const historyRows = historyRes.data || [];
+      const sessionRows = sessionRes.data || [];
+      if (historyRes.error && sessionRows.length === 0) {
+        const message = historyRes.error.message;
+        tbody.innerHTML = `<tr><td colspan="10">오류: ${message}</td></tr>`;
         return;
       }
 
       const grouped = {};
-      (data || []).forEach(row => {
+      historyRows.forEach(row => {
         const username = row.username || '-';
         if (!grouped[username]) {
           grouped[username] = { username, wins: 0, draws: 0, losses: 0, matches: 0 };
@@ -799,7 +760,24 @@ footer {
         grouped[username].matches += 1;
       });
 
+      if (Object.keys(grouped).length === 0) {
+        sessionRows.forEach(row => {
+          const username = row.username || '-';
+          const wins = Number(row.wins || 0);
+          const draws = Number(row.draws || 0);
+          const losses = Number(row.losses || 0);
+          grouped[username] = {
+            username,
+            wins,
+            draws,
+            losses,
+            matches: Number(row.matches ?? (wins + draws + losses)),
+          };
+        });
+      }
+
       const ranking = Object.values(grouped)
+        .filter(row => row.matches > 0)
         .map(row => {
           const profile = statsMap[row.username] || {};
           return {
@@ -814,7 +792,7 @@ footer {
         .slice(0, 10);
 
       if (ranking.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10">최근 24시간 랭킹 데이터가 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10">오늘 24시간 랭킹 데이터가 없습니다.</td></tr>';
         return;
       }
 
