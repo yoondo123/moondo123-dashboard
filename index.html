@@ -241,10 +241,28 @@
     function localDate(daysAgo = 0) {
       const d = new Date();
       d.setDate(d.getDate() - daysAgo);
+      return formatLocalDate(d);
+    }
+
+    function formatLocalDate(d) {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
       return `${y}-${m}-${day}`;
+    }
+
+    function weeklyResetDate() {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      const daysSinceThursday = (d.getDay() - 4 + 7) % 7;
+      d.setDate(d.getDate() - daysSinceThursday);
+      return formatLocalDate(d);
+    }
+
+    function sevenDaysAgoIso() {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      return d.toISOString();
     }
 
     async function sha256(text) {
@@ -356,7 +374,7 @@
     async function loadDailyStats() {
       if (!currentUser) return;
       const today = localDate(0);
-      const weekStart = localDate(6);
+      const weekStart = weeklyResetDate();
 
       const todayRes = await supabaseClient
         .from('daily_sessions')
@@ -394,8 +412,9 @@
         .from('game_history')
         .select('*')
         .eq('username', currentUser.username)
+        .gte('created_at', sevenDaysAgoIso())
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(50);
 
       const tbody = document.getElementById('recentList');
       if (error) {
