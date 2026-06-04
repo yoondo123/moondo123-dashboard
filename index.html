@@ -188,7 +188,7 @@
           <div class="live-name" id="liveUsername">-</div>
           <div class="live-score" id="liveScore">0</div>
           <div class="live-score" id="liveRank">0</div>
-          <div class="live-name" id="liveTier">Unranked</div>
+          <div class="live-name" id="liveTier">-</div>
           <div class="live-time" id="liveTime">대기</div>
         </div>
       </div>
@@ -336,12 +336,21 @@
       }
 
       const live = data[0];
-      document.getElementById('liveUsername').innerText = live.username || currentUser.username;
-      document.getElementById('liveScore').innerText = live.score ?? 0;
-      document.getElementById('liveRank').innerText = live.rank ?? 0;
-      document.getElementById('liveTier').innerText = live.tier || 'Unranked';
-      document.getElementById('liveTime').innerText = live.updated_at ? new Date(live.updated_at).toLocaleTimeString() : '대기';
-      state.innerHTML = '<span class="status-dot"></span>LIVE';
+      const hasMatchData =
+        live.match_my_name ||
+        live.match_my_score !== null ||
+        live.match_opponent_score !== null ||
+        live.match_opponent_name ||
+        live.match_time;
+
+      document.getElementById('liveUsername').innerText = live.match_my_name || currentUser.username;
+      document.getElementById('liveScore').innerText = live.match_my_score ?? '-';
+      document.getElementById('liveRank').innerText = live.match_opponent_score ?? '-';
+      document.getElementById('liveTier').innerText = live.match_opponent_name || '상대 OCR 대기';
+      document.getElementById('liveTime').innerText = live.match_time || '시간 OCR 대기';
+      state.innerHTML = hasMatchData
+        ? '<span class="status-dot"></span>LIVE'
+        : '<span class="status-dot"></span>LIVE - 경기 OCR 대기 중';
     }
 
     async function loadDailyStats() {
