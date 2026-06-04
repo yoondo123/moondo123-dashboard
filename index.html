@@ -2,154 +2,221 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>MOONDO123 관리자 대시보드</title>
-
+  <title>MOONDO123 FC온라인 전적</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
 
   <style>
     body {
-      background: #081225;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 30px;
+      background:#081225;
+      color:white;
+      font-family:Arial;
+      padding:30px;
     }
-
+    input, button {
+      padding:10px;
+      margin:4px;
+    }
     table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 25px;
-      background: #111c2f;
+      width:100%;
+      border-collapse:collapse;
+      margin-top:20px;
+      background:#111c2f;
     }
-
     th, td {
-      border: 1px solid #334155;
-      padding: 12px;
-      text-align: center;
+      border:1px solid #334155;
+      padding:10px;
+      text-align:center;
     }
-
     th {
-      background: #1e293b;
+      background:#1e293b;
     }
-
-    button {
-      padding: 8px 14px;
-      margin: 3px;
-      cursor: pointer;
+    .card {
+      background:#111c2f;
+      padding:20px;
+      margin-top:20px;
+      border-radius:10px;
     }
-
-    .approve {
-      background: #2563eb;
-      color: white;
-      border: none;
-    }
-
-    .reject {
-      background: #dc2626;
-      color: white;
-      border: none;
-    }
-
-    .logout {
-      background: #475569;
-      color: white;
-      border: none;
-      float: right;
+    a {
+      color:#93c5fd;
     }
   </style>
 </head>
 
 <body>
-  <button class="logout" onclick="logout()">로그아웃</button>
+  <h1>MOONDO123 FC온라인 전적</h1>
+  <p><a href="./admin.html">관리자 페이지</a></p>
 
-  <h1>MOONDO123 관리자 대시보드</h1>
-  <p>회원가입 신청 목록</p>
+  <input id="searchNick" placeholder="닉네임 입력">
+  <button onclick="searchPlayer()">검색</button>
 
+  <div id="summary" class="card">닉네임을 검색해주세요.</div>
+
+  <h2>전체 랭킹 TOP 10</h2>
   <table>
     <thead>
       <tr>
-        <th>아이디</th>
+        <th>순위</th>
         <th>닉네임</th>
-        <th>상태</th>
-        <th>가입일</th>
-        <th>관리</th>
+        <th>총 경기</th>
+        <th>승</th>
+        <th>무</th>
+        <th>패</th>
+        <th>승률</th>
+        <th>FC</th>
       </tr>
     </thead>
-    <tbody id="userList">
+    <tbody id="rankingList"></tbody>
+  </table>
+
+  <h2>최근 경기</h2>
+  <table>
+    <thead>
       <tr>
-        <td colspan="5">불러오는 중...</td>
+        <th>닉네임</th>
+        <th>결과</th>
+        <th>스코어</th>
+        <th>FC</th>
+        <th>날짜</th>
       </tr>
-    </tbody>
+    </thead>
+    <tbody id="recentList"></tbody>
   </table>
 
   <script>
-    if (localStorage.getItem('admin_login') !== 'true') {
-      location.href = './admin.html';
-    }
+    async function searchPlayer() {
+      const nick = document.getElementById('searchNick').value.trim();
+      const summary = document.getElementById('summary');
 
-    async function loadUsers() {
-      const tbody = document.getElementById('userList');
+      if (!nick) {
+        summary.innerHTML = '닉네임을 입력해주세요.';
+        return;
+      }
 
       const { data, error } = await supabaseClient
-        .from('app_users')
+        .from('match_history')
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('nickname', nick)
+        .order('created_at', { ascending:false });
 
       if (error) {
-        console.error(error);
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5">오류 : ${error.message}</td>
-          </tr>
-        `;
+        summary.innerHTML = '오류 : ' + error.message;
+        return;
+      }
+
+      renderSummary(nick, data || []);
+    }
+
+    function renderSummary(nick, matches) {
+      const total = matches.length;
+      const win = matches.filter(x => x.result === '승').length;
+      const draw = matches.filter(x => x.result === '무').length;
+      const lose = matches.filter(x => x.result === '패').length;
+      const fc = matches.reduce((sum, x) => sum + Number(x.fc_point || 0), 0);
+      const rate = total === 0 ? 0 : ((win / total) * 100).toFixed(1);
+
+      document.getElementById('summary').innerHTML = `
+        <h2>${nick}</h2>
+        <p>총 경기: ${total}</p>
+        <p>승: ${win} / 무: ${draw} / 패: ${lose}</p>
+        <p>승률: ${rate}%</p>
+        <p>총 FC: ${fc}</p>
+      `;
+    }
+
+    async function loadRecent() {
+      const { data, error } = await supabaseClient
+        .from('match_history')
+        .select('*')
+        .order('created_at', { ascending:false })
+        .limit(10);
+
+      const tbody = document.getElementById('recentList');
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="5">오류 : ${error.message}</td></tr>`;
         return;
       }
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5">회원가입 신청이 없습니다.</td>
-          </tr>
-        `;
+        tbody.innerHTML = `<tr><td colspan="5">등록된 전적이 없습니다.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = data.map(user => `
+      tbody.innerHTML = data.map(row => `
         <tr>
-          <td>${user.username || ''}</td>
-          <td>${user.nickname || ''}</td>
-          <td>${user.status || ''}</td>
-          <td>${user.created_at ? new Date(user.created_at).toLocaleString() : ''}</td>
-          <td>
-            <button class="approve" onclick="updateStatus('${user.id}', 'approved')">승인</button>
-            <button class="reject" onclick="updateStatus('${user.id}', 'rejected')">거절</button>
-          </td>
+          <td>${row.nickname}</td>
+          <td>${row.result}</td>
+          <td>${row.score_for} : ${row.score_against}</td>
+          <td>${row.fc_point || 0}</td>
+          <td>${new Date(row.created_at).toLocaleString()}</td>
         </tr>
       `).join('');
     }
 
-    async function updateStatus(id, status) {
-      const { error } = await supabaseClient
-        .from('app_users')
-        .update({ status: status })
-        .eq('id', id);
+    async function loadRanking() {
+      const { data, error } = await supabaseClient
+        .from('match_history')
+        .select('*');
+
+      const tbody = document.getElementById('rankingList');
 
       if (error) {
-        alert('오류 : ' + error.message);
-        console.error(error);
+        tbody.innerHTML = `<tr><td colspan="8">오류 : ${error.message}</td></tr>`;
         return;
       }
 
-      alert(status === 'approved' ? '승인 완료' : '거절 완료');
-      loadUsers();
+      const map = {};
+
+      (data || []).forEach(m => {
+        if (!map[m.nickname]) {
+          map[m.nickname] = {
+            nickname: m.nickname,
+            total: 0,
+            win: 0,
+            draw: 0,
+            lose: 0,
+            fc: 0
+          };
+        }
+
+        map[m.nickname].total++;
+        map[m.nickname].fc += Number(m.fc_point || 0);
+
+        if (m.result === '승') map[m.nickname].win++;
+        if (m.result === '무') map[m.nickname].draw++;
+        if (m.result === '패') map[m.nickname].lose++;
+      });
+
+      const ranking = Object.values(map)
+        .map(x => ({
+          ...x,
+          winrate: x.total === 0 ? 0 : Number(((x.win / x.total) * 100).toFixed(1))
+        }))
+        .sort((a, b) => b.winrate - a.winrate)
+        .slice(0, 10);
+
+      if (ranking.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8">랭킹 데이터가 없습니다.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = ranking.map((row, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${row.nickname}</td>
+          <td>${row.total}</td>
+          <td>${row.win}</td>
+          <td>${row.draw}</td>
+          <td>${row.lose}</td>
+          <td>${row.winrate}%</td>
+          <td>${row.fc}</td>
+        </tr>
+      `).join('');
     }
 
-    function logout() {
-      localStorage.removeItem('admin_login');
-      location.href = './admin.html';
-    }
-
-    loadUsers();
+    loadRecent();
+    loadRanking();
   </script>
 </body>
 </html>
