@@ -6,47 +6,16 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
-
-  <style>
-    body {
-      background: #081225;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 30px;
-    }
-
-    h1 {
-      margin-bottom: 25px;
-    }
-
-    input {
-      width: 180px;
-      padding: 12px;
-      margin-right: 10px;
-      font-size: 15px;
-    }
-
-    button {
-      padding: 12px 24px;
-      font-size: 15px;
-      cursor: pointer;
-    }
-
-    #result {
-      margin-top: 18px;
-      color: #ffb4b4;
-    }
-  </style>
 </head>
 
-<body>
+<body style="background:#081225;color:white;font-family:Arial;padding:30px;">
   <h1>MOONDO123 관리자</h1>
 
   <input id="adminId" placeholder="아이디" value="admin">
   <input id="adminPw" type="password" placeholder="비밀번호">
   <button onclick="login()">로그인</button>
 
-  <p id="result"></p>
+  <p id="result" style="color:#ffb4b4;"></p>
 
   <script>
     async function login() {
@@ -54,19 +23,12 @@
       const pw = document.getElementById('adminPw').value.trim();
       const result = document.getElementById('result');
 
-      result.innerText = '';
-
-      if (!id || !pw) {
-        result.innerText = '아이디와 비밀번호를 입력해주세요.';
-        return;
-      }
-
       const { data, error } = await supabaseClient
         .from('admin_users')
         .select('*')
         .eq('username', id)
         .eq('password', pw)
-        .maybeSingle();
+        .limit(1);
 
       if (error) {
         console.error(error);
@@ -74,7 +36,7 @@
         return;
       }
 
-      if (!data) {
+      if (!data || data.length === 0) {
         result.innerText = '아이디 또는 비밀번호가 틀렸습니다.';
         return;
       }
