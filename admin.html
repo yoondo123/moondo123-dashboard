@@ -17,16 +17,24 @@
   <p id="result" style="color:#ffb4b4;"></p>
 
   <script>
+    async function sha256(text) {
+      const bytes = new TextEncoder().encode(text);
+      const hash = await crypto.subtle.digest('SHA-256', bytes);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     async function login() {
       const id = document.getElementById('adminId').value.trim();
       const pw = document.getElementById('adminPw').value.trim();
       const result = document.getElementById('result');
+      const passwordHash = await sha256(pw);
 
       const { data, error } = await supabaseClient
         .from('admin_users')
         .select('*')
         .eq('username', id)
-        .eq('password', pw)
+        .eq('password_hash', passwordHash)
+        .eq('status', 'approved')
         .limit(1);
 
       if (error) {
@@ -45,4 +53,3 @@
   </script>
 
 </body>
-</html>
