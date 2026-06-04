@@ -2,221 +2,464 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOONDO123 FC온라인 전적</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
-
   <style>
+    * { box-sizing: border-box; }
     body {
-      background:#081225;
-      color:white;
-      font-family:Arial;
-      padding:30px;
+      margin: 0;
+      background: #071326;
+      color: #f8fbff;
+      font-family: Arial, "Malgun Gothic", sans-serif;
     }
-    input, button {
-      padding:10px;
-      margin:4px;
+    main {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 34px 0 60px;
     }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 34px; }
+    h2 { font-size: 24px; margin: 30px 0 14px; }
+    button, input {
+      height: 42px;
+      border: 1px solid #34445f;
+      font: inherit;
+    }
+    input {
+      width: 210px;
+      padding: 0 12px;
+      background: #fff;
+      color: #111827;
+    }
+    button {
+      padding: 0 16px;
+      background: #2563eb;
+      color: #fff;
+      cursor: pointer;
+    }
+    button.secondary { background: #334155; }
+    a { color: #7ec4ff; }
     table {
-      width:100%;
-      border-collapse:collapse;
-      margin-top:20px;
-      background:#111c2f;
+      width: 100%;
+      border-collapse: collapse;
+      background: #111c2f;
     }
     th, td {
-      border:1px solid #334155;
-      padding:10px;
-      text-align:center;
+      border: 1px solid #34445f;
+      padding: 12px 10px;
+      text-align: center;
     }
-    th {
-      background:#1e293b;
+    th { background: #1d2a3d; }
+    .panel {
+      background: #121d31;
+      border: 1px solid #263850;
+      border-radius: 8px;
+      padding: 20px;
     }
-    .card {
-      background:#111c2f;
-      padding:20px;
-      margin-top:20px;
-      border-radius:10px;
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
     }
-    a {
-      color:#93c5fd;
+    .login-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .hidden { display: none !important; }
+    .muted { color: #9eb2cc; }
+    .ok { color: #52d273; }
+    .bad { color: #ff6b6b; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .stat {
+      background: #0d182a;
+      border: 1px solid #28384f;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .stat strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 26px;
+    }
+    .live-card {
+      display: grid;
+      grid-template-columns: 1fr 86px 86px 1fr 120px;
+      align-items: center;
+      background: #0d182a;
+      border: 1px solid #28384f;
+      border-radius: 6px;
+      overflow: hidden;
+      min-height: 72px;
+    }
+    .live-name {
+      padding: 0 24px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .live-score {
+      height: 72px;
+      display: grid;
+      place-items: center;
+      background: #f4f7fb;
+      color: #101622;
+      font-size: 34px;
+      font-weight: 800;
+    }
+    .live-time {
+      color: #ffd166;
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: #52d273;
+    }
+    @media (max-width: 760px) {
+      main { width: min(100% - 24px, 1180px); padding-top: 20px; }
+      header, .topbar { align-items: flex-start; flex-direction: column; }
+      h1 { font-size: 26px; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .live-card { grid-template-columns: 1fr 58px 58px 1fr; }
+      .live-time { grid-column: 1 / -1; padding: 12px; }
+      .live-name { padding: 0 12px; font-size: 18px; }
+      .live-score { height: 58px; font-size: 26px; }
+      table { font-size: 13px; }
     }
   </style>
 </head>
-
 <body>
-  <h1>MOONDO123 FC온라인 전적</h1>
-  <p><a href="./admin.html">관리자 페이지</a></p>
+  <main>
+    <header>
+      <div>
+        <h1>MOONDO123 FC온라인 전적</h1>
+        <p class="muted">프로그램 실행 중이면 실시간 점수는 10초마다 갱신됩니다.</p>
+      </div>
+      <a href="./admin.html">관리자 페이지</a>
+    </header>
 
-  <input id="searchNick" placeholder="닉네임 입력">
-  <button onclick="searchPlayer()">검색</button>
+    <section id="loginPanel" class="panel">
+      <div class="topbar">
+        <h2 style="margin:0;">로그인</h2>
+        <p class="muted">프로그램에서 만든 ID로 로그인합니다.</p>
+      </div>
+      <div class="login-row">
+        <input id="loginId" placeholder="아이디">
+        <input id="loginPw" type="password" placeholder="비밀번호">
+        <button onclick="login()">로그인</button>
+      </div>
+      <p id="loginMessage" class="bad" style="margin-top:12px;"></p>
+    </section>
 
-  <div id="summary" class="card">닉네임을 검색해주세요.</div>
+    <section id="dashboard" class="hidden">
+      <div class="topbar">
+        <div>
+          <h2 style="margin:0;"><span id="helloName"></span> 님 전적</h2>
+          <p id="lastUpdated" class="muted"></p>
+        </div>
+        <button class="secondary" onclick="logout()">로그아웃</button>
+      </div>
 
-  <h2>전체 랭킹 TOP 10</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>순위</th>
-        <th>닉네임</th>
-        <th>총 경기</th>
-        <th>승</th>
-        <th>무</th>
-        <th>패</th>
-        <th>승률</th>
-        <th>FC</th>
-      </tr>
-    </thead>
-    <tbody id="rankingList"></tbody>
-  </table>
+      <h2>실시간 점수</h2>
+      <div class="panel">
+        <p id="liveState" class="muted" style="margin-bottom:12px;"></p>
+        <div class="live-card">
+          <div class="live-name" id="liveUsername">-</div>
+          <div class="live-score" id="liveScore">0</div>
+          <div class="live-score" id="liveRank">0</div>
+          <div class="live-name" id="liveTier">Unranked</div>
+          <div class="live-time" id="liveTime">대기</div>
+        </div>
+      </div>
 
-  <h2>최근 경기</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>닉네임</th>
-        <th>결과</th>
-        <th>스코어</th>
-        <th>FC</th>
-        <th>날짜</th>
-      </tr>
-    </thead>
-    <tbody id="recentList"></tbody>
-  </table>
+      <h2>오늘 / 일주일 승패</h2>
+      <div class="grid">
+        <div class="stat"><span class="muted">오늘</span><strong id="todayRecord">0승 0무 0패</strong></div>
+        <div class="stat"><span class="muted">오늘 경기</span><strong id="todayMatches">0</strong></div>
+        <div class="stat"><span class="muted">일주일</span><strong id="weekRecord">0승 0무 0패</strong></div>
+        <div class="stat"><span class="muted">일주일 경기</span><strong id="weekMatches">0</strong></div>
+      </div>
+
+      <h2>최근 경기</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>결과</th>
+            <th>점수 변화</th>
+            <th>경기 후 점수</th>
+            <th>경기 후 순위</th>
+            <th>날짜</th>
+          </tr>
+        </thead>
+        <tbody id="recentList"></tbody>
+      </table>
+    </section>
+
+    <h2>전체 랭킹 TOP 10</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>순위</th>
+          <th>닉네임</th>
+          <th>승</th>
+          <th>무</th>
+          <th>패</th>
+          <th>총 경기</th>
+          <th>승률</th>
+          <th>점수</th>
+          <th>FC</th>
+        </tr>
+      </thead>
+      <tbody id="rankingList"></tbody>
+    </table>
+  </main>
 
   <script>
-    async function searchPlayer() {
-      const nick = document.getElementById('searchNick').value.trim();
-      const summary = document.getElementById('summary');
+    let currentUser = JSON.parse(localStorage.getItem('moondo_user') || 'null');
 
-      if (!nick) {
-        summary.innerHTML = '닉네임을 입력해주세요.';
+    function localDate(daysAgo = 0) {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    async function sha256(text) {
+      const bytes = new TextEncoder().encode(text);
+      const hash = await crypto.subtle.digest('SHA-256', bytes);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function setLoginState() {
+      const loggedIn = !!currentUser;
+      document.getElementById('loginPanel').classList.toggle('hidden', loggedIn);
+      document.getElementById('dashboard').classList.toggle('hidden', !loggedIn);
+      if (loggedIn) {
+        document.getElementById('helloName').innerText = currentUser.username;
+      }
+    }
+
+    async function login() {
+      const username = document.getElementById('loginId').value.trim();
+      const password = document.getElementById('loginPw').value.trim();
+      const message = document.getElementById('loginMessage');
+      message.innerText = '';
+
+      if (!username || !password) {
+        message.innerText = '아이디와 비밀번호를 입력해주세요.';
         return;
       }
 
       const { data, error } = await supabaseClient
-        .from('match_history')
-        .select('*')
-        .eq('nickname', nick)
-        .order('created_at', { ascending:false });
+        .from('app_users')
+        .select('id, username, password_hash, status')
+        .eq('username', username)
+        .limit(1);
 
       if (error) {
-        summary.innerHTML = '오류 : ' + error.message;
+        message.innerText = '오류: ' + error.message;
+        return;
+      }
+      if (!data || data.length === 0) {
+        message.innerText = '가입되지 않은 아이디입니다.';
         return;
       }
 
-      renderSummary(nick, data || []);
+      const user = data[0];
+      if (user.status !== 'approved') {
+        message.innerText = '관리자 승인 후 로그인할 수 있습니다.';
+        return;
+      }
+      if (user.password_hash !== await sha256(password)) {
+        message.innerText = '비밀번호가 맞지 않습니다.';
+        return;
+      }
+
+      currentUser = { id: user.id, username: user.username };
+      localStorage.setItem('moondo_user', JSON.stringify(currentUser));
+      setLoginState();
+      refreshAll();
     }
 
-    function renderSummary(nick, matches) {
-      const total = matches.length;
-      const win = matches.filter(x => x.result === '승').length;
-      const draw = matches.filter(x => x.result === '무').length;
-      const lose = matches.filter(x => x.result === '패').length;
-      const fc = matches.reduce((sum, x) => sum + Number(x.fc_point || 0), 0);
-      const rate = total === 0 ? 0 : ((win / total) * 100).toFixed(1);
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('moondo_user');
+      setLoginState();
+    }
 
-      document.getElementById('summary').innerHTML = `
-        <h2>${nick}</h2>
-        <p>총 경기: ${total}</p>
-        <p>승: ${win} / 무: ${draw} / 패: ${lose}</p>
-        <p>승률: ${rate}%</p>
-        <p>총 FC: ${fc}</p>
-      `;
+    function resultLabel(result) {
+      if (result === 'win') return '<span class="ok">승</span>';
+      if (result === 'loss') return '<span class="bad">패</span>';
+      if (result === 'draw') return '무';
+      return result || '-';
+    }
+
+    async function loadLiveStatus() {
+      if (!currentUser) return;
+      const { data, error } = await supabaseClient
+        .from('live_status')
+        .select('*')
+        .eq('username', currentUser.username)
+        .limit(1);
+
+      const state = document.getElementById('liveState');
+      if (error) {
+        state.innerText = '실시간 데이터 오류: ' + error.message;
+        return;
+      }
+      if (!data || data.length === 0) {
+        state.innerText = '아직 프로그램에서 올라온 실시간 점수가 없습니다.';
+        return;
+      }
+
+      const live = data[0];
+      document.getElementById('liveUsername').innerText = live.username || currentUser.username;
+      document.getElementById('liveScore').innerText = live.score ?? 0;
+      document.getElementById('liveRank').innerText = live.rank ?? 0;
+      document.getElementById('liveTier').innerText = live.tier || 'Unranked';
+      document.getElementById('liveTime').innerText = live.updated_at ? new Date(live.updated_at).toLocaleTimeString() : '대기';
+      state.innerHTML = '<span class="status-dot"></span>LIVE';
+    }
+
+    async function loadDailyStats() {
+      if (!currentUser) return;
+      const today = localDate(0);
+      const weekStart = localDate(6);
+
+      const todayRes = await supabaseClient
+        .from('daily_sessions')
+        .select('*')
+        .eq('username', currentUser.username)
+        .eq('session_date', today)
+        .limit(1);
+
+      const weekRes = await supabaseClient
+        .from('daily_sessions')
+        .select('*')
+        .eq('username', currentUser.username)
+        .gte('session_date', weekStart)
+        .lte('session_date', today);
+
+      const t = todayRes.data && todayRes.data[0] ? todayRes.data[0] : {};
+      document.getElementById('todayRecord').innerText = `${t.wins || 0}승 ${t.draws || 0}무 ${t.losses || 0}패`;
+      document.getElementById('todayMatches').innerText = t.matches || 0;
+
+      const week = (weekRes.data || []).reduce((acc, row) => {
+        acc.wins += Number(row.wins || 0);
+        acc.draws += Number(row.draws || 0);
+        acc.losses += Number(row.losses || 0);
+        acc.matches += Number(row.matches || 0);
+        return acc;
+      }, { wins: 0, draws: 0, losses: 0, matches: 0 });
+
+      document.getElementById('weekRecord').innerText = `${week.wins}승 ${week.draws}무 ${week.losses}패`;
+      document.getElementById('weekMatches').innerText = week.matches;
     }
 
     async function loadRecent() {
+      if (!currentUser) return;
       const { data, error } = await supabaseClient
-        .from('match_history')
+        .from('game_history')
         .select('*')
-        .order('created_at', { ascending:false })
+        .eq('username', currentUser.username)
+        .order('created_at', { ascending: false })
         .limit(10);
 
       const tbody = document.getElementById('recentList');
-
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="5">오류 : ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5">오류: ${error.message}</td></tr>`;
         return;
       }
-
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5">등록된 전적이 없습니다.</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="5">최근 경기 기록이 없습니다.</td></tr>';
         return;
       }
 
       tbody.innerHTML = data.map(row => `
         <tr>
-          <td>${row.nickname}</td>
-          <td>${row.result}</td>
-          <td>${row.score_for} : ${row.score_against}</td>
-          <td>${row.fc_point || 0}</td>
-          <td>${new Date(row.created_at).toLocaleString()}</td>
+          <td>${resultLabel(row.result)}</td>
+          <td>${row.score_change ?? 0}</td>
+          <td>${row.score_after ?? '-'}</td>
+          <td>${row.rank_after ?? '-'}</td>
+          <td>${row.created_at ? new Date(row.created_at).toLocaleString() : ''}</td>
         </tr>
       `).join('');
     }
 
     async function loadRanking() {
       const { data, error } = await supabaseClient
-        .from('match_history')
-        .select('*');
+        .from('player_stats')
+        .select('*')
+        .order('wins', { ascending: false })
+        .order('score', { ascending: false })
+        .limit(10);
 
       const tbody = document.getElementById('rankingList');
-
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="8">오류 : ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9">오류: ${error.message}</td></tr>`;
+        return;
+      }
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9">랭킹 데이터가 없습니다.</td></tr>';
         return;
       }
 
-      const map = {};
-
-      (data || []).forEach(m => {
-        if (!map[m.nickname]) {
-          map[m.nickname] = {
-            nickname: m.nickname,
-            total: 0,
-            win: 0,
-            draw: 0,
-            lose: 0,
-            fc: 0
-          };
-        }
-
-        map[m.nickname].total++;
-        map[m.nickname].fc += Number(m.fc_point || 0);
-
-        if (m.result === '승') map[m.nickname].win++;
-        if (m.result === '무') map[m.nickname].draw++;
-        if (m.result === '패') map[m.nickname].lose++;
-      });
-
-      const ranking = Object.values(map)
-        .map(x => ({
-          ...x,
-          winrate: x.total === 0 ? 0 : Number(((x.win / x.total) * 100).toFixed(1))
-        }))
-        .sort((a, b) => b.winrate - a.winrate)
-        .slice(0, 10);
-
-      if (ranking.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8">랭킹 데이터가 없습니다.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = ranking.map((row, i) => `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${row.nickname}</td>
-          <td>${row.total}</td>
-          <td>${row.win}</td>
-          <td>${row.draw}</td>
-          <td>${row.lose}</td>
-          <td>${row.winrate}%</td>
-          <td>${row.fc}</td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = data.map((row, i) => {
+        const wins = Number(row.wins || 0);
+        const draws = Number(row.draws || 0);
+        const losses = Number(row.losses || 0);
+        const matches = wins + draws + losses;
+        const winRate = matches ? ((wins / matches) * 100).toFixed(1) : '0.0';
+        return `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${row.username || '-'}</td>
+            <td class="ok">${wins}</td>
+            <td>${draws}</td>
+            <td class="bad">${losses}</td>
+            <td>${matches}</td>
+            <td>${winRate}%</td>
+            <td>${row.score ?? 0}</td>
+            <td>${row.fc_mined ?? 0}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
-    loadRecent();
-    loadRanking();
+    async function refreshAll() {
+      await loadRanking();
+      if (currentUser) {
+        await Promise.all([loadLiveStatus(), loadDailyStats(), loadRecent()]);
+        document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
+      }
+    }
+
+    setLoginState();
+    refreshAll();
+    setInterval(refreshAll, 10000);
   </script>
 </body>
 </html>
