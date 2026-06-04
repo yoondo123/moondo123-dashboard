@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOONDO123 Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+  <style>
+    body{margin:0;background:#0f172a;color:#e5e7eb;font-family:Arial,'Noto Sans KR',sans-serif}.wrap{max-width:1100px;margin:0 auto;padding:34px 18px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:22px}.title{font-size:34px;font-weight:900}.admin{color:#93c5fd;text-decoration:none;border:1px solid #334155;padding:9px 12px;border-radius:10px}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}.card{background:#111827;border:1px solid #334155;border-radius:18px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.25)}.name{font-size:21px;font-weight:800;margin-bottom:12px}.tier{font-size:18px;color:#fbbf24}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.stat{background:#0b1220;border-radius:12px;padding:12px}.label{font-size:12px;color:#94a3b8}.num{font-size:22px;font-weight:800;margin-top:4px}.muted{color:#94a3b8}.empty{padding:30px;background:#111827;border-radius:18px;border:1px solid #334155}.updated{font-size:12px;color:#64748b;margin-top:14px}.rank{font-size:28px;font-weight:900;color:#86efac}</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div><div class="title">🏆 MOONDO123 Dashboard</div><div class="muted">승 / 무 / 패 / 티어 / 점수 / 등수 / FC 채굴 / 승률</div></div>
+      <a class="admin" href="./admin.html">관리자</a>
+    </div>
+    <div id="status" class="muted">불러오는 중...</div>
+    <div id="cards" class="cards"></div>
+  </div>
+<script>
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+function fmt(v){ return (v===null||v===undefined||v==='') ? '-' : v; }
+function dateFmt(v){ if(!v) return '-'; try{return new Date(v).toLocaleString('ko-KR')}catch(e){return v} }
+async function loadStats(){
+  const status = document.getElementById('status');
+  const cards = document.getElementById('cards');
+  const {data, error} = await client.from('player_stats').select('*').order('score',{ascending:false});
+  if(error){ status.textContent = '데이터 로드 오류: ' + error.message; return; }
+  if(!data || data.length === 0){ status.innerHTML = '<div class="empty">아직 표시할 기록이 없습니다. 프로그램에서 로그인 후 전적이 업로드되면 여기에 표시됩니다.</div>'; return; }
+  status.textContent = '';
+  cards.innerHTML = data.map(row => {
+    const wins=Number(row.wins||0), draws=Number(row.draws||0), losses=Number(row.losses||0);
+    const matches=wins+draws+losses;
+    const winRate = row.win_rate ?? (matches ? ((wins/matches)*100).toFixed(1) : 0);
+    return `<div class="card">
+      <div class="name">👤 ${fmt(row.username)}</div>
+      <div class="tier">현재 티어: ${fmt(row.tier)}</div>
+      <div class="rank">${fmt(row.rank)}위</div>
+      <div class="grid">
+        <div class="stat"><div class="label">승</div><div class="num">${wins}</div></div>
+        <div class="stat"><div class="label">무</div><div class="num">${draws}</div></div>
+        <div class="stat"><div class="label">패</div><div class="num">${losses}</div></div>
+        <div class="stat"><div class="label">승률</div><div class="num">${winRate}%</div></div>
+        <div class="stat"><div class="label">점수</div><div class="num">${fmt(row.score)}</div></div>
+        <div class="stat"><div class="label">FC 채굴</div><div class="num">${fmt(row.fc_mined)}</div></div>
+      </div>
+      <div class="updated">최근 업데이트: ${dateFmt(row.updated_at)}</div>
+    </div>`;
+  }).join('');
+}
+loadStats();
+setInterval(loadStats, 15000);
+</script>
+</body>
+</html>
