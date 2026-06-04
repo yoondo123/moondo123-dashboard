@@ -1,77 +1,88 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>MOONDO123 관리자</title>
+  <meta charset="UTF-8">
+  <title>MOONDO123 관리자</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
 
-<style>
-body{
-    background:#081225;
-    color:white;
-    font-family:sans-serif;
-    padding:30px;
-}
+  <style>
+    body {
+      background: #081225;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 30px;
+    }
 
-input{
-    padding:10px;
-    margin-right:10px;
-}
+    h1 {
+      margin-bottom: 25px;
+    }
 
-button{
-    padding:10px 20px;
-}
-</style>
+    input {
+      width: 180px;
+      padding: 12px;
+      margin-right: 10px;
+      font-size: 15px;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    #result {
+      margin-top: 18px;
+      color: #ffb4b4;
+    }
+  </style>
 </head>
 
 <body>
+  <h1>MOONDO123 관리자</h1>
 
-<h1>MOONDO123 관리자</h1>
+  <input id="adminId" placeholder="아이디" value="admin">
+  <input id="adminPw" type="password" placeholder="비밀번호">
+  <button onclick="login()">로그인</button>
 
-<input id="id" placeholder="아이디">
-<input id="pw" type="password" placeholder="비밀번호">
+  <p id="result"></p>
 
-<button onclick="login()">로그인</button>
+  <script>
+    async function login() {
+      const id = document.getElementById('adminId').value.trim();
+      const pw = document.getElementById('adminPw').value.trim();
+      const result = document.getElementById('result');
 
-<p id="result"></p>
+      result.innerText = '';
 
-<script>
+      if (!id || !pw) {
+        result.innerText = '아이디와 비밀번호를 입력해주세요.';
+        return;
+      }
 
-async function login(){
-
-    const id = document.getElementById('id').value;
-    const pw = document.getElementById('pw').value;
-
-    const { data, error } = await supabaseClient
+      const { data, error } = await supabaseClient
         .from('admin_users')
         .select('*')
         .eq('username', id)
         .eq('password', pw)
-        .single();
+        .maybeSingle();
 
-    if(error){
+      if (error) {
         console.error(error);
-        document.getElementById('result').innerText =
-            '오류 : ' + error.message;
+        result.innerText = '오류 : ' + error.message;
         return;
-    }
+      }
 
-    if(!data){
-        document.getElementById('result').innerText =
-            '로그인 실패';
+      if (!data) {
+        result.innerText = '아이디 또는 비밀번호가 틀렸습니다.';
         return;
+      }
+
+      localStorage.setItem('admin_login', 'true');
+      alert('로그인 성공');
+      location.href = './index.html';
     }
-
-    localStorage.setItem('admin_login','true');
-
-    alert('로그인 성공');
-
-    location.href='index.html';
-}
-
-</script>
-
+  </script>
 </body>
 </html>
