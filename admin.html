@@ -1,77 +1,77 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MOONDO123 Admin</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./config.js"></script>
-  <style>
-    body{margin:0;background:#020617;color:#e5e7eb;font-family:Arial,'Noto Sans KR',sans-serif}.wrap{max-width:1050px;margin:0 auto;padding:30px 18px}a{color:#93c5fd}.panel{background:#111827;border:1px solid #334155;border-radius:16px;padding:18px;margin:16px 0}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;border-bottom:1px solid #1f2937;padding:13px 0}.row:last-child{border-bottom:0}.grow{flex:1}.id{font-weight:800;font-size:18px}.meta{color:#94a3b8;font-size:13px}input{background:#0f172a;border:1px solid #334155;color:#e5e7eb;border-radius:10px;padding:12px}button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}.ok{background:#2563eb;color:white}.yes{background:#16a34a;color:white}.no{background:#dc2626;color:white}.block{background:#f97316;color:white}.ghost{background:#334155;color:white}.badge{font-size:12px;padding:5px 8px;border-radius:999px;background:#334155}.pending{background:#854d0e}.approved{background:#166534}.rejected{background:#7f1d1d}.blocked{background:#9a3412}</style>
+<meta charset="UTF-8">
+<title>MOONDO123 관리자</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
+
+<style>
+body{
+    background:#081225;
+    color:white;
+    font-family:sans-serif;
+    padding:30px;
+}
+
+input{
+    padding:10px;
+    margin-right:10px;
+}
+
+button{
+    padding:10px 20px;
+}
+</style>
 </head>
+
 <body>
-<div class="wrap">
-  <h1>🛠 MOONDO123 관리자</h1>
-  <a href="./index.html">대시보드로 이동</a>
 
-  <div id="loginBox" class="panel">
-    <h2>관리자 로그인</h2>
-    <input id="adminId" placeholder="관리자 아이디" />
-    <input id="adminPw" placeholder="관리자 비밀번호" type="password" />
-    <button class="ok" onclick="adminLogin()">로그인</button>
-    <p id="loginMsg" class="meta"></p>
-  </div>
+<h1>MOONDO123 관리자</h1>
 
-  <div id="adminBox" style="display:none">
-    <div class="panel">
-      <button class="ghost" onclick="logout()">로그아웃</button>
-      <button class="ok" onclick="loadUsers()">새로고침</button>
-      <p class="meta">가입대기 계정을 승인/거부하거나 승인 계정을 정지할 수 있습니다.</p>
-    </div>
-    <div id="users" class="panel"></div>
-  </div>
-</div>
+<input id="id" placeholder="아이디">
+<input id="pw" type="password" placeholder="비밀번호">
+
+<button onclick="login()">로그인</button>
+
+<p id="result"></p>
+
 <script>
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-async function sha256(text){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+
+async function login(){
+
+    const id = document.getElementById('id').value;
+    const pw = document.getElementById('pw').value;
+
+    const { data, error } = await supabaseClient
+        .from('admin_users')
+        .select('*')
+        .eq('username', id)
+        .eq('password', pw)
+        .single();
+
+    if(error){
+        console.error(error);
+        document.getElementById('result').innerText =
+            '오류 : ' + error.message;
+        return;
+    }
+
+    if(!data){
+        document.getElementById('result').innerText =
+            '로그인 실패';
+        return;
+    }
+
+    localStorage.setItem('admin_login','true');
+
+    alert('로그인 성공');
+
+    location.href='index.html';
 }
-function statusKo(s){return {pending:'승인대기',approved:'승인완료',rejected:'가입거부',blocked:'정지'}[s] || s;}
-function checkSession(){ if(sessionStorage.getItem('moondo_admin')==='1'){document.getElementById('loginBox').style.display='none';document.getElementById('adminBox').style.display='block';loadUsers();}}
-async function adminLogin(){
-  const username=document.getElementById('adminId').value.trim();
-  const password=document.getElementById('adminPw').value;
-  const msg=document.getElementById('loginMsg');
-  msg.textContent='확인 중...';
-  const {data,error}=await client.from('admin_users').select('*').eq('username',username).limit(1);
-  if(error){msg.textContent='오류: '+error.message;return;}
-  if(!data || data.length===0){msg.textContent='관리자 아이디가 없습니다.';return;}
-  const hash=await sha256(password);
-  if(data[0].password_hash!==hash || data[0].status!=='approved'){msg.textContent='관리자 비밀번호가 틀렸거나 승인되지 않았습니다.';return;}
-  sessionStorage.setItem('moondo_admin','1');
-  checkSession();
-}
-function logout(){sessionStorage.removeItem('moondo_admin');location.reload();}
-async function setStatus(id,status){
-  const {error}=await client.from('app_users').update({status, updated_at:new Date().toISOString()}).eq('id',id);
-  if(error){alert(error.message);return;}
-  await loadUsers();
-}
-async function loadUsers(){
-  const box=document.getElementById('users');
-  box.innerHTML='불러오는 중...';
-  const {data,error}=await client.from('app_users').select('*').order('created_at',{ascending:false});
-  if(error){box.textContent='오류: '+error.message;return;}
-  if(!data || data.length===0){box.textContent='회원가입 신청이 없습니다.';return;}
-  box.innerHTML='<h2>회원 관리</h2>'+data.map(u=>`<div class="row">
-    <div class="grow"><div class="id">${u.username} <span class="badge ${u.status}">${statusKo(u.status)}</span></div><div class="meta">닉네임: ${u.nickname||'-'} · 가입: ${new Date(u.created_at).toLocaleString('ko-KR')}</div></div>
-    <button class="yes" onclick="setStatus('${u.id}','approved')">승인</button>
-    <button class="no" onclick="setStatus('${u.id}','rejected')">거부</button>
-    <button class="block" onclick="setStatus('${u.id}','blocked')">정지</button>
-  </div>`).join('');
-}
-checkSession();
+
 </script>
+
 </body>
 </html>
