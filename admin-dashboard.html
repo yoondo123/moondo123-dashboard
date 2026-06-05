@@ -41,8 +41,12 @@
     .approve { background:#2563eb; color:white; border:0; cursor:pointer; }
     .reject { background:#dc2626; color:white; border:0; cursor:pointer; }
     .reset { background:#b45309; color:white; border:0; cursor:pointer; }
+    .reset-today { background:#0f766e; color:white; border:0; cursor:pointer; }
+    .reset-week { background:#7c3aed; color:white; border:0; cursor:pointer; }
+    .reset-all { background:#991b1b; color:white; border:0; cursor:pointer; font-weight:bold; }
     .delete { background:#7f1d1d; color:white; border:0; cursor:pointer; }
     .logout { float:right; background:#475569; color:white; border:0; cursor:pointer; }
+    .small { font-size:12px; color:#cbd5e1; line-height:1.5; }
     a { color:#93c5fd; }
   </style>
 </head>
@@ -54,6 +58,11 @@
 
   <div class="box">
     <h2>회원 관리</h2>
+    <p class="small">
+      오늘 초기화: 오늘 00시 이후 기록 삭제<br>
+      주간 초기화: 이번 주 목요일 00시 이후 기록 삭제<br>
+      전체 초기화: game_history, daily_sessions, live_status 삭제/초기화 + player_stats 누적 0
+    </p>
     <table>
       <thead>
         <tr>
@@ -117,6 +126,60 @@
       location.href = './admin.html';
     }
 
+    function normalizeResult(result) {
+      if (result === '승') return 'win';
+      if (result === '무') return 'draw';
+      if (result === '패') return 'loss';
+      return result;
+    }
+
+    function startOfTodayIso() {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString();
+    }
+
+    function todayDateKey() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function weeklyResetDateKey() {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      const daysSinceThursday = (d.getDay() - 4 + 7) % 7;
+      d.setDate(d.getDate() - daysSinceThursday);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function weeklyResetIso() {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      const daysSinceThursday = (d.getDay() - 4 + 7) % 7;
+      d.setDate(d.getDate() - daysSinceThursday);
+      return d.toISOString();
+    }
+
+    async function safeDelete(tableName, columnName, value, extraBuilder) {
+      let q = supabaseClient.from(tableName).delete().eq(columnName, value);
+      if (extraBuilder) q = extraBuilder(q);
+      const { error } = await q;
+      if (error) console.warn(`[${tableName}] 삭제 실패:`, error.message);
+      return error;
+    }
+
+    async function safeUpdate(tableName, payload, columnName, value) {
+      const { error } = await supabaseClient.from(tableName).update(payload).eq(columnName, value);
+      if (error) console.warn(`[${tableName}] 업데이트 실패:`, error.message);
+      return error;
+    }
+
     async function loadUsers() {
       const tbody = document.getElementById('userList');
 
@@ -135,19 +198,26 @@
         return;
       }
 
-      tbody.innerHTML = data.map(user => `
-        <tr>
-          <td>${user.username || ''}</td>
-          <td>${user.nickname || ''}</td>
-          <td>${user.status || ''}</td>
-          <td>${user.created_at ? new Date(user.created_at).toLocaleString() : ''}</td>
-          <td>
-            <button class="approve" onclick="updateUserStatus('${user.id}', 'approved')">승인</button>
-            <button class="reject" onclick="updateUserStatus('${user.id}', 'rejected')">거절</button>
-            <button class="reset" onclick="resetPlayerStats('${user.id}', ${JSON.stringify(user.username || '')})">누적 초기화</button>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = data.map(user => {
+        const username = JSON.stringify(user.username || '');
+        const userId = JSON.stringify(user.id || '');
+        return `
+          <tr>
+            <td>${user.username || ''}</td>
+            <td>${user.nickname || ''}</td>
+            <td>${user.status || ''}</td>
+            <td>${user.created_at ? new Date(user.created_at).toLocaleString() : ''}</td>
+            <td>
+              <button class="approve" onclick="updateUserStatus(${userId}, 'approved')">승인</button>
+              <button class="reject" onclick="updateUserStatus(${userId}, 'rejected')">거절</button>
+              <button class="reset-today" onclick="resetTodayStats(${userId}, ${username})">오늘 초기화</button>
+              <button class="reset-week" onclick="resetWeekStats(${userId}, ${username})">주간 초기화</button>
+              <button class="reset" onclick="resetPlayerStats(${userId}, ${username})">누적 초기화</button>
+              <button class="reset-all" onclick="resetAllStats(${userId}, ${username})">전체 초기화</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     async function updateUserStatus(id, status) {
@@ -171,10 +241,11 @@
       const { data } = await supabaseClient
         .from('player_stats')
         .select('*')
-        .eq('user_id', userId)
+        .eq('username', username)
         .limit(1);
 
       const current = data && data.length ? data[0] : {};
+
       const payload = {
         user_id: userId,
         username,
@@ -191,7 +262,7 @@
 
       const { error } = await supabaseClient
         .from('player_stats')
-        .upsert(payload, { onConflict: 'user_id' });
+        .upsert(payload, { onConflict: 'username' });
 
       if (error) {
         alert('오류 : ' + error.message);
@@ -199,6 +270,105 @@
       }
 
       alert('누적 전적 초기화 완료');
+      loadUsers();
+    }
+
+    async function resetTodayStats(userId, username) {
+      if (!confirm(`${username} 님의 오늘 전적을 초기화할까요?\n오늘 00시 이후 game_history와 daily_sessions 기록이 삭제됩니다.`)) return;
+
+      const todayIso = startOfTodayIso();
+      const todayKey = todayDateKey();
+
+      const errors = [];
+
+      errors.push(await safeDelete('game_history', 'username', username, q => q.gte('created_at', todayIso)));
+      errors.push(await safeDelete('daily_sessions', 'username', username, q => q.eq('session_date', todayKey)));
+
+      await safeUpdate('live_status', {
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        matches: 0,
+        result: null,
+        updated_at: new Date().toISOString()
+      }, 'username', username);
+
+      const failed = errors.filter(Boolean);
+      alert(failed.length ? `오늘 초기화 일부 실패: ${failed.map(e => e.message).join(' / ')}` : '오늘 전적 초기화 완료');
+    }
+
+    async function resetWeekStats(userId, username) {
+      if (!confirm(`${username} 님의 주간 전적을 초기화할까요?\n이번 주 목요일 00시 이후 game_history와 daily_sessions 기록이 삭제됩니다.`)) return;
+
+      const weekIso = weeklyResetIso();
+      const weekKey = weeklyResetDateKey();
+
+      const errors = [];
+
+      errors.push(await safeDelete('game_history', 'username', username, q => q.gte('created_at', weekIso)));
+      errors.push(await safeDelete('daily_sessions', 'username', username, q => q.gte('session_date', weekKey)));
+
+      await safeUpdate('live_status', {
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        matches: 0,
+        result: null,
+        updated_at: new Date().toISOString()
+      }, 'username', username);
+
+      const failed = errors.filter(Boolean);
+      alert(failed.length ? `주간 초기화 일부 실패: ${failed.map(e => e.message).join(' / ')}` : '주간 전적 초기화 완료');
+    }
+
+    async function resetAllStats(userId, username) {
+      const typed = prompt(`${username} 님의 모든 전적을 완전 초기화합니다.\n진행하려면 아이디를 그대로 입력하세요.`);
+      if (typed !== username) {
+        alert('아이디가 일치하지 않아 취소되었습니다.');
+        return;
+      }
+
+      const errors = [];
+
+      errors.push(await safeDelete('game_history', 'username', username));
+      errors.push(await safeDelete('daily_sessions', 'username', username));
+
+      await safeUpdate('live_status', {
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        matches: 0,
+        result: null,
+        score: 0,
+        rank: 0,
+        live_score: null,
+        opponent_score: null,
+        opponent: null,
+        updated_at: new Date().toISOString()
+      }, 'username', username);
+
+      const { error: playerError } = await supabaseClient
+        .from('player_stats')
+        .upsert({
+          user_id: userId,
+          username,
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          fc_mined: 0,
+          win_rate: 0,
+          tier: 'Unranked',
+          score: 0,
+          rank: 0,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'username' });
+
+      if (playerError) errors.push(playerError);
+
+      const failed = errors.filter(Boolean);
+      alert(failed.length ? `전체 초기화 일부 실패: ${failed.map(e => e.message).join(' / ')}` : '전체 전적 초기화 완료');
+      loadUsers();
+      loadMatches();
     }
 
     async function addMatch() {
