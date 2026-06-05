@@ -212,6 +212,126 @@
     @media (max-width: 520px) {
       .grid { grid-template-columns: 1fr; }
     }
+
+    /* 기존 MOONDO 대시보드 톤 */
+    body {
+      background: #081225;
+      padding: 22px;
+      color: #ffffff;
+      font-family: "Segoe UI", "Malgun Gothic", "Noto Sans KR", Arial, sans-serif;
+    }
+
+    .wrap {
+      width: min(1080px, 100%);
+    }
+
+    header {
+      background: #101a2a;
+      border: 1px solid #26384f;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      box-shadow: none;
+    }
+
+    h1 {
+      font-size: 34px;
+      line-height: 1.1;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    h2 {
+      position: relative;
+      margin: 26px 0 12px;
+      padding-left: 12px;
+      font-size: 23px;
+      line-height: 1.2;
+      color: #ffffff;
+    }
+
+    h2::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 5px;
+      width: 4px;
+      height: 18px;
+      border-radius: 4px;
+      background: linear-gradient(#55f0bd, #ffd166);
+    }
+
+    .sub {
+      color: #a9bdd6;
+      font-size: 13px;
+    }
+
+    .admin {
+      color: #70e8ff;
+      font-size: 13px;
+    }
+
+    input {
+      background: #0e1828;
+      border: 1px solid #2c3f58;
+      border-radius: 6px;
+    }
+
+    button {
+      border-radius: 6px;
+      background: #1b5d7c;
+    }
+
+    .card {
+      background: #101a2a;
+      border: 1px solid #26384f;
+      border-radius: 8px;
+      box-shadow: none;
+      min-height: 96px;
+    }
+
+    .label {
+      color: #9fb4ce;
+      font-size: 12px;
+    }
+
+    .value {
+      color: #ffffff;
+      font-size: 26px;
+    }
+
+    .meta {
+      color: #ffd166;
+      font-size: 12px;
+    }
+
+    .panel {
+      background: #101a2a;
+      border: 1px solid #26384f;
+      border-radius: 8px;
+    }
+
+    th {
+      background: #1b2a3d;
+      color: #eaffff;
+    }
+
+    td {
+      background: #0c1523;
+    }
+
+    tr:nth-child(even) td {
+      background: #111a28;
+    }
+
+    #liveMatch {
+      background: #151d2c !important;
+      border-color: #30445e !important;
+    }
+
+    footer {
+      color: #7f8da0;
+    }
   </style>
 </head>
 <body>
@@ -219,7 +339,7 @@
     <header>
       <div>
         <h1>MOONDO FC 온라인 전적</h1>
-        <p class="sub">저장된 DB 기록 기준으로 표시합니다. 프로그램 재시작 직후 0으로 들어오는 값은 화면에서 덮어쓰지 않습니다.</p>
+        <p class="sub">실시간 경기와 최근 기록을 10초마다 갱신합니다.</p>
       </div>
       <a class="admin" href="./admin.html">관리자 페이지</a>
     </header>
@@ -229,7 +349,7 @@
         <input id="searchNick" placeholder="닉네임 입력" autocomplete="off">
         <button onclick="searchPlayer()">검색</button>
       </div>
-      <p id="statusText" class="sub">닉네임을 검색하면 오늘/주간/누적 전적을 확인할 수 있습니다.</p>
+      <p id="statusText" class="sub">닉네임을 검색해 전적을 확인하세요.</p>
     </section>
 
     <h2>실시간 경기정보</h2>
@@ -552,7 +672,7 @@
           loadRecentFlow(nick),
           loadRecent7(nick),
         ]);
-        document.getElementById('statusText').innerText = `${nick} 님 기록 표시 중. 새로고침해도 이전보다 작은 값은 덮어쓰지 않습니다.`;
+        document.getElementById('statusText').innerText = `${nick} 님 전적`;
       } catch (error) {
         document.getElementById('statusText').innerText = `오류: ${error.message}`;
       }
