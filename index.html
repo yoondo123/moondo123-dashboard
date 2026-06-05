@@ -4797,6 +4797,33 @@ footer {
       el.dataset.tabGroup = forcedGroup;
     });
 
+    function setSectionGroup(anchorSelector, groupName) {
+      const anchor = dashboard.querySelector(anchorSelector);
+      if (!anchor) return;
+
+      const sectionBody = anchor.closest('.panel, .today-grid, .week-grid, .form-strip, .table-wrap, .grid');
+      if (!sectionBody) return;
+
+      sectionBody.dataset.tabGroup = groupName;
+      let heading = sectionBody.previousElementSibling;
+      while (heading && heading.tagName !== 'H2') heading = heading.previousElementSibling;
+      if (heading) heading.dataset.tabGroup = groupName;
+    }
+
+    [
+      '#liveState',
+      '#todayMatches',
+      '#formDots',
+      '#rankingList'
+    ].forEach(selector => setSectionGroup(selector, 'home'));
+
+    [
+      '#weekMatches',
+      '#weeklyRankingList',
+      '#recentList',
+      '#lifetimeRecord'
+    ].forEach(selector => setSectionGroup(selector, 'stats'));
+
     function showTab(tabName) {
       Array.from(dashboard.children).forEach(el => {
         if (el.id === 'moondoTabs') return;
