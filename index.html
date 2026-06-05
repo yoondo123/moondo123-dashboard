@@ -219,7 +219,18 @@
     }
     .footer-actions a,
     .footer-actions button {
+      display: inline-grid;
+      place-items: center;
+      height: 42px;
       min-width: 150px;
+      padding: 0 16px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .06);
+      color: #f5f8ff;
+      font-size: 13px;
+      font-weight: 900;
+      box-shadow: none;
     }
     .live-card {
       display: grid;
@@ -1763,11 +1774,18 @@
       saveStatsCache(username, 'recent7', cachedRows);
     }
 
+    function applyCurrentAccountFilter(query, username = currentUser?.username) {
+      if (currentUser?.id && username === currentUser.username) {
+        return query.or(`username.eq.${username},user_id.eq.${currentUser.id}`);
+      }
+      return query.eq('username', username);
+    }
+
     async function loadUserHistory(username, sinceIso) {
       let query = supabaseClient
         .from('game_history')
-        .select('*')
-        .eq('username', username);
+        .select('*');
+      query = applyCurrentAccountFilter(query, username);
       if (sinceIso) query = query.gte('created_at', sinceIso);
       return query.order('created_at', { ascending: false });
     }
@@ -1994,11 +2012,37 @@
 
         if (error) throw error;
         setRemoteMessage('예약 완료: 다음 경기 결과 저장 후 프로그램이 중지됩니다.');
+        loadRemoteCommandStatus();
       } catch (error) {
         setRemoteMessage(
           '원격 중지 예약 실패: remote_commands 테이블이 있는지 확인해주세요. ' + (error?.message || error),
           false
         );
+      }
+    }
+
+    async function loadRemoteCommandStatus() {
+      if (!currentUser) return;
+      try {
+        const { data, error } = await supabaseClient
+          .from('remote_commands')
+          .select('status, message, created_at, accepted_at, completed_at')
+          .eq('user_id', currentUser.id)
+          .eq('action', 'stop_after_result')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (error) throw error;
+        const command = data?.[0];
+        if (!command) return;
+        if (command.status === 'pending') {
+          setRemoteMessage('원격 중지 대기 중: 프로그램이 명령을 확인하면 접수됩니다.');
+        } else if (command.status === 'accepted') {
+          setRemoteMessage('원격 중지 접수됨: 다음 경기 결과 저장 후 중지됩니다.');
+        } else if (command.status === 'completed') {
+          setRemoteMessage('원격 중지 완료: 경기 결과 저장 후 프로그램을 중지했습니다.');
+        }
+      } catch (_) {
+        // The setup SQL may not have been installed yet.
       }
     }
 
@@ -2174,10 +2218,11 @@
       if (!currentUser) return;
       const dots = document.getElementById('formDots');
       const summary = document.getElementById('formSummary');
-      const { data, error } = await supabaseClient
+      let query = supabaseClient
         .from('game_history')
-        .select('result, created_at')
-        .eq('username', currentUser.username)
+        .select('result, created_at');
+      query = applyCurrentAccountFilter(query, currentUser.username);
+      const { data, error } = await query
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -2331,7 +2376,13 @@
         }),
       ]);
       if (currentUser) {
-        await Promise.all([loadLiveStatus(), loadPeriodStats(statsMap), loadRecent(), loadRecentForm()]);
+        await Promise.all([
+          loadLiveStatus(),
+          loadPeriodStats(statsMap),
+          loadRecent(),
+          loadRecentForm(),
+          loadRemoteCommandStatus(),
+        ]);
         document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
       }
     }
