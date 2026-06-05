@@ -487,6 +487,11 @@
       grid-template-columns: repeat(4, minmax(150px, 1fr));
       gap: 12px;
     }
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 12px;
+    }
     .stat {
       min-height: 118px;
       padding: 18px 18px 16px;
@@ -607,12 +612,14 @@
       #dashboard > .topbar { align-items: stretch; }
       .grid { grid-template-columns: 1fr; }
       .today-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .live-card { grid-template-columns: 1fr 64px 64px 1fr; }
       .live-score { height: 64px; font-size: 31px; }
       .live-time { font-size: 21px; }
     }
     @media (max-width: 430px) {
       .today-grid { grid-template-columns: 1fr; }
+      .week-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -728,7 +735,7 @@
       </div>
 
       <h2>주간 전적</h2>
-      <div class="today-grid">
+      <div class="week-grid">
         <div class="stat compact">
           <span class="muted">주간 경기 총 수</span>
           <strong id="weekMatches">0</strong>
@@ -1199,7 +1206,11 @@
       const live = liveRes.data?.[0];
       const meta = currentMeta(profile, live);
 
-      const lifetime = profileStats(profile);
+      let lifetime = restoreStatsFromCache(
+        currentUser.username,
+        'lifetime',
+        profileStats(profile)
+      );
 
       const todayHistory = summarizeMatches(todayHistoryRes.data || []);
       const todaySessions = summarizeSessions(todaySessionRes.data || []);
@@ -1222,6 +1233,8 @@
         bestStats(weekHistory, weekSessions, weekLive, weekProfile)
       );
       cacheStatsIfUseful(currentUser.username, `week:${weekStart}`, week);
+      lifetime = bestStats(lifetime, today, week);
+      cacheStatsIfUseful(currentUser.username, 'lifetime', lifetime);
 
       document.getElementById('lifetimeRecord').innerText = `${lifetime.wins}승 ${lifetime.draws}무 ${lifetime.losses}패`;
       document.getElementById('lifetimeMatches').innerText = lifetime.matches;
@@ -1364,6 +1377,10 @@
         if (!isUpdatedSince(profile, startOfTodayIso())) return;
         mergeRankingStats(profile.username || '-', profileStats(profile));
       });
+
+      if (currentUser) {
+        mergeRankingStats(currentUser.username, loadStatsCache(currentUser.username, todayDate()));
+      }
 
       const ranking = Object.values(grouped)
         .filter(row => row.matches > 0)
