@@ -1487,7 +1487,7 @@
   </main>
 
   <script>
-    const CACHE_VERSION = 'stats-history-first-v2';
+    const CACHE_VERSION = 'stats-db-only-v4';
     if (localStorage.getItem('moondo_cache_version') !== CACHE_VERSION) {
       Object.keys(localStorage)
         .filter(key => key.startsWith('moondo_stats_cache:'))
@@ -1496,16 +1496,6 @@
     }
 
     let currentUser = JSON.parse(localStorage.getItem('moondo_user') || 'null');
-
-    function db() {
-      if (window.supabaseClient) return window.supabaseClient;
-      if (typeof supabaseClient !== 'undefined') return supabaseClient;
-      if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_KEY !== 'undefined' && window.supabase) {
-        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        return window.supabaseClient;
-      }
-      throw new Error('Supabase 설정을 찾을 수 없습니다. config.js의 SUPABASE_URL / SUPABASE_KEY를 확인하세요.');
-    }
 
     function formatLocalDate(d) {
       const y = d.getFullYear();
@@ -1742,13 +1732,13 @@
     }
 
     function applyCurrentAccountFilter(query, username = currentUser?.username) {
-      // 기존 DB는 username 기준으로 저장되는 구조라 user_id 조건을 섞으면
-      // user_id 컬럼이 없는 테이블에서 조회가 전부 실패할 수 있습니다.
+      // 전적 테이블마다 user_id 컬럼 유무가 달라서 username 기준으로만 조회합니다.
+      // user_id까지 OR로 묶으면 컬럼이 없을 때 오늘/주간/최근기록이 통째로 비어 보일 수 있습니다.
       return query.eq('username', username);
     }
 
     async function loadUserHistory(username, sinceIso) {
-      let query = db()
+      let query = supabaseClient
         .from('game_history')
         .select('*');
       query = applyCurrentAccountFilter(query, username);
@@ -1757,7 +1747,7 @@
     }
 
     async function loadUserSessions(username, sinceDateKey) {
-      let query = db()
+      let query = supabaseClient
         .from('daily_sessions')
         .select('*')
         .eq('username', username);
@@ -1785,6 +1775,22 @@
       const draws = Number(live?.draws || 0);
       const losses = Number(live?.losses || 0);
       return { wins, draws, losses, matches: Number(live?.matches ?? (wins + draws + losses)) };
+    }
+
+
+
+    function normalizeStats(stats) {
+      const wins = Number(stats?.wins || 0);
+      const draws = Number(stats?.draws || 0);
+      const losses = Number(stats?.losses || 0);
+      const matches = Number(stats?.matches ?? (wins + draws + losses));
+      return { wins, draws, losses, matches };
+    }
+
+    function choosePeriodStats(historyStats, sessionStats) {
+      // 같은 경기를 game_history와 daily_sessions가 둘 다 가지고 있을 수 있으니 더 큰 쪽만 사용합니다.
+      // 둘을 더하면 중복 집계가 생길 수 있습니다.
+      return bestStats(normalizeStats(historyStats), normalizeStats(sessionStats));
     }
 
     function currentMeta(profile, live) {
@@ -1877,7 +1883,7 @@
         return;
       }
 
-      const { data, error } = await db()
+      const { data, error } = await supabaseClient
         .from('app_users')
         .select('id, username, password_hash, status')
         .eq('username', username)
@@ -1929,7 +1935,7 @@
         return;
       }
 
-      const { data: exists, error: existsError } = await db()
+      const { data: exists, error: existsError } = await supabaseClient
         .from('app_users')
         .select('id')
         .eq('username', username)
@@ -1944,7 +1950,7 @@
         return;
       }
 
-      const { error } = await db()
+      const { error } = await supabaseClient
         .from('app_users')
         .insert({
           username,
@@ -1969,7 +1975,7 @@
     }
 
     async function loadPlayerStatsMap() {
-      const { data } = await db().from('player_stats').select('*');
+      const { data } = await supabaseClient.from('player_stats').select('*');
       const map = {};
       (data || []).forEach(row => { map[row.username] = row; });
       return map;
@@ -1977,7 +1983,7 @@
 
     async function loadLiveStatus() {
       if (!currentUser) return;
-      const { data, error } = await db()
+      const { data, error } = await supabaseClient
         .from('live_status')
         .select('*')
         .eq('username', currentUser.username)
@@ -2017,7 +2023,7 @@
         loadUserSessions(currentUser.username, todayDate()),
         loadUserHistory(currentUser.username, weeklyResetIso()),
         loadUserSessions(currentUser.username, weekStart),
-        db()
+        supabaseClient
           .from('live_status')
           .select('*')
           .eq('username', currentUser.username)
@@ -2026,31 +2032,20 @@
       const live = liveRes.data?.[0];
       const meta = currentMeta(profile, live);
 
-      let lifetime = restoreStatsFromCache(
-        currentUser.username,
-        'lifetime',
-        profileStats(profile)
-      );
+      // 누적 전적은 player_stats 기준입니다.
+      // 날짜 필터나 브라우저 캐시에 영향받지 않아서 관리자 초기화 전까지 유지됩니다.
+      const lifetime = profileStats(profile);
 
+      // 오늘 전적은 한국 브라우저 기준 자정 00:00 이후 기록만 봅니다.
+      // 매크로를 껐다 켜도 DB에 남은 game_history/daily_sessions를 다시 읽어 누적 표시됩니다.
       const todayHistory = summarizeMatches(todayHistoryRes.data || []);
       const todaySessions = summarizeSessions(todaySessionRes.data || []);
-      const today = restoreStatsFromCache(
-        currentUser.username,
-        todayDate(),
-        firstUsefulStats(todayHistory, todaySessions)
-      );
-      cacheStatsIfUseful(currentUser.username, todayDate(), today);
+      const today = choosePeriodStats(todayHistory, todaySessions);
 
+      // 주간 전적은 매주 목요일 00:00 이후 기록만 봅니다.
       const weekHistory = summarizeMatches(weekHistoryRes.data || []);
       const weekSessions = summarizeSessions(weekSessionRes.data || []);
-      const week = restoreStatsFromCache(
-        currentUser.username,
-        `week:${weekStart}`,
-        firstUsefulStats(weekHistory, weekSessions)
-      );
-      cacheStatsIfUseful(currentUser.username, `week:${weekStart}`, week);
-      lifetime = bestStats(lifetime, today, week);
-      cacheStatsIfUseful(currentUser.username, 'lifetime', lifetime);
+      const week = choosePeriodStats(weekHistory, weekSessions);
 
       document.getElementById('lifetimeRecord').innerText = `${lifetime.wins}승 ${lifetime.draws}무 ${lifetime.losses}패`;
       document.getElementById('lifetimeMatches').innerText = lifetime.matches;
@@ -2100,8 +2095,7 @@
         dateKey,
         ...dailyStatsFromMaps(dateKey, historyMap, sessionMap),
       }));
-      rows = restoreRecentRowsFromCache(currentUser.username, rows);
-      cacheRecentRowsIfUseful(currentUser.username, rows);
+      // 최근 7일도 DB 기준으로만 표시합니다. 날짜가 바뀌면 자동으로 밀려납니다.
 
       tbody.innerHTML = rows.map(row => `
         <tr>
@@ -2116,7 +2110,7 @@
 
     async function loadRecentForm() {
       if (!currentUser) return;
-      let query = db()
+      let query = supabaseClient
         .from('game_history')
         .select('result, created_at');
       query = applyCurrentAccountFilter(query, currentUser.username);
@@ -2125,19 +2119,12 @@
         .limit(10);
 
       if (error) {
-        const cached = loadStatsCache(currentUser.username, 'recent10form');
-        if (cached?.length) renderRecentForm(cached, '저장된 최근 흐름');
+        renderRecentForm([], '전적 조회 오류');
         return;
       }
 
       const rows = data || [];
-      if (!rows.length) {
-        const cached = loadStatsCache(currentUser.username, 'recent10form');
-        if (cached?.length) renderRecentForm(cached, '저장된 최근 흐름');
-        return;
-      }
       const results = rows.map(row => normalizeResult(row.result));
-      saveStatsCache(currentUser.username, 'recent10form', results);
       renderRecentForm(results, '전체 최근 경기 순서');
     }
 
@@ -2147,10 +2134,11 @@
         sinceIso = startOfTodayIso(),
         sessionFromDate = todayDate(),
         sessionExactDate = todayDate(),
-        emptyMessage = '오늘 24시간 랭킹 데이터가 없습니다.',
+        emptyMessage = '오늘 랭킹 데이터가 없습니다.',
       } = options;
       const tbody = document.getElementById(tbodyId);
-      let sessionQuery = db()
+
+      let sessionQuery = supabaseClient
         .from('daily_sessions')
         .select('*');
       if (sessionExactDate) {
@@ -2158,74 +2146,59 @@
       } else if (sessionFromDate) {
         sessionQuery = sessionQuery.gte('session_date', sessionFromDate);
       }
-      const [historyRes, sessionRes, liveRes] = await Promise.all([
-        db()
+
+      const [historyRes, sessionRes] = await Promise.all([
+        supabaseClient
           .from('game_history')
           .select('*')
           .gte('created_at', sinceIso),
         sessionQuery,
-        db()
-          .from('live_status')
-          .select('*')
-          .gte('updated_at', sinceIso),
       ]);
 
-      const historyRows = historyRes.data || [];
-      const sessionRows = sessionRes.data || [];
-
-      const grouped = {};
-      const historyUsers = new Set();
-      function mergeRankingStats(username, stats) {
-        if (!username || username === '-' || !stats || Number(stats.matches || 0) <= 0) return;
-        grouped[username] = {
-          username,
-          ...bestStats(grouped[username], stats),
-        };
+      if (historyRes.error && sessionRes.error) {
+        tbody.innerHTML = `<tr><td colspan="10">오류: ${historyRes.error.message}</td></tr>`;
+        return;
       }
-      historyRows.forEach(row => {
+
+      const historyGrouped = {};
+      (historyRes.data || []).forEach(row => {
         const username = row.username || '-';
-        historyUsers.add(username);
-        const current = grouped[username] || emptyStats();
+        if (!historyGrouped[username]) historyGrouped[username] = emptyStats();
         const result = normalizeResult(row.result);
-        const next = {
-          wins: current.wins + (result === 'win' ? 1 : 0),
-          draws: current.draws + (result === 'draw' ? 1 : 0),
-          losses: current.losses + (result === 'loss' ? 1 : 0),
-          matches: current.matches + 1,
-        };
-        grouped[username] = { username, ...next };
+        if (result === 'win') historyGrouped[username].wins += 1;
+        if (result === 'draw') historyGrouped[username].draws += 1;
+        if (result === 'loss') historyGrouped[username].losses += 1;
+        historyGrouped[username].matches += 1;
       });
 
-      sessionRows.forEach(row => {
-        if (historyUsers.has(row.username || '-')) return;
+      const sessionGrouped = {};
+      (sessionRes.data || []).forEach(row => {
+        const username = row.username || '-';
+        if (!sessionGrouped[username]) sessionGrouped[username] = emptyStats();
         const wins = Number(row.wins || 0);
         const draws = Number(row.draws || 0);
         const losses = Number(row.losses || 0);
-        mergeRankingStats(row.username || '-', {
-          wins,
-          draws,
-          losses,
-          matches: Number(row.matches ?? (wins + draws + losses)),
-        });
+        sessionGrouped[username].wins += wins;
+        sessionGrouped[username].draws += draws;
+        sessionGrouped[username].losses += losses;
+        sessionGrouped[username].matches += Number(row.matches ?? (wins + draws + losses));
       });
 
-      (liveRes.data || []).forEach(row => {
-        if (historyUsers.has(row.username || '-')) return;
-        mergeRankingStats(row.username || '-', liveStatusStats(row));
-      });
-
-      const ranking = Object.values(grouped)
-        .filter(row => row.matches > 0)
-        .map(row => {
-          const profile = statsMap[row.username] || {};
+      const usernames = new Set([...Object.keys(historyGrouped), ...Object.keys(sessionGrouped)]);
+      const ranking = [...usernames]
+        .map(username => {
+          const stats = choosePeriodStats(historyGrouped[username], sessionGrouped[username]);
+          const profile = statsMap[username] || {};
           return {
-            ...row,
+            username,
+            ...stats,
             tier: profile.tier || '-',
             score: profile.score ?? 0,
-            fc: fcFromWins(row.wins),
-            rate: row.matches ? row.wins / row.matches : 0,
+            fc: fcFromWins(stats.wins),
+            rate: stats.matches ? stats.wins / stats.matches : 0,
           };
         })
+        .filter(row => row.username && row.username !== '-' && row.matches > 0)
         .sort((a, b) => b.rate - a.rate || b.wins - a.wins || b.matches - a.matches || b.score - a.score)
         .slice(0, 10);
 
@@ -2251,37 +2224,31 @@
     }
 
     async function refreshAll() {
-      try {
-        const statsMap = await loadPlayerStatsMap();
+      const statsMap = await loadPlayerStatsMap();
+      await Promise.all([
+        loadRanking(statsMap, {
+          tbodyId: 'rankingList',
+          sinceIso: startOfTodayIso(),
+          sessionFromDate: todayDate(),
+          sessionExactDate: todayDate(),
+          emptyMessage: '오늘 랭킹 데이터가 없습니다.',
+        }),
+        loadRanking(statsMap, {
+          tbodyId: 'weeklyRankingList',
+          sinceIso: weeklyResetIso(),
+          sessionFromDate: weeklyResetDate(),
+          sessionExactDate: null,
+          emptyMessage: '이번 주 랭킹 데이터가 없습니다.',
+        }),
+      ]);
+      if (currentUser) {
         await Promise.all([
-          loadRanking(statsMap, {
-            tbodyId: 'rankingList',
-            sinceIso: startOfTodayIso(),
-            sessionFromDate: todayDate(),
-            sessionExactDate: todayDate(),
-            emptyMessage: '오늘 랭킹 데이터가 없습니다.',
-          }),
-          loadRanking(statsMap, {
-            tbodyId: 'weeklyRankingList',
-            sinceIso: weeklyResetIso(),
-            sessionFromDate: weeklyResetDate(),
-            sessionExactDate: null,
-            emptyMessage: '이번 주 랭킹 데이터가 없습니다.',
-          }),
+          loadLiveStatus(),
+          loadPeriodStats(statsMap),
+          loadRecent(),
+          loadRecentForm(),
         ]);
-        if (currentUser) {
-          await Promise.all([
-            loadLiveStatus(),
-            loadPeriodStats(statsMap),
-            loadRecent(),
-            loadRecentForm(),
-          ]);
-          document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
-        }
-      } catch (error) {
-        console.error('[MOONDO] refreshAll error', error);
-        const lastUpdated = document.getElementById('lastUpdated');
-        if (lastUpdated) lastUpdated.innerText = '연동 오류: ' + (error?.message || error);
+        document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
       }
     }
 
