@@ -1364,6 +1364,14 @@
   </main>
 
   <script>
+    const CACHE_VERSION = 'stats-history-first-v2';
+    if (localStorage.getItem('moondo_cache_version') !== CACHE_VERSION) {
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('moondo_stats_cache:'))
+        .forEach(key => localStorage.removeItem(key));
+      localStorage.setItem('moondo_cache_version', CACHE_VERSION);
+    }
+
     let currentUser = JSON.parse(localStorage.getItem('moondo_user') || 'null');
 
     function formatLocalDate(d) {
@@ -1540,6 +1548,19 @@
         }, emptyStats());
     }
 
+    function firstUsefulStats(...statsList) {
+      for (const stats of statsList) {
+        const normalized = {
+          wins: Number(stats?.wins || 0),
+          draws: Number(stats?.draws || 0),
+          losses: Number(stats?.losses || 0),
+          matches: Number(stats?.matches || 0),
+        };
+        if (normalized.matches > 0) return normalized;
+      }
+      return emptyStats();
+    }
+
     function statsCacheKey(username, scope) {
       return `moondo_stats_cache:${username}:${scope}`;
     }
@@ -1559,8 +1580,8 @@
 
     function restoreStatsFromCache(username, scope, stats) {
       const cached = loadStatsCache(username, scope);
-      if (!cached) return stats;
-      return bestStats(stats, cached);
+      if (Number(stats?.matches || 0) > 0) return stats;
+      return cached || stats;
     }
 
     function cacheStatsIfUseful(username, scope, stats) {
@@ -1573,7 +1594,7 @@
       const cachedRows = loadStatsCache(username, 'recent7') || {};
       return rows.map(row => ({
         dateKey: row.dateKey,
-        ...bestStats(row, cachedRows[row.dateKey]),
+        ...restoreStatsFromCache(username, `recent7:${row.dateKey}`, row),
       }));
     }
 
@@ -1587,6 +1608,7 @@
             losses: Number(row.losses || 0),
             matches: Number(row.matches || 0),
           };
+          saveStatsCache(username, `recent7:${row.dateKey}`, cachedRows[row.dateKey]);
         }
       });
       saveStatsCache(username, 'recent7', cachedRows);
@@ -1833,7 +1855,7 @@
       const today = restoreStatsFromCache(
         currentUser.username,
         todayDate(),
-        bestStats(todayHistory, todaySessions, todayLive, todayProfile)
+        firstUsefulStats(todayHistory, todayLive, todaySessions, todayProfile)
       );
       cacheStatsIfUseful(currentUser.username, todayDate(), today);
 
@@ -1844,7 +1866,7 @@
       const week = restoreStatsFromCache(
         currentUser.username,
         `week:${weekStart}`,
-        bestStats(weekHistory, weekSessions, weekLive, weekProfile)
+        firstUsefulStats(weekHistory, weekLive, weekSessions, weekProfile)
       );
       cacheStatsIfUseful(currentUser.username, `week:${weekStart}`, week);
       lifetime = bestStats(lifetime, today, week);
@@ -1902,7 +1924,7 @@
       const sessionMap = groupSessionsByDay(sessionRows);
       const live = liveRows[0];
       if (live && isUpdatedSince(live, startOfTodayIso()) && liveStatusStats(live).matches > 0) {
-        sessionMap[todayDate()] = bestStats(sessionMap[todayDate()], liveStatusStats(live));
+        sessionMap[todayDate()] = firstUsefulStats(historyMap[todayDate()], liveStatusStats(live), sessionMap[todayDate()]);
       }
       let rows = last7DateKeys().map(dateKey => ({
         dateKey,
@@ -1912,7 +1934,7 @@
       const profile = statsMap[currentUser.username] || {};
       if (profile && isUpdatedSince(profile, startOfTodayIso())) {
         rows = rows.map(row => row.dateKey === todayDate()
-          ? { dateKey: row.dateKey, ...bestStats(row, profileStats(profile)) }
+          ? { dateKey: row.dateKey, ...firstUsefulStats(historyMap[row.dateKey], row, profileStats(profile)) }
           : row
         );
       }
