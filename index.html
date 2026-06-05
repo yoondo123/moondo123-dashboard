@@ -952,6 +952,58 @@
         }, emptyStats());
     }
 
+    function statsCacheKey(username, scope) {
+      return `moondo_stats_cache:${username}:${scope}`;
+    }
+
+    function loadStatsCache(username, scope) {
+      try {
+        return JSON.parse(localStorage.getItem(statsCacheKey(username, scope)) || 'null');
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function saveStatsCache(username, scope, value) {
+      if (!username || !value) return;
+      localStorage.setItem(statsCacheKey(username, scope), JSON.stringify(value));
+    }
+
+    function restoreStatsFromCache(username, scope, stats) {
+      const cached = loadStatsCache(username, scope);
+      if (!cached) return stats;
+      return bestStats(stats, cached);
+    }
+
+    function cacheStatsIfUseful(username, scope, stats) {
+      if (stats && Number(stats.matches || 0) > 0) {
+        saveStatsCache(username, scope, stats);
+      }
+    }
+
+    function restoreRecentRowsFromCache(username, rows) {
+      const cachedRows = loadStatsCache(username, 'recent7') || {};
+      return rows.map(row => ({
+        dateKey: row.dateKey,
+        ...bestStats(row, cachedRows[row.dateKey]),
+      }));
+    }
+
+    function cacheRecentRowsIfUseful(username, rows) {
+      const cachedRows = loadStatsCache(username, 'recent7') || {};
+      rows.forEach(row => {
+        if (Number(row.matches || 0) > 0) {
+          cachedRows[row.dateKey] = {
+            wins: Number(row.wins || 0),
+            draws: Number(row.draws || 0),
+            losses: Number(row.losses || 0),
+            matches: Number(row.matches || 0),
+          };
+        }
+      });
+      saveStatsCache(username, 'recent7', cachedRows);
+    }
+
     async function loadUserHistory(username, sinceIso) {
       let query = supabaseClient
         .from('game_history')
@@ -1131,12 +1183,24 @@
       const todayHistory = summarizeMatches(todayHistoryRes.data || []);
       const todaySessions = summarizeSessions(todaySessionRes.data || []);
       const todayLive = live && isUpdatedSince(live, startOfTodayIso()) ? liveStatusStats(live) : emptyStats();
-      const today = bestStats(todayHistory, todaySessions, todayLive);
+      const todayProfile = profile && isUpdatedSince(profile, startOfTodayIso()) ? profileStats(profile) : emptyStats();
+      const today = restoreStatsFromCache(
+        currentUser.username,
+        todayDate(),
+        bestStats(todayHistory, todaySessions, todayLive, todayProfile)
+      );
+      cacheStatsIfUseful(currentUser.username, todayDate(), today);
 
       const weekHistory = summarizeMatches(weekHistoryRes.data || []);
       const weekSessions = summarizeSessions(weekSessionRes.data || []);
       const weekLive = live && isUpdatedSince(live, weeklyResetIso()) ? liveStatusStats(live) : emptyStats();
-      const week = bestStats(weekHistory, weekSessions, weekLive);
+      const weekProfile = profile && isUpdatedSince(profile, weeklyResetIso()) ? profileStats(profile) : emptyStats();
+      const week = restoreStatsFromCache(
+        currentUser.username,
+        `week:${weekStart}`,
+        bestStats(weekHistory, weekSessions, weekLive, weekProfile)
+      );
+      cacheStatsIfUseful(currentUser.username, `week:${weekStart}`, week);
 
       document.getElementById('lifetimeRecord').innerText = `${lifetime.wins}승 ${lifetime.draws}무 ${lifetime.losses}패`;
       document.getElementById('lifetimeMatches').innerText = lifetime.matches;
@@ -1189,10 +1253,20 @@
       if (live && isUpdatedSince(live, startOfTodayIso()) && liveStatusStats(live).matches > 0) {
         sessionMap[todayDate()] = bestStats(sessionMap[todayDate()], liveStatusStats(live));
       }
-      const rows = last7DateKeys().map(dateKey => ({
+      let rows = last7DateKeys().map(dateKey => ({
         dateKey,
         ...dailyStatsFromMaps(dateKey, historyMap, sessionMap),
       }));
+      const statsMap = await loadPlayerStatsMap();
+      const profile = statsMap[currentUser.username] || {};
+      if (profile && isUpdatedSince(profile, startOfTodayIso())) {
+        rows = rows.map(row => row.dateKey === todayDate()
+          ? { dateKey: row.dateKey, ...bestStats(row, profileStats(profile)) }
+          : row
+        );
+      }
+      rows = restoreRecentRowsFromCache(currentUser.username, rows);
+      cacheRecentRowsIfUseful(currentUser.username, rows);
 
       tbody.innerHTML = rows.map(row => `
         <tr>
