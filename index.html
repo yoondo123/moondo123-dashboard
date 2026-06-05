@@ -482,6 +482,11 @@
     .grid {
       gap: 14px;
     }
+    .today-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 12px;
+    }
     .stat {
       min-height: 118px;
       padding: 18px 18px 16px;
@@ -515,6 +520,19 @@
       color: var(--amber);
       font-size: 13px;
       font-weight: 900;
+    }
+    .stat.compact {
+      min-height: 98px;
+      padding: 15px 16px 14px;
+    }
+    .stat.compact strong {
+      margin-top: 9px;
+      font-size: clamp(24px, 2.2vw, 32px);
+      line-height: 1.08;
+      word-break: keep-all;
+    }
+    .stat.compact small {
+      min-height: 16px;
     }
     #todayRecord,
     #weekRecord,
@@ -582,9 +600,13 @@
       header h1 { font-size: 32px; }
       #dashboard > .topbar { align-items: stretch; }
       .grid { grid-template-columns: 1fr; }
+      .today-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .live-card { grid-template-columns: 1fr 64px 64px 1fr; }
       .live-score { height: 64px; font-size: 31px; }
       .live-time { font-size: 21px; }
+    }
+    @media (max-width: 430px) {
+      .today-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -635,16 +657,46 @@
       </div>
 
       <h2>오늘 전적</h2>
-      <div class="grid">
-        <div class="stat">
-          <span class="muted">오늘</span>
-          <strong id="todayRecord">0승 0무 0패</strong>
-          <small id="todayMeta">FC 0 · 티어 -</small>
-        </div>
-        <div class="stat">
-          <span class="muted">오늘 경기</span>
+      <div class="today-grid">
+        <div class="stat compact">
+          <span class="muted">오늘 경기 총 수</span>
           <strong id="todayMatches">0</strong>
           <small id="todayWinRate">승률 0.0%</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">승</span>
+          <strong id="todayWins">0</strong>
+          <small>오늘 승리</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">무</span>
+          <strong id="todayDraws">0</strong>
+          <small>오늘 무승부</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">패</span>
+          <strong id="todayLosses">0</strong>
+          <small>오늘 패배</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">FC 채굴량</span>
+          <strong id="todayFc">0</strong>
+          <small>승리 1회당 15 FC</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">현재 티어</span>
+          <strong id="todayTier">-</strong>
+          <small>실시간 기준</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">현재 점수</span>
+          <strong id="todayScore">0</strong>
+          <small>실시간 기준</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">현재 등수</span>
+          <strong id="todayRank">-</strong>
+          <small>실시간 기준</small>
         </div>
       </div>
 
@@ -1081,9 +1133,14 @@
       document.getElementById('lifetimeTier').innerText = meta.tier;
       document.getElementById('lifetimeScore').innerText = `점수 ${meta.score} · 등수 ${meta.rank}`;
 
-      document.getElementById('todayRecord').innerText = `${today.wins}승 ${today.draws}무 ${today.losses}패`;
       document.getElementById('todayMatches').innerText = today.matches;
-      document.getElementById('todayMeta').innerText = `FC ${fcFromWins(today.wins)} · 티어 ${meta.tier} · 점수 ${meta.score} · 등수 ${meta.rank}`;
+      document.getElementById('todayWins').innerText = today.wins;
+      document.getElementById('todayDraws').innerText = today.draws;
+      document.getElementById('todayLosses').innerText = today.losses;
+      document.getElementById('todayFc').innerText = fcFromWins(today.wins);
+      document.getElementById('todayTier').innerText = meta.tier;
+      document.getElementById('todayScore').innerText = meta.score;
+      document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
 
       document.getElementById('weekRecord').innerText = `${week.wins}승 ${week.draws}무 ${week.losses}패`;
