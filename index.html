@@ -232,6 +232,18 @@
       <p id="statusText" class="sub">닉네임을 검색하면 오늘/주간/누적 전적을 확인할 수 있습니다.</p>
     </section>
 
+    <h2>실시간 경기정보</h2>
+    <section class="card">
+      <div class="label"><span class="ok">●</span> LIVE</div>
+      <div id="liveMatch" style="display:grid;grid-template-columns:1fr auto 1fr auto;align-items:center;gap:12px;background:#172235;border:1px solid var(--line);border-radius:8px;padding:14px;">
+        <div id="liveMyName" class="value" style="font-size:20px;">-</div>
+        <div id="liveScore" class="value" style="font-size:28px;color:#eaf3ff;">0 : 0</div>
+        <div id="liveOpponentName" class="value" style="font-size:20px;">-</div>
+        <div id="liveTime" class="meta" style="font-size:18px;margin:0;">--:--</div>
+      </div>
+      <div id="liveMeta" class="meta">실시간 경기 OCR 대기 중</div>
+    </section>
+
     <h2>오늘 전적</h2>
     <section class="grid">
       <div class="card">
@@ -535,6 +547,7 @@
       document.getElementById('statusText').innerText = `${nick} 님 기록을 불러오는 중입니다.`;
       try {
         await Promise.all([
+          loadLiveMatch(nick),
           loadSummary(nick),
           loadRecentFlow(nick),
           loadRecent7(nick),
@@ -569,6 +582,38 @@
       document.getElementById('currentTier').innerText = profile?.tier || '-';
       document.getElementById('currentScore').innerText = `점수 ${Number(profile?.score || 0)}`;
       document.getElementById('currentRank').innerText = Number(profile?.rank || 0) || '-';
+    }
+
+    async function loadLiveMatch(nick = currentNick) {
+      try {
+        let query = supabaseClient
+          .from('live_status')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        if (nick) query = query.eq('username', nick);
+
+        const { data, error } = await query;
+        if (error) throw error;
+        const live = data?.[0];
+
+        const myName = live?.match_my_name || live?.username || nick || '-';
+        const opponent = live?.match_opponent_name || '-';
+        const myScore = live?.match_my_score ?? 0;
+        const opponentScore = live?.match_opponent_score ?? 0;
+        const matchTime = live?.match_time || '--:--';
+        const updated = live?.updated_at ? new Date(live.updated_at).toLocaleString() : '대기 중';
+
+        document.getElementById('liveMyName').innerText = myName;
+        document.getElementById('liveScore').innerText = `${myScore} : ${opponentScore}`;
+        document.getElementById('liveOpponentName').innerText = opponent;
+        document.getElementById('liveTime').innerText = matchTime;
+        document.getElementById('liveMeta').innerText = live
+          ? `상태 ${live.status || '-'} · 마지막 갱신 ${updated}`
+          : '실시간 경기 OCR 대기 중';
+      } catch (error) {
+        document.getElementById('liveMeta').innerText = `실시간 정보 오류: ${error.message}`;
+      }
     }
 
     async function loadRecentFlow(nick) {
@@ -694,6 +739,7 @@
 
     async function refreshRankings() {
       await Promise.all([
+        loadLiveMatch(currentNick),
         loadRanking('todayRanking', startOfTodayIso(), null, dateKey()),
         loadRanking('weekRanking', weekStartIso(), weekStartKey()),
       ]);
