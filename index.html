@@ -1367,7 +1367,7 @@
         </div>
       </div>
 
-      <h2>24시간 승률 랭킹 TOP 10</h2>
+      <h2>오늘 승률 랭킹 TOP 10</h2>
       <div class="table-wrap">
         <table>
           <thead>
@@ -1555,12 +1555,6 @@
       d.setHours(0, 0, 0, 0);
       const daysSinceThursday = (d.getDay() - 4 + 7) % 7;
       d.setDate(d.getDate() - daysSinceThursday);
-      return d.toISOString();
-    }
-
-    function daysAgoIso(days) {
-      const d = new Date();
-      d.setDate(d.getDate() - days);
       return d.toISOString();
     }
 
@@ -2206,12 +2200,6 @@
         mergeRankingStats(row.username || '-', liveStatusStats(row));
       });
 
-      Object.values(statsMap || {}).forEach(profile => {
-        if (historyUsers.has(profile.username || '-')) return;
-        if (!isUpdatedSince(profile, sinceIso)) return;
-        mergeRankingStats(profile.username || '-', profileStats(profile));
-      });
-
       const ranking = Object.values(grouped)
         .filter(row => row.matches > 0)
         .map(row => {
@@ -2248,16 +2236,15 @@
       `).join('');
     }
 
-    
     async function refreshAll() {
       const statsMap = await loadPlayerStatsMap();
       await Promise.all([
         loadRanking(statsMap, {
           tbodyId: 'rankingList',
-          sinceIso: daysAgoIso(1),
+          sinceIso: startOfTodayIso(),
           sessionFromDate: todayDate(),
           sessionExactDate: todayDate(),
-          emptyMessage: '최근 24시간 랭킹 데이터가 없습니다.',
+          emptyMessage: '오늘 랭킹 데이터가 없습니다.',
         }),
         loadRanking(statsMap, {
           tbodyId: 'weeklyRankingList',
