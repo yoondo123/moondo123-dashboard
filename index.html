@@ -839,6 +839,321 @@
         font-size: 13px;
       }
     }
+    @media (max-width: 640px) {
+      body {
+        background:
+          radial-gradient(circle at 20% 0%, rgba(112,242,210,.16), transparent 34%),
+          linear-gradient(180deg, #101827 0%, #090b12 48%, #06080d 100%);
+      }
+      main {
+        padding: 8px 10px 26px;
+      }
+      header,
+      #dashboard > .topbar,
+      .panel {
+        border-radius: 14px;
+      }
+      header {
+        padding: 16px;
+        background:
+          linear-gradient(135deg, rgba(112,242,210,.2), transparent 42%),
+          linear-gradient(180deg, rgba(255,255,255,.07), transparent),
+          #111827;
+      }
+      header h1 {
+        font-size: 25px;
+      }
+      header p {
+        display: none;
+      }
+      #dashboard > .topbar {
+        padding: 12px;
+        background: rgba(13, 18, 29, .86);
+      }
+      #dashboard > .topbar h2 {
+        font-size: 19px;
+      }
+      #lastUpdated {
+        font-size: 11px;
+      }
+      h2 {
+        margin: 20px 0 9px;
+        font-size: 18px;
+      }
+      h2::before {
+        width: 5px;
+        height: 20px;
+      }
+      .mobile-note {
+        display: none;
+      }
+
+      .live-card {
+        grid-template-columns: 1fr 46px 46px 1fr;
+        min-height: 54px;
+        background:
+          linear-gradient(90deg, rgba(112,242,210,.12), transparent 28%, rgba(255,211,110,.08)),
+          #151b28;
+      }
+      .live-name {
+        padding: 0 8px;
+        font-size: 13px;
+      }
+      .live-score {
+        height: 54px;
+        font-size: 24px;
+      }
+      .live-time {
+        height: 32px;
+        font-size: 15px;
+      }
+
+      .today-grid,
+      .week-grid,
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 7px;
+      }
+      .today-grid .stat,
+      .week-grid .stat,
+      .grid .stat {
+        min-height: 62px;
+        padding: 10px 10px 9px;
+        border-radius: 12px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.065), transparent),
+          rgba(19, 24, 36, .92);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      }
+      .today-grid .stat::before,
+      .week-grid .stat::before,
+      .grid .stat::before {
+        display: none;
+      }
+      .today-grid .stat .muted,
+      .week-grid .stat .muted,
+      .grid .stat .muted {
+        font-size: 10px;
+        color: #9eabc1;
+      }
+      .today-grid .stat strong,
+      .week-grid .stat strong,
+      .grid .stat strong,
+      .today-grid .stat.compact strong,
+      .week-grid .stat.compact strong {
+        margin-top: 5px;
+        font-size: 20px;
+        line-height: 1.05;
+      }
+      .today-grid .stat small,
+      .week-grid .stat small,
+      .grid .stat small {
+        margin-top: 5px;
+        font-size: 10px;
+      }
+      .today-grid .stat:first-child,
+      .week-grid .stat:first-child {
+        grid-column: 1 / -1;
+        min-height: 94px;
+        padding: 14px;
+        background:
+          linear-gradient(135deg, rgba(112,242,210,.26), rgba(217,255,116,.08)),
+          linear-gradient(180deg, rgba(255,255,255,.08), transparent),
+          #151d2b;
+      }
+      .today-grid .stat:first-child strong,
+      .week-grid .stat:first-child strong {
+        font-size: 42px;
+      }
+      .today-grid .stat:first-child .muted,
+      .week-grid .stat:first-child .muted {
+        font-size: 12px;
+        color: #dffdf5;
+      }
+      .today-grid .stat:first-child small,
+      .week-grid .stat:first-child small {
+        color: #fff1ad;
+        font-size: 12px;
+      }
+      .today-grid .stat:nth-child(2),
+      .today-grid .stat:nth-child(3),
+      .today-grid .stat:nth-child(4),
+      .week-grid .stat:nth-child(2),
+      .week-grid .stat:nth-child(3),
+      .week-grid .stat:nth-child(4) {
+        grid-column: span 2;
+        text-align: center;
+      }
+      .today-grid .stat:nth-child(5),
+      .today-grid .stat:nth-child(6),
+      .today-grid .stat:nth-child(7),
+      .today-grid .stat:nth-child(8),
+      .week-grid .stat:nth-child(5) {
+        grid-column: span 3;
+        min-height: 54px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .today-grid .stat:nth-child(6) strong,
+      #lifetimeTier {
+        font-size: 18px;
+        word-break: keep-all;
+      }
+      .grid .stat {
+        grid-column: span 3;
+      }
+      .grid .stat:first-child {
+        grid-column: 1 / -1;
+        min-height: 82px;
+      }
+      #lifetimeRecord {
+        font-size: 28px;
+      }
+
+      .table-wrap {
+        margin-top: 0;
+      }
+      #rankingList tr,
+      #weeklyRankingList tr {
+        display: grid;
+        grid-template-columns: 42px 1fr auto;
+        grid-template-areas:
+          "rank name rate"
+          "rank tier record";
+        gap: 3px 9px;
+        padding: 11px 12px;
+        border-radius: 14px;
+        background:
+          linear-gradient(135deg, rgba(112,242,210,.14), transparent 42%),
+          rgba(18, 23, 35, .95);
+      }
+      #rankingList td,
+      #weeklyRankingList td {
+        min-height: auto;
+        padding: 0;
+        border: 0;
+        display: block;
+        text-align: left;
+      }
+      #rankingList td::before,
+      #weeklyRankingList td::before {
+        content: "" !important;
+      }
+      #rankingList td:nth-child(1),
+      #weeklyRankingList td:nth-child(1) {
+        grid-area: rank;
+        align-self: stretch;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        background: rgba(112,242,210,.13);
+        color: #dffff6;
+        font-size: 16px;
+      }
+      #rankingList td:nth-child(2),
+      #weeklyRankingList td:nth-child(2) {
+        grid-area: name;
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 950;
+      }
+      #rankingList td:nth-child(3),
+      #weeklyRankingList td:nth-child(3) {
+        grid-area: tier;
+        color: #aab7ca;
+        font-size: 11px;
+      }
+      #rankingList td:nth-child(8),
+      #weeklyRankingList td:nth-child(8) {
+        grid-area: rate;
+        justify-self: end;
+        color: #ffd36e;
+        font-size: 15px;
+        font-weight: 950;
+      }
+      #rankingList td:nth-child(4),
+      #weeklyRankingList td:nth-child(4) {
+        grid-area: record;
+        justify-self: end;
+      }
+      #rankingList td:nth-child(4)::after,
+      #weeklyRankingList td:nth-child(4)::after {
+        content: "승";
+        margin-left: 2px;
+        color: #70f2d2;
+      }
+      #rankingList td:nth-child(5),
+      #rankingList td:nth-child(6),
+      #rankingList td:nth-child(7),
+      #rankingList td:nth-child(9),
+      #rankingList td:nth-child(10),
+      #weeklyRankingList td:nth-child(5),
+      #weeklyRankingList td:nth-child(6),
+      #weeklyRankingList td:nth-child(7),
+      #weeklyRankingList td:nth-child(9),
+      #weeklyRankingList td:nth-child(10) {
+        display: none;
+      }
+
+      #recentList tr {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+          "date rate"
+          "record matches";
+        gap: 4px 12px;
+        padding: 11px 12px;
+        border-radius: 14px;
+      }
+      #recentList td {
+        min-height: auto;
+        padding: 0;
+        border: 0;
+        display: block;
+      }
+      #recentList td::before {
+        content: "" !important;
+      }
+      #recentList td:nth-child(1) {
+        grid-area: date;
+        color: #dffff6;
+        font-size: 13px;
+        font-weight: 950;
+      }
+      #recentList td:nth-child(2) {
+        grid-area: record;
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 950;
+      }
+      #recentList td:nth-child(3) {
+        grid-area: matches;
+        color: #aab7ca;
+        font-size: 12px;
+      }
+      #recentList td:nth-child(3)::after {
+        content: " 경기";
+      }
+      #recentList td:nth-child(4) {
+        grid-area: rate;
+        color: #ffd36e;
+        font-size: 13px;
+        font-weight: 950;
+      }
+      #recentList td:nth-child(5) {
+        display: none;
+      }
+      #rankingList td[colspan],
+      #weeklyRankingList td[colspan],
+      #recentList td[colspan] {
+        display: block;
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 12px;
+      }
+    }
   </style>
 </head>
 <body>
