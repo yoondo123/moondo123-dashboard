@@ -621,6 +621,224 @@
       .today-grid { grid-template-columns: 1fr; }
       .week-grid { grid-template-columns: 1fr; }
     }
+    @media (max-width: 640px) {
+      body {
+        background-size: 28px 28px, auto;
+      }
+      main {
+        width: 100%;
+        padding: 10px 10px 28px;
+      }
+      header {
+        min-height: auto;
+        margin-bottom: 14px;
+        padding: 18px 16px;
+        border-radius: 12px;
+      }
+      header::after {
+        display: none;
+      }
+      header h1 {
+        font-size: 28px;
+        line-height: 1.08;
+      }
+      header p {
+        font-size: 13px;
+        line-height: 1.45;
+      }
+      header a,
+      button.secondary {
+        width: 100%;
+        min-height: 40px;
+      }
+      .panel {
+        padding: 12px;
+        border-radius: 12px;
+      }
+      #dashboard > .topbar {
+        margin: 14px 0;
+        padding: 14px;
+        border-radius: 12px;
+      }
+      #dashboard > .topbar h2,
+      h2 {
+        font-size: 21px;
+      }
+      h2 {
+        margin: 22px 0 10px;
+      }
+      h2::before {
+        width: 6px;
+        height: 24px;
+      }
+      .login-row {
+        gap: 8px;
+      }
+      .live-card {
+        grid-template-columns: 1fr 54px 54px 1fr;
+        min-height: 58px;
+        border-radius: 10px;
+      }
+      .live-name {
+        min-width: 0;
+        padding: 0 9px;
+        font-size: 14px;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+      }
+      .live-score {
+        height: 58px;
+        font-size: 26px;
+      }
+      .live-time {
+        height: 36px;
+        padding: 0 10px;
+        font-size: 16px;
+      }
+      .today-grid,
+      .week-grid,
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .stat,
+      .stat.compact {
+        min-height: 88px;
+        padding: 13px 12px 12px;
+        border-radius: 11px;
+      }
+      .stat::before {
+        width: 4px;
+      }
+      .stat .muted {
+        font-size: 11px;
+      }
+      .stat strong,
+      .stat.compact strong {
+        margin-top: 8px;
+        font-size: 22px;
+        line-height: 1.08;
+      }
+      .stat small,
+      .stat.compact small {
+        margin-top: 7px;
+        font-size: 11px;
+        line-height: 1.25;
+      }
+      .table-wrap {
+        overflow: visible;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+      }
+      table,
+      thead,
+      tbody,
+      tr,
+      th,
+      td {
+        display: block;
+        width: 100%;
+        min-width: 0;
+      }
+      table {
+        font-size: 13px;
+      }
+      thead {
+        display: none;
+      }
+      tbody tr {
+        margin-bottom: 8px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,.11);
+        border-radius: 11px;
+        background:
+          linear-gradient(135deg, rgba(112,242,210,.12), transparent 32%),
+          rgba(17, 21, 31, .94);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      }
+      tbody tr:nth-child(even) {
+        background:
+          linear-gradient(135deg, rgba(112,242,210,.12), transparent 32%),
+          rgba(17, 21, 31, .94);
+      }
+      tbody td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 36px;
+        padding: 9px 12px;
+        border-right: 0;
+        text-align: right;
+        white-space: normal;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+      }
+      tbody td::before {
+        flex: 0 0 auto;
+        color: #aebbd0;
+        font-size: 11px;
+        font-weight: 950;
+        text-align: left;
+      }
+      #rankingList td:nth-child(1)::before,
+      #weeklyRankingList td:nth-child(1)::before { content: "순위"; }
+      #rankingList td:nth-child(2)::before,
+      #weeklyRankingList td:nth-child(2)::before { content: "닉네임"; }
+      #rankingList td:nth-child(3)::before,
+      #weeklyRankingList td:nth-child(3)::before { content: "티어"; }
+      #rankingList td:nth-child(4)::before,
+      #weeklyRankingList td:nth-child(4)::before { content: "승"; }
+      #rankingList td:nth-child(5)::before,
+      #weeklyRankingList td:nth-child(5)::before { content: "무"; }
+      #rankingList td:nth-child(6)::before,
+      #weeklyRankingList td:nth-child(6)::before { content: "패"; }
+      #rankingList td:nth-child(7)::before,
+      #weeklyRankingList td:nth-child(7)::before { content: "총 경기"; }
+      #rankingList td:nth-child(8)::before,
+      #weeklyRankingList td:nth-child(8)::before { content: "승률"; }
+      #rankingList td:nth-child(9)::before,
+      #weeklyRankingList td:nth-child(9)::before { content: "점수"; }
+      #rankingList td:nth-child(10)::before,
+      #weeklyRankingList td:nth-child(10)::before { content: "FC"; }
+      #recentList td:nth-child(1)::before { content: "날짜"; }
+      #recentList td:nth-child(2)::before { content: "전적"; }
+      #recentList td:nth-child(3)::before { content: "경기수"; }
+      #recentList td:nth-child(4)::before { content: "승률"; }
+      #recentList td:nth-child(5)::before { content: "FC"; }
+      #rankingList td[colspan],
+      #weeklyRankingList td[colspan],
+      #recentList td[colspan] {
+        justify-content: center;
+        text-align: center;
+      }
+      #rankingList td[colspan]::before,
+      #weeklyRankingList td[colspan]::before,
+      #recentList td[colspan]::before {
+        content: "";
+      }
+    }
+    @media (max-width: 360px) {
+      main {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+      .today-grid,
+      .week-grid,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .live-card {
+        grid-template-columns: 1fr 46px 46px 1fr;
+      }
+      .live-score {
+        font-size: 23px;
+      }
+      .live-name {
+        font-size: 13px;
+      }
+    }
   </style>
 </head>
 <body>
