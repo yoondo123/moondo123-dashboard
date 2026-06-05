@@ -936,6 +936,22 @@
       return sessionMap[dateKey] || emptyStats();
     }
 
+    function bestStats(...statsList) {
+      return statsList
+        .filter(Boolean)
+        .reduce((best, stats) => {
+          const normalized = {
+            wins: Number(stats.wins || 0),
+            draws: Number(stats.draws || 0),
+            losses: Number(stats.losses || 0),
+            matches: Number(stats.matches || 0),
+          };
+          if (normalized.matches > best.matches) return normalized;
+          if (normalized.matches === best.matches && normalized.wins > best.wins) return normalized;
+          return best;
+        }, emptyStats());
+    }
+
     async function loadUserHistory(username, sinceIso) {
       let query = supabaseClient
         .from('game_history')
@@ -1114,17 +1130,13 @@
 
       const todayHistory = summarizeMatches(todayHistoryRes.data || []);
       const todaySessions = summarizeSessions(todaySessionRes.data || []);
-      let today = todayHistory.matches ? todayHistory : todaySessions;
-      if (!today.matches && live && isUpdatedSince(live, startOfTodayIso())) {
-        today = liveStatusStats(live);
-      }
+      const todayLive = live && isUpdatedSince(live, startOfTodayIso()) ? liveStatusStats(live) : emptyStats();
+      const today = bestStats(todayHistory, todaySessions, todayLive);
 
       const weekHistory = summarizeMatches(weekHistoryRes.data || []);
       const weekSessions = summarizeSessions(weekSessionRes.data || []);
-      let week = weekHistory.matches ? weekHistory : weekSessions;
-      if (!week.matches && live && isUpdatedSince(live, weeklyResetIso())) {
-        week = liveStatusStats(live);
-      }
+      const weekLive = live && isUpdatedSince(live, weeklyResetIso()) ? liveStatusStats(live) : emptyStats();
+      const week = bestStats(weekHistory, weekSessions, weekLive);
 
       document.getElementById('lifetimeRecord').innerText = `${lifetime.wins}승 ${lifetime.draws}무 ${lifetime.losses}패`;
       document.getElementById('lifetimeMatches').innerText = lifetime.matches;
@@ -1175,7 +1187,7 @@
       const sessionMap = groupSessionsByDay(sessionRows);
       const live = liveRows[0];
       if (live && isUpdatedSince(live, startOfTodayIso()) && liveStatusStats(live).matches > 0) {
-        sessionMap[todayDate()] = liveStatusStats(live);
+        sessionMap[todayDate()] = bestStats(sessionMap[todayDate()], liveStatusStats(live));
       }
       const rows = last7DateKeys().map(dateKey => ({
         dateKey,
