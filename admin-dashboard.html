@@ -17,6 +17,7 @@
     input, select, button {
       padding:10px;
       margin:4px;
+      border-radius:6px;
     }
     table {
       width:100%;
@@ -29,9 +30,7 @@
       padding:10px;
       text-align:center;
     }
-    th {
-      background:#1e293b;
-    }
+    th { background:#1e293b; }
     .box {
       background:#111c2f;
       padding:20px;
@@ -47,12 +46,13 @@
     .delete { background:#7f1d1d; color:white; border:0; cursor:pointer; }
     .logout { float:right; background:#475569; color:white; border:0; cursor:pointer; }
     .small { font-size:12px; color:#cbd5e1; line-height:1.5; }
+    .status { margin-top:10px; color:#fde68a; font-size:13px; }
     a { color:#93c5fd; }
   </style>
 </head>
 
 <body>
-  <button class="logout" onclick="logout()">로그아웃</button>
+  <button class="logout" id="logoutBtn">로그아웃</button>
   <h1>MOONDO123 관리자 대시보드</h1>
   <p><a href="./index.html">일반 대시보드로 이동</a></p>
 
@@ -61,8 +61,10 @@
     <p class="small">
       오늘 초기화: 오늘 00시 이후 기록 삭제<br>
       주간 초기화: 이번 주 목요일 00시 이후 기록 삭제<br>
-      전체 초기화: game_history, daily_sessions, live_status 삭제/초기화 + player_stats 누적 0
+      누적 초기화: player_stats 누적 승/무/패/FC만 0<br>
+      전체 초기화: game_history, daily_sessions 삭제 + live_status/player_stats 초기화
     </p>
+    <p id="statusText" class="status"></p>
     <table>
       <thead>
         <tr>
@@ -94,7 +96,7 @@
     <input id="scoreAgainst" type="number" placeholder="실점">
     <input id="fcPoint" type="number" placeholder="FC 포인트">
 
-    <button onclick="addMatch()">등록</button>
+    <button id="addMatchBtn">등록</button>
   </div>
 
   <div class="box">
@@ -117,20 +119,33 @@
   </div>
 
   <script>
+    if (!window.supabaseClient) {
+      alert('config.js에서 supabaseClient가 생성되지 않았습니다.');
+    }
+
     if (localStorage.getItem('admin_login') !== 'true') {
       location.href = './admin.html';
+    }
+
+    const $ = (id) => document.getElementById(id);
+
+    function setStatus(text) {
+      $('statusText').innerText = text || '';
+      console.log('[ADMIN]', text);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
     function logout() {
       localStorage.removeItem('admin_login');
       location.href = './admin.html';
-    }
-
-    function normalizeResult(result) {
-      if (result === '승') return 'win';
-      if (result === '무') return 'draw';
-      if (result === '패') return 'loss';
-      return result;
     }
 
     function startOfTodayIso() {
@@ -166,22 +181,29 @@
       return d.toISOString();
     }
 
-    async function safeDelete(tableName, columnName, value, extraBuilder) {
-      let q = supabaseClient.from(tableName).delete().eq(columnName, value);
+    async function deleteWhere(tableName, username, extraBuilder) {
+      let q = supabaseClient.from(tableName).delete().eq('username', username);
       if (extraBuilder) q = extraBuilder(q);
       const { error } = await q;
-      if (error) console.warn(`[${tableName}] 삭제 실패:`, error.message);
-      return error;
+      if (error) {
+        console.warn(`${tableName} 삭제 실패:`, error.message);
+        return `${tableName}: ${error.message}`;
+      }
+      return null;
     }
 
-    async function safeUpdate(tableName, payload, columnName, value) {
-      const { error } = await supabaseClient.from(tableName).update(payload).eq(columnName, value);
-      if (error) console.warn(`[${tableName}] 업데이트 실패:`, error.message);
-      return error;
+    async function updateWhere(tableName, username, payload) {
+      const { error } = await supabaseClient.from(tableName).update(payload).eq('username', username);
+      if (error) {
+        console.warn(`${tableName} 업데이트 실패:`, error.message);
+        return `${tableName}: ${error.message}`;
+      }
+      return null;
     }
 
     async function loadUsers() {
-      const tbody = document.getElementById('userList');
+      const tbody = $('userList');
+      setStatus('회원 목록 불러오는 중...');
 
       const { data, error } = await supabaseClient
         .from('app_users')
@@ -189,38 +211,39 @@
         .order('created_at', { ascending:false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="5">오류 : ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5">오류 : ${escapeHtml(error.message)}</td></tr>`;
+        setStatus('회원 목록 오류: ' + error.message);
         return;
       }
 
       if (!data || data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5">회원이 없습니다.</td></tr>`;
+        setStatus('');
         return;
       }
 
-      tbody.innerHTML = data.map(user => {
-        const username = JSON.stringify(user.username || '');
-        const userId = JSON.stringify(user.id || '');
-        return `
-          <tr>
-            <td>${user.username || ''}</td>
-            <td>${user.nickname || ''}</td>
-            <td>${user.status || ''}</td>
-            <td>${user.created_at ? new Date(user.created_at).toLocaleString() : ''}</td>
-            <td>
-              <button class="approve" onclick="updateUserStatus(${userId}, 'approved')">승인</button>
-              <button class="reject" onclick="updateUserStatus(${userId}, 'rejected')">거절</button>
-              <button class="reset-today" onclick="resetTodayStats(${userId}, ${username})">오늘 초기화</button>
-              <button class="reset-week" onclick="resetWeekStats(${userId}, ${username})">주간 초기화</button>
-              <button class="reset" onclick="resetPlayerStats(${userId}, ${username})">누적 초기화</button>
-              <button class="reset-all" onclick="resetAllStats(${userId}, ${username})">전체 초기화</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
+      tbody.innerHTML = data.map(user => `
+        <tr>
+          <td>${escapeHtml(user.username)}</td>
+          <td>${escapeHtml(user.nickname)}</td>
+          <td>${escapeHtml(user.status)}</td>
+          <td>${user.created_at ? new Date(user.created_at).toLocaleString() : ''}</td>
+          <td>
+            <button class="approve" data-action="approve" data-id="${escapeHtml(user.id)}">승인</button>
+            <button class="reject" data-action="reject" data-id="${escapeHtml(user.id)}">거절</button>
+            <button class="reset-today" data-action="resetToday" data-id="${escapeHtml(user.id)}" data-username="${escapeHtml(user.username)}">오늘 초기화</button>
+            <button class="reset-week" data-action="resetWeek" data-id="${escapeHtml(user.id)}" data-username="${escapeHtml(user.username)}">주간 초기화</button>
+            <button class="reset" data-action="resetPlayer" data-id="${escapeHtml(user.id)}" data-username="${escapeHtml(user.username)}">누적 초기화</button>
+            <button class="reset-all" data-action="resetAll" data-id="${escapeHtml(user.id)}" data-username="${escapeHtml(user.username)}">전체 초기화</button>
+          </td>
+        </tr>
+      `).join('');
+
+      setStatus('회원 목록 로드 완료');
     }
 
     async function updateUserStatus(id, status) {
+      setStatus('회원 상태 변경 중...');
       const { error } = await supabaseClient
         .from('app_users')
         .update({ status })
@@ -228,6 +251,7 @@
 
       if (error) {
         alert('오류 : ' + error.message);
+        setStatus('회원 상태 변경 실패');
         return;
       }
 
@@ -236,7 +260,10 @@
     }
 
     async function resetPlayerStats(userId, username) {
+      if (!username) return alert('username이 비어 있습니다.');
       if (!confirm(`${username} 님의 누적 전적을 초기화할까요?\n승/무/패, 누적 FC, 승률만 0으로 바꾸고 티어/점수/등수는 유지됩니다.`)) return;
+
+      setStatus(`${username} 누적 전적 초기화 중...`);
 
       const { data } = await supabaseClient
         .from('player_stats')
@@ -260,80 +287,109 @@
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabaseClient
+      let result = await supabaseClient
         .from('player_stats')
         .upsert(payload, { onConflict: 'username' });
 
-      if (error) {
-        alert('오류 : ' + error.message);
+      if (result.error) {
+        result = await supabaseClient
+          .from('player_stats')
+          .upsert(payload, { onConflict: 'user_id' });
+      }
+
+      if (result.error) {
+        alert('오류 : ' + result.error.message);
+        setStatus('누적 초기화 실패');
         return;
       }
 
       alert('누적 전적 초기화 완료');
-      loadUsers();
+      setStatus('누적 초기화 완료');
     }
 
     async function resetTodayStats(userId, username) {
+      if (!username) return alert('username이 비어 있습니다.');
       if (!confirm(`${username} 님의 오늘 전적을 초기화할까요?\n오늘 00시 이후 game_history와 daily_sessions 기록이 삭제됩니다.`)) return;
+
+      setStatus(`${username} 오늘 전적 초기화 중...`);
 
       const todayIso = startOfTodayIso();
       const todayKey = todayDateKey();
-
       const errors = [];
 
-      errors.push(await safeDelete('game_history', 'username', username, q => q.gte('created_at', todayIso)));
-      errors.push(await safeDelete('daily_sessions', 'username', username, q => q.eq('session_date', todayKey)));
+      errors.push(await deleteWhere('game_history', username, q => q.gte('created_at', todayIso)));
+      errors.push(await deleteWhere('daily_sessions', username, q => q.eq('session_date', todayKey)));
 
-      await safeUpdate('live_status', {
+      const liveError = await updateWhere('live_status', username, {
         wins: 0,
         draws: 0,
         losses: 0,
         matches: 0,
         result: null,
         updated_at: new Date().toISOString()
-      }, 'username', username);
+      });
+      errors.push(liveError);
 
       const failed = errors.filter(Boolean);
-      alert(failed.length ? `오늘 초기화 일부 실패: ${failed.map(e => e.message).join(' / ')}` : '오늘 전적 초기화 완료');
+      if (failed.length) {
+        alert(`오늘 초기화 일부 실패:\n${failed.join('\n')}`);
+        setStatus('오늘 초기화 일부 실패');
+      } else {
+        alert('오늘 전적 초기화 완료');
+        setStatus('오늘 초기화 완료');
+      }
     }
 
     async function resetWeekStats(userId, username) {
+      if (!username) return alert('username이 비어 있습니다.');
       if (!confirm(`${username} 님의 주간 전적을 초기화할까요?\n이번 주 목요일 00시 이후 game_history와 daily_sessions 기록이 삭제됩니다.`)) return;
+
+      setStatus(`${username} 주간 전적 초기화 중...`);
 
       const weekIso = weeklyResetIso();
       const weekKey = weeklyResetDateKey();
-
       const errors = [];
 
-      errors.push(await safeDelete('game_history', 'username', username, q => q.gte('created_at', weekIso)));
-      errors.push(await safeDelete('daily_sessions', 'username', username, q => q.gte('session_date', weekKey)));
+      errors.push(await deleteWhere('game_history', username, q => q.gte('created_at', weekIso)));
+      errors.push(await deleteWhere('daily_sessions', username, q => q.gte('session_date', weekKey)));
 
-      await safeUpdate('live_status', {
+      const liveError = await updateWhere('live_status', username, {
         wins: 0,
         draws: 0,
         losses: 0,
         matches: 0,
         result: null,
         updated_at: new Date().toISOString()
-      }, 'username', username);
+      });
+      errors.push(liveError);
 
       const failed = errors.filter(Boolean);
-      alert(failed.length ? `주간 초기화 일부 실패: ${failed.map(e => e.message).join(' / ')}` : '주간 전적 초기화 완료');
+      if (failed.length) {
+        alert(`주간 초기화 일부 실패:\n${failed.join('\n')}`);
+        setStatus('주간 초기화 일부 실패');
+      } else {
+        alert('주간 전적 초기화 완료');
+        setStatus('주간 초기화 완료');
+      }
     }
 
     async function resetAllStats(userId, username) {
+      if (!username) return alert('username이 비어 있습니다.');
+
       const typed = prompt(`${username} 님의 모든 전적을 완전 초기화합니다.\n진행하려면 아이디를 그대로 입력하세요.`);
       if (typed !== username) {
         alert('아이디가 일치하지 않아 취소되었습니다.');
         return;
       }
 
+      setStatus(`${username} 전체 전적 초기화 중...`);
+
       const errors = [];
 
-      errors.push(await safeDelete('game_history', 'username', username));
-      errors.push(await safeDelete('daily_sessions', 'username', username));
+      errors.push(await deleteWhere('game_history', username));
+      errors.push(await deleteWhere('daily_sessions', username));
 
-      await safeUpdate('live_status', {
+      errors.push(await updateWhere('live_status', username, {
         wins: 0,
         draws: 0,
         losses: 0,
@@ -345,9 +401,9 @@
         opponent_score: null,
         opponent: null,
         updated_at: new Date().toISOString()
-      }, 'username', username);
+      }));
 
-      const { error: playerError } = await supabaseClient
+      let result = await supabaseClient
         .from('player_stats')
         .upsert({
           user_id: userId,
@@ -363,20 +419,45 @@
           updated_at: new Date().toISOString()
         }, { onConflict: 'username' });
 
-      if (playerError) errors.push(playerError);
+      if (result.error) {
+        result = await supabaseClient
+          .from('player_stats')
+          .upsert({
+            user_id: userId,
+            username,
+            wins: 0,
+            draws: 0,
+            losses: 0,
+            fc_mined: 0,
+            win_rate: 0,
+            tier: 'Unranked',
+            score: 0,
+            rank: 0,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+      }
+
+      if (result.error) errors.push('player_stats: ' + result.error.message);
 
       const failed = errors.filter(Boolean);
-      alert(failed.length ? `전체 초기화 일부 실패: ${failed.map(e => e.message).join(' / ')}` : '전체 전적 초기화 완료');
+      if (failed.length) {
+        alert(`전체 초기화 일부 실패:\n${failed.join('\n')}`);
+        setStatus('전체 초기화 일부 실패');
+      } else {
+        alert('전체 전적 초기화 완료');
+        setStatus('전체 초기화 완료');
+      }
+
       loadUsers();
       loadMatches();
     }
 
     async function addMatch() {
-      const nickname = document.getElementById('matchNick').value.trim();
-      const result = document.getElementById('matchResult').value;
-      const scoreFor = Number(document.getElementById('scoreFor').value || 0);
-      const scoreAgainst = Number(document.getElementById('scoreAgainst').value || 0);
-      const fcPoint = Number(document.getElementById('fcPoint').value || 0);
+      const nickname = $('matchNick').value.trim();
+      const result = $('matchResult').value;
+      const scoreFor = Number($('scoreFor').value || 0);
+      const scoreAgainst = Number($('scoreAgainst').value || 0);
+      const fcPoint = Number($('fcPoint').value || 0);
 
       if (!nickname) {
         alert('닉네임을 입력해주세요.');
@@ -400,16 +481,16 @@
 
       alert('전적 등록 완료');
 
-      document.getElementById('matchNick').value = '';
-      document.getElementById('scoreFor').value = '';
-      document.getElementById('scoreAgainst').value = '';
-      document.getElementById('fcPoint').value = '';
+      $('matchNick').value = '';
+      $('scoreFor').value = '';
+      $('scoreAgainst').value = '';
+      $('fcPoint').value = '';
 
       loadMatches();
     }
 
     async function loadMatches() {
-      const tbody = document.getElementById('matchList');
+      const tbody = $('matchList');
 
       const { data, error } = await supabaseClient
         .from('match_history')
@@ -417,7 +498,7 @@
         .order('created_at', { ascending:false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="6">오류 : ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6">오류 : ${escapeHtml(error.message)}</td></tr>`;
         return;
       }
 
@@ -428,13 +509,13 @@
 
       tbody.innerHTML = data.map(match => `
         <tr>
-          <td>${match.nickname || ''}</td>
-          <td>${match.result || ''}</td>
+          <td>${escapeHtml(match.nickname)}</td>
+          <td>${escapeHtml(match.result)}</td>
           <td>${match.score_for ?? 0} : ${match.score_against ?? 0}</td>
           <td>${match.fc_point || 0}</td>
           <td>${match.created_at ? new Date(match.created_at).toLocaleString() : ''}</td>
           <td>
-            <button class="delete" onclick="deleteMatch(${match.id})">삭제</button>
+            <button class="delete" data-action="deleteMatch" data-id="${escapeHtml(match.id)}">삭제</button>
           </td>
         </tr>
       `).join('');
@@ -456,6 +537,31 @@
       alert('삭제 완료');
       loadMatches();
     }
+
+    document.addEventListener('click', async function (e) {
+      const button = e.target.closest('button[data-action]');
+      if (!button) return;
+
+      const action = button.dataset.action;
+      const id = button.dataset.id;
+      const username = button.dataset.username;
+
+      try {
+        if (action === 'approve') return updateUserStatus(id, 'approved');
+        if (action === 'reject') return updateUserStatus(id, 'rejected');
+        if (action === 'resetToday') return resetTodayStats(id, username);
+        if (action === 'resetWeek') return resetWeekStats(id, username);
+        if (action === 'resetPlayer') return resetPlayerStats(id, username);
+        if (action === 'resetAll') return resetAllStats(id, username);
+        if (action === 'deleteMatch') return deleteMatch(id);
+      } catch (err) {
+        console.error(err);
+        alert('버튼 실행 중 오류: ' + err.message);
+      }
+    });
+
+    $('logoutBtn').addEventListener('click', logout);
+    $('addMatchBtn').addEventListener('click', addMatch);
 
     loadUsers();
     loadMatches();
