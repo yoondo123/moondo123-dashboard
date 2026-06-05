@@ -2030,23 +2030,19 @@
 
       const todayHistory = summarizeMatches(todayHistoryRes.data || []);
       const todaySessions = summarizeSessions(todaySessionRes.data || []);
-      const todayLive = live && isUpdatedSince(live, startOfTodayIso()) ? liveStatusStats(live) : emptyStats();
-      const todayProfile = profile && isUpdatedSince(profile, startOfTodayIso()) ? profileStats(profile) : emptyStats();
       const today = restoreStatsFromCache(
         currentUser.username,
         todayDate(),
-        firstUsefulStats(todayHistory, todayLive, todaySessions, todayProfile)
+        firstUsefulStats(todayHistory, todaySessions)
       );
       cacheStatsIfUseful(currentUser.username, todayDate(), today);
 
       const weekHistory = summarizeMatches(weekHistoryRes.data || []);
       const weekSessions = summarizeSessions(weekSessionRes.data || []);
-      const weekLive = live && isUpdatedSince(live, weeklyResetIso()) ? liveStatusStats(live) : emptyStats();
-      const weekProfile = profile && isUpdatedSince(profile, weeklyResetIso()) ? profileStats(profile) : emptyStats();
       const week = restoreStatsFromCache(
         currentUser.username,
         `week:${weekStart}`,
-        firstUsefulStats(weekHistory, weekLive, weekSessions, weekProfile)
+        firstUsefulStats(weekHistory, weekSessions)
       );
       cacheStatsIfUseful(currentUser.username, `week:${weekStart}`, week);
       lifetime = bestStats(lifetime, today, week);
@@ -2082,20 +2078,14 @@
     async function loadRecent() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentList');
-      const [historyRes, sessionRes, liveRes] = await Promise.all([
+      const [historyRes, sessionRes] = await Promise.all([
         loadUserHistory(currentUser.username, rolling7StartIso()),
         loadUserSessions(currentUser.username, rolling7StartKey()),
-        supabaseClient
-          .from('live_status')
-          .select('*')
-          .eq('username', currentUser.username)
-          .limit(1),
       ]);
 
       const historyRows = historyRes.data || [];
       const sessionRows = sessionRes.data || [];
-      const liveRows = liveRes.data || [];
-      if (historyRes.error && sessionRows.length === 0 && liveRows.length === 0) {
+      if (historyRes.error && sessionRows.length === 0) {
         const message = historyRes.error.message;
         tbody.innerHTML = `<tr><td colspan="5">오류: ${message}</td></tr>`;
         return;
@@ -2103,22 +2093,10 @@
 
       const historyMap = groupHistoryByDay(historyRows);
       const sessionMap = groupSessionsByDay(sessionRows);
-      const live = liveRows[0];
-      if (live && isUpdatedSince(live, startOfTodayIso()) && liveStatusStats(live).matches > 0) {
-        sessionMap[todayDate()] = firstUsefulStats(historyMap[todayDate()], liveStatusStats(live), sessionMap[todayDate()]);
-      }
       let rows = last7DateKeys().map(dateKey => ({
         dateKey,
         ...dailyStatsFromMaps(dateKey, historyMap, sessionMap),
       }));
-      const statsMap = await loadPlayerStatsMap();
-      const profile = statsMap[currentUser.username] || {};
-      if (profile && isUpdatedSince(profile, startOfTodayIso())) {
-        rows = rows.map(row => row.dateKey === todayDate()
-          ? { dateKey: row.dateKey, ...firstUsefulStats(historyMap[row.dateKey], row, profileStats(profile)) }
-          : row
-        );
-      }
       rows = restoreRecentRowsFromCache(currentUser.username, rows);
       cacheRecentRowsIfUseful(currentUser.username, rows);
 
