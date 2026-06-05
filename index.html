@@ -154,6 +154,73 @@
       font-size: 13px;
       font-weight: 800;
     }
+    .form-strip {
+      display: grid;
+      gap: 10px;
+      margin: 14px 0 8px;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 16px;
+      background:
+        linear-gradient(135deg, rgba(112, 242, 210, .08), transparent 40%),
+        rgba(14, 18, 28, .82);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+    }
+    .form-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .form-title {
+      color: #f8fbff;
+      font-size: 14px;
+      font-weight: 950;
+    }
+    .form-summary {
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 900;
+      text-align: right;
+    }
+    .form-dots {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .form-dot {
+      display: grid;
+      place-items: center;
+      min-height: 32px;
+      border-radius: 10px;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 950;
+      border: 1px solid rgba(255, 255, 255, .12);
+      background: rgba(255, 255, 255, .08);
+    }
+    .form-dot.win {
+      background: linear-gradient(180deg, rgba(112,167,255,.95), rgba(49,93,151,.92));
+      box-shadow: 0 0 18px rgba(112,167,255,.22);
+    }
+    .form-dot.loss {
+      background: linear-gradient(180deg, rgba(255,102,115,.95), rgba(142,42,55,.92));
+      box-shadow: 0 0 18px rgba(255,102,115,.2);
+    }
+    .form-dot.draw {
+      background: linear-gradient(180deg, rgba(166,176,194,.9), rgba(84,94,112,.9));
+    }
+    .footer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 28px;
+    }
+    .footer-actions a,
+    .footer-actions button {
+      min-width: 150px;
+    }
     .live-card {
       display: grid;
       grid-template-columns: minmax(170px, 1fr) 84px 84px minmax(170px, 1fr) 132px;
@@ -290,6 +357,8 @@
       .login-row input, .login-row button { width: 100%; }
       .remote-actions { width: 100%; justify-content: stretch; }
       .remote-actions button { flex: 1; min-width: 0; }
+      .footer-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .footer-actions a, .footer-actions button { width: 100%; min-width: 0; }
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .live-card { grid-template-columns: 1fr 58px 58px 1fr; }
       .live-time {
@@ -901,10 +970,35 @@
         padding: 0 10px;
         font-size: 12px;
       }
+      .remote-actions {
+        grid-template-columns: 1fr;
+      }
       .remote-message {
         margin: -5px 2px 10px;
         font-size: 12px;
         line-height: 1.35;
+      }
+      .form-strip {
+        margin: 10px 0 4px;
+        padding: 11px;
+        border-radius: 13px;
+      }
+      .form-title {
+        font-size: 13px;
+      }
+      .form-summary {
+        font-size: 11px;
+      }
+      .form-dots {
+        gap: 5px;
+      }
+      .form-dot {
+        min-height: 27px;
+        border-radius: 8px;
+        font-size: 11px;
+      }
+      .footer-actions {
+        margin-top: 22px;
       }
       h2 {
         margin: 20px 0 9px;
@@ -1193,7 +1287,6 @@
         <h1>MOONDO FC온라인 전적</h1>
         <p class="muted">실시간 경기와 최근 기록을 10초마다 갱신합니다.</p>
       </div>
-      <a href="./admin.html">관리자 페이지</a>
     </header>
 
     <section id="loginPanel" class="panel">
@@ -1221,7 +1314,6 @@
         </div>
         <div class="remote-actions">
           <button onclick="requestStopAfterResult()">경기 후 중지</button>
-          <button class="secondary" onclick="logout()">로그아웃</button>
         </div>
       </div>
       <p id="remoteCommandMessage" class="muted remote-message"></p>
@@ -1279,6 +1371,25 @@
           <span class="muted">현재 등수</span>
           <strong id="todayRank">-</strong>
           <small>실시간 기준</small>
+        </div>
+      </div>
+
+      <div class="form-strip">
+        <div class="form-head">
+          <span class="form-title">최근 10판 흐름</span>
+          <span class="form-summary" id="formSummary">기록 대기</span>
+        </div>
+        <div class="form-dots" id="formDots">
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
         </div>
       </div>
 
@@ -1392,6 +1503,10 @@
           <strong id="lifetimeTier">-</strong>
           <small id="lifetimeScore">점수 0</small>
         </div>
+      </div>
+      <div class="footer-actions">
+        <a href="./admin.html">관리자 페이지</a>
+        <button class="secondary" onclick="logout()">로그아웃</button>
       </div>
     </section>
     <footer>made by yoondo</footer>
@@ -1707,6 +1822,29 @@
       if (r === 'loss') return '<span class="bad">패</span>';
       if (r === 'draw') return '무';
       return result || '-';
+    }
+
+    function resultShort(result) {
+      const r = normalizeResult(result);
+      if (r === 'win') return '승';
+      if (r === 'loss') return '패';
+      if (r === 'draw') return '무';
+      return '-';
+    }
+
+    function streakSummary(results) {
+      if (!results.length) return '기록 대기';
+      const latest = normalizeResult(results[0]);
+      let streak = 0;
+      for (const result of results) {
+        if (normalizeResult(result) !== latest) break;
+        streak += 1;
+      }
+      const label = latest === 'win' ? '연승' : latest === 'loss' ? '연패' : latest === '연속 무';
+      const wins = results.filter(r => normalizeResult(r) === 'win').length;
+      const draws = results.filter(r => normalizeResult(r) === 'draw').length;
+      const losses = results.filter(r => normalizeResult(r) === 'loss').length;
+      return `${streak}${label} · 최근10판 ${wins}승 ${draws}무 ${losses}패`;
     }
 
     function setLoginState() {
@@ -2032,6 +2170,33 @@
       `).join('');
     }
 
+    async function loadRecentForm() {
+      if (!currentUser) return;
+      const dots = document.getElementById('formDots');
+      const summary = document.getElementById('formSummary');
+      const { data, error } = await supabaseClient
+        .from('game_history')
+        .select('result, created_at')
+        .eq('username', currentUser.username)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        summary.innerText = '흐름 데이터 오류';
+        return;
+      }
+
+      const rows = data || [];
+      const results = rows.map(row => normalizeResult(row.result));
+      summary.innerText = streakSummary(results);
+      const padded = [...results, ...Array(Math.max(0, 10 - results.length)).fill('')];
+      dots.innerHTML = padded.slice(0, 10).map(result => {
+        const normalized = normalizeResult(result);
+        const cls = normalized === 'win' ? 'win' : normalized === 'loss' ? 'loss' : normalized === 'draw' ? 'draw' : '';
+        return `<span class="form-dot ${cls}">${resultShort(result)}</span>`;
+      }).join('');
+    }
+
     async function loadRanking(statsMap, options = {}) {
       const {
         tbodyId = 'rankingList',
@@ -2166,7 +2331,7 @@
         }),
       ]);
       if (currentUser) {
-        await Promise.all([loadLiveStatus(), loadPeriodStats(statsMap), loadRecent()]);
+        await Promise.all([loadLiveStatus(), loadPeriodStats(statsMap), loadRecent(), loadRecentForm()]);
         document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
       }
     }
