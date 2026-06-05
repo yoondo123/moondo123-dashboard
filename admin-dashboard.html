@@ -119,9 +119,28 @@
   </div>
 
   <script>
-    if (!window.supabaseClient) {
-      alert('config.js에서 supabaseClient가 생성되지 않았습니다.');
+    // config.js 호환 처리
+    // config.js에 supabaseClient가 없고 SUPABASE_URL / SUPABASE_KEY만 있어도 여기서 자동 생성합니다.
+    const SB_URL =
+      window.SUPABASE_URL ||
+      (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '');
+
+    const SB_KEY =
+      window.SUPABASE_KEY ||
+      window.SUPABASE_ANON_KEY ||
+      (typeof SUPABASE_KEY !== 'undefined' ? SUPABASE_KEY : '') ||
+      (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '');
+
+    const db =
+      window.supabaseClient ||
+      (window.supabase && SB_URL && SB_KEY ? window.supabase.createClient(SB_URL, SB_KEY) : null);
+
+    if (!db) {
+      alert('Supabase 연결 실패: config.js의 SUPABASE_URL / SUPABASE_KEY를 확인해주세요.');
+      throw new Error('Supabase client not initialized');
     }
+
+    window.supabaseClient = db;
 
     if (localStorage.getItem('admin_login') !== 'true') {
       location.href = './admin.html';
@@ -320,15 +339,8 @@
       errors.push(await deleteWhere('game_history', username, q => q.gte('created_at', todayIso)));
       errors.push(await deleteWhere('daily_sessions', username, q => q.eq('session_date', todayKey)));
 
-      const liveError = await updateWhere('live_status', username, {
-        wins: 0,
-        draws: 0,
-        losses: 0,
-        matches: 0,
-        result: null,
-        updated_at: new Date().toISOString()
-      });
-      errors.push(liveError);
+      // live_status는 테이블마다 컬럼 구성이 달라서 update 대신 해당 유저 행 삭제로 안전하게 초기화합니다.
+      errors.push(await deleteWhere('live_status', username));
 
       const failed = errors.filter(Boolean);
       if (failed.length) {
@@ -353,15 +365,8 @@
       errors.push(await deleteWhere('game_history', username, q => q.gte('created_at', weekIso)));
       errors.push(await deleteWhere('daily_sessions', username, q => q.gte('session_date', weekKey)));
 
-      const liveError = await updateWhere('live_status', username, {
-        wins: 0,
-        draws: 0,
-        losses: 0,
-        matches: 0,
-        result: null,
-        updated_at: new Date().toISOString()
-      });
-      errors.push(liveError);
+      // live_status는 테이블마다 컬럼 구성이 달라서 update 대신 해당 유저 행 삭제로 안전하게 초기화합니다.
+      errors.push(await deleteWhere('live_status', username));
 
       const failed = errors.filter(Boolean);
       if (failed.length) {
@@ -389,16 +394,8 @@
       errors.push(await deleteWhere('game_history', username));
       errors.push(await deleteWhere('daily_sessions', username));
 
-      errors.push(await updateWhere('live_status', username, {
-        wins: 0,
-        draws: 0,
-        losses: 0,
-        matches: 0,
-        result: null,
-        score: 0,
-        rank: 0,
-        updated_at: new Date().toISOString()
-      }));
+      // live_status는 테이블마다 컬럼 구성이 달라서 update 대신 해당 유저 행 삭제로 안전하게 초기화합니다.
+      errors.push(await deleteWhere('live_status', username));
 
       let result = await supabaseClient
         .from('player_stats')
