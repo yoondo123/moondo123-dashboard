@@ -3,1601 +3,456 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MOONDO FC온라인 전적</title>
+  <title>MOONDO FC 온라인 전적</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   <style>
-    * { box-sizing: border-box; }
     :root {
-      --bg: #070a10;
-      --surface: rgba(15, 18, 26, .86);
-      --surface-strong: rgba(20, 24, 34, .96);
-      --surface-soft: rgba(255, 255, 255, .045);
-      --line: rgba(255, 255, 255, .1);
-      --line-strong: rgba(90, 214, 174, .34);
-      --text: #f7f8fb;
-      --muted: #9ca7ba;
-      --green: #5ad6ae;
-      --blue: #70a7ff;
-      --red: #ff6673;
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: #101a2a;
+      --panel-2: #142235;
+      --line: #26384f;
+      --text: #f7fbff;
+      --muted: #9db0c8;
+      --accent: #4ee1b6;
       --gold: #ffd166;
-      --shadow: 0 18px 50px rgba(0, 0, 0, .38);
+      --bad: #ff5c7a;
+      --blue: #6eb6ff;
     }
+
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      min-height: 100vh;
       background:
-        linear-gradient(180deg, rgba(9, 19, 32, .92), rgba(7, 10, 16, .98)),
-        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 72px),
-        repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 72px),
-        #070a10;
+        radial-gradient(circle at 12% 8%, rgba(78, 225, 182, 0.12), transparent 34%),
+        radial-gradient(circle at 82% 0%, rgba(110, 182, 255, 0.12), transparent 30%),
+        var(--bg);
       color: var(--text);
-      font-family: "Pretendard", "SUIT", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
-      letter-spacing: 0;
+      font-family: "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      padding: 28px;
     }
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background: linear-gradient(135deg, rgba(90,214,174,.08), transparent 34%, rgba(255,209,102,.06));
-      border-top: 3px solid rgba(90,214,174,.65);
-    }
-    main {
-      width: min(1180px, calc(100% - 40px));
+
+    .wrap {
+      width: min(1160px, 100%);
       margin: 0 auto;
-      padding: 24px 0 38px;
     }
-    header, .topbar {
+
+    header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 16px;
-    }
-    header {
+      gap: 18px;
       margin-bottom: 22px;
-      padding: 18px 20px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: linear-gradient(135deg, rgba(20, 24, 34, .92), rgba(12, 18, 28, .72));
-      box-shadow: var(--shadow);
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
-    h1, h2, p { margin: 0; }
+
+    h1, h2, h3, p { margin: 0; }
+
     h1 {
-      font-size: clamp(26px, 3.4vw, 38px);
-      line-height: 1.05;
-      color: var(--text);
-      text-shadow: 0 0 22px rgba(90, 214, 174, .22);
+      font-size: clamp(28px, 4vw, 46px);
+      font-weight: 900;
+      letter-spacing: 0;
     }
+
     h2 {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 26px 0 12px;
-      font-size: clamp(19px, 2.3vw, 25px);
-      line-height: 1.2;
+      margin: 28px 0 12px;
+      font-size: 22px;
+      font-weight: 850;
     }
-    h2::before {
-      content: "";
-      width: 4px;
-      height: 20px;
-      border-radius: 3px;
-      background: linear-gradient(180deg, var(--green), var(--gold));
-      box-shadow: 0 0 18px rgba(90, 214, 174, .35);
-    }
-    a {
-      color: #b9d1ff;
-      text-decoration: none;
-      font-weight: 700;
-    }
-    a:hover { color: var(--green); }
-    button, input {
-      height: 42px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      font: inherit;
-    }
-    input {
-      width: 220px;
-      padding: 0 12px;
-      background: rgba(7, 10, 16, .88);
-      color: var(--text);
-      outline: none;
-    }
-    input:focus {
-      border-color: var(--green);
-      box-shadow: 0 0 0 3px rgba(90, 214, 174, .12);
-    }
-    button {
-      padding: 0 16px;
-      background: linear-gradient(135deg, #258263, #315d97);
-      color: white;
-      cursor: pointer;
-      font-weight: 900;
-      box-shadow: 0 12px 28px rgba(29, 127, 102, .24);
-    }
-    button:hover { filter: brightness(1.08); }
-    button.secondary {
-      background: rgba(255, 255, 255, .06);
-      border-color: rgba(255, 255, 255, .16);
-      box-shadow: none;
-    }
-    .muted { color: var(--muted); }
-    .ok { color: var(--green); }
-    .bad { color: var(--red); }
-    .hidden { display: none !important; }
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 18px;
-      box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .04);
-      backdrop-filter: blur(14px);
-    }
-    .login-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 16px;
-    }
-    .form-strip {
-      display: grid;
-      gap: 10px;
-      margin: 14px 0 8px;
-      padding: 14px;
-      border: 1px solid rgba(255, 255, 255, .1);
-      border-radius: 16px;
-      background:
-        linear-gradient(135deg, rgba(112, 242, 210, .08), transparent 40%),
-        rgba(14, 18, 28, .82);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
-    }
-    .form-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    .form-title {
-      color: #f8fbff;
+
+    .sub {
+      color: var(--muted);
+      margin-top: 6px;
       font-size: 14px;
-      font-weight: 950;
     }
-    .form-summary {
-      color: var(--gold);
-      font-size: 12px;
-      font-weight: 900;
-      text-align: right;
+
+    .admin {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 800;
+      white-space: nowrap;
     }
-    .form-dots {
+
+    .search {
       display: grid;
-      grid-template-columns: repeat(10, minmax(0, 1fr));
-      gap: 7px;
+      grid-template-columns: minmax(180px, 320px) auto;
+      gap: 8px;
+      margin: 18px 0 8px;
     }
-    .form-dot {
-      display: grid;
-      place-items: center;
-      min-height: 32px;
-      border-radius: 10px;
-      color: #ffffff;
-      font-size: 12px;
-      font-weight: 950;
-      border: 1px solid rgba(255, 255, 255, .12);
-      background: rgba(255, 255, 255, .08);
-    }
-    .form-dot.win {
-      background: linear-gradient(180deg, rgba(112,167,255,.95), rgba(49,93,151,.92));
-      box-shadow: 0 0 18px rgba(112,167,255,.22);
-    }
-    .form-dot.loss {
-      background: linear-gradient(180deg, rgba(255,102,115,.95), rgba(142,42,55,.92));
-      box-shadow: 0 0 18px rgba(255,102,115,.2);
-    }
-    .form-dot.draw {
-      background: linear-gradient(180deg, rgba(166,176,194,.9), rgba(84,94,112,.9));
-    }
-    .footer-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 28px;
-    }
-    .footer-actions a,
-    .footer-actions button {
-      display: inline-grid;
-      place-items: center;
-      height: 42px;
-      min-width: 150px;
-      padding: 0 16px;
-      border: 1px solid rgba(255, 255, 255, .16);
+
+    input, button {
+      border: 1px solid var(--line);
       border-radius: 8px;
-      background: rgba(255, 255, 255, .06);
-      color: #f5f8ff;
-      font-size: 13px;
-      font-weight: 900;
-      box-shadow: none;
+      background: rgba(16, 26, 42, 0.92);
+      color: var(--text);
+      padding: 12px 14px;
+      font: inherit;
+      font-weight: 750;
     }
-    .live-card {
-      display: grid;
-      grid-template-columns: minmax(170px, 1fr) 84px 84px minmax(170px, 1fr) 132px;
-      align-items: center;
-      min-height: 72px;
-      overflow: hidden;
-      border: 1px solid rgba(112, 167, 255, .22);
-      border-radius: 8px;
-      background:
-        linear-gradient(90deg, rgba(255,255,255,.035), transparent 35%, rgba(255,255,255,.035)),
-        var(--surface-strong);
+
+    button {
+      cursor: pointer;
+      background: linear-gradient(135deg, #1f8f75, #2676aa);
+      border: 0;
     }
-    .live-name {
-      padding: 0 22px;
-      font-size: clamp(18px, 2.2vw, 24px);
-      font-weight: 900;
-      word-break: keep-all;
-    }
-    .live-score {
-      height: 72px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(180deg, #f8fbff, #dce5f2);
-      color: #07111f;
-      font-size: 34px;
-      font-weight: 950;
-      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .08);
-    }
-    .live-time {
-      padding: 0 16px;
-      color: var(--gold);
-      text-align: right;
-      font-size: 23px;
-      font-weight: 950;
-      text-shadow: 0 0 18px rgba(255, 209, 102, .32);
-    }
-    .status-dot {
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      margin-right: 8px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 14px rgba(90, 214, 174, .9);
-    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
     }
-    .stat {
-      position: relative;
-      min-height: 102px;
-      padding: 16px 16px 15px;
-      overflow: hidden;
+
+    .card {
+      background: linear-gradient(180deg, rgba(20, 34, 53, 0.98), rgba(13, 22, 35, 0.98));
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: linear-gradient(180deg, rgba(24, 30, 42, .96), rgba(13, 17, 25, .94));
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+      padding: 16px;
+      min-height: 112px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
     }
-    .stat::before {
-      content: "";
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 3px;
-      background: linear-gradient(180deg, var(--green), transparent);
-      opacity: .78;
-    }
-    .stat .muted {
-      display: block;
-      color: #aeb8ca;
-      font-size: 13px;
+
+    .label {
+      color: var(--muted);
+      font-size: 12px;
       font-weight: 800;
+      margin-bottom: 8px;
     }
-    .stat strong {
-      display: block;
-      margin-top: 9px;
-      font-size: clamp(22px, 2.5vw, 29px);
-      line-height: 1.12;
-      overflow-wrap: anywhere;
+
+    .value {
+      font-size: 28px;
+      line-height: 1.15;
+      font-weight: 900;
     }
-    .stat small {
-      display: block;
-      margin-top: 8px;
+
+    .meta {
       color: var(--gold);
       font-size: 12px;
-      font-weight: 800;
-      line-height: 1.35;
-      white-space: normal;
+      font-weight: 850;
+      margin-top: 8px;
     }
-    .table-wrap {
-      width: 100%;
-      overflow-x: auto;
-      border: 1px solid rgba(112, 167, 255, .2);
+
+    .panel {
+      background: rgba(16, 26, 42, 0.72);
+      border: 1px solid var(--line);
       border-radius: 8px;
-      background: rgba(10, 14, 22, .82);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+      overflow: hidden;
     }
+
     table {
       width: 100%;
-      min-width: 760px;
       border-collapse: collapse;
-      background: transparent;
+      table-layout: fixed;
     }
+
     th, td {
-      border-bottom: 1px solid rgba(255, 255, 255, .08);
-      border-right: 1px solid rgba(255, 255, 255, .07);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
       padding: 12px 10px;
       text-align: center;
-      white-space: nowrap;
-    }
-    th:last-child, td:last-child { border-right: 0; }
-    tr:last-child td { border-bottom: 0; }
-    th {
-      background: rgba(25, 34, 48, .96);
-      color: #d8fff2;
-      font-size: 13px;
-      font-weight: 900;
-    }
-    tbody tr:nth-child(even) { background: rgba(255, 255, 255, .025); }
-    tbody tr:hover { background: rgba(90, 214, 174, .07); }
-    footer {
-      margin-top: 34px;
-      text-align: center;
-      color: #7d899b;
-      font-size: 12px;
-      font-style: italic;
-    }
-    .mobile-note { display: none; }
-    @media (max-width: 760px) {
-      main { width: min(100% - 24px, 1180px); padding: 14px 0 42px; }
-      header, .topbar { flex-direction: column; }
-      header { padding: 16px; }
-      .login-row input, .login-row button { width: 100%; }
-      .footer-actions { display: grid; grid-template-columns: 1fr 1fr; }
-      .footer-actions a, .footer-actions button { width: 100%; min-width: 0; }
-      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .live-card { grid-template-columns: 1fr 58px 58px 1fr; }
-      .live-time {
-        grid-column: 1 / -1;
-        height: 44px;
-        display: grid;
-        place-items: center end;
-        border-top: 1px solid var(--line);
-      }
-      .live-name { padding: 0 12px; font-size: 16px; }
-      .live-score { height: 58px; font-size: 27px; }
-      .mobile-note { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }
-      .panel { padding: 14px; }
-      h2 { margin-top: 24px; }
-    }
-    @media (max-width: 430px) {
-      .grid { grid-template-columns: 1fr; }
-      .stat { min-height: 88px; }
-    }
-
-    /* Visual refresh */
-    :root {
-      --bg: #090b12;
-      --ink: #f7f8ff;
-      --soft: #aeb7c9;
-      --cyan: #70f2d2;
-      --lime: #d9ff74;
-      --amber: #ffd36e;
-      --rose: #ff5f75;
-      --violet: #9b8cff;
-      --panel-deep: rgba(13, 16, 25, .92);
-      --panel-card: rgba(22, 27, 39, .9);
-      --stroke: rgba(255, 255, 255, .1);
-      --stroke-hot: rgba(112, 242, 210, .48);
-      --card-shadow: 0 20px 60px rgba(0, 0, 0, .34);
-    }
-    body {
-      background:
-        linear-gradient(135deg, rgba(112, 242, 210, .1) 0 1px, transparent 1px 100%),
-        linear-gradient(180deg, #101726 0%, #090b12 48%, #07080d 100%);
-      background-size: 42px 42px, auto;
-      font-family: "Pretendard", "SUIT", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
-      color: var(--ink);
-    }
-    body::before {
-      border-top: 0;
-      background:
-        linear-gradient(90deg, rgba(112, 242, 210, .18), rgba(217, 255, 116, .12), rgba(155, 140, 255, .14)),
-        linear-gradient(180deg, rgba(255,255,255,.04), transparent 140px);
-      height: 6px;
-      bottom: auto;
-    }
-    main {
-      width: min(1120px, calc(100% - 48px));
-      padding: 28px 0 42px;
-    }
-    header {
-      position: relative;
-      align-items: center;
-      min-height: 120px;
-      padding: 26px 30px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, .12);
-      border-radius: 18px;
-      background:
-        linear-gradient(135deg, rgba(112, 242, 210, .18), transparent 28%),
-        linear-gradient(110deg, rgba(255, 211, 110, .12), transparent 52%),
-        rgba(14, 18, 28, .9);
-      box-shadow: var(--card-shadow), inset 0 1px 0 rgba(255, 255, 255, .08);
-    }
-    header::after {
-      content: "M";
-      position: absolute;
-      right: 36px;
-      bottom: -38px;
-      color: rgba(255,255,255,.035);
-      font-size: 150px;
-      font-weight: 950;
-      line-height: 1;
-      pointer-events: none;
-    }
-    header h1 {
-      font-size: clamp(34px, 5vw, 58px);
-      font-weight: 950;
-      letter-spacing: 0;
-      color: #ffffff;
-    }
-    header h1::first-letter {
-      color: var(--cyan);
-    }
-    header p {
-      margin-top: 8px;
-      color: #c8d2e6;
-      font-size: 15px;
-      font-weight: 700;
-    }
-    header a,
-    button.secondary {
-      position: relative;
-      z-index: 1;
-      display: inline-grid;
-      place-items: center;
-      min-height: 38px;
-      padding: 0 16px;
-      border: 1px solid rgba(255, 255, 255, .16);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, .08);
-      color: #f5f8ff;
-      font-size: 13px;
-      font-weight: 900;
-    }
-    #dashboard > .topbar {
-      align-items: center;
-      margin: 24px 0 18px;
-      padding: 18px 20px;
-      border: 1px solid rgba(112, 242, 210, .22);
-      border-radius: 16px;
-      background: rgba(12, 15, 23, .78);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
-    }
-    #dashboard > .topbar h2 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 950;
-    }
-    #dashboard > .topbar h2::before {
-      width: 8px;
-      height: 30px;
-      border-radius: 99px;
-      background: linear-gradient(180deg, var(--cyan), var(--lime));
-    }
-    #lastUpdated {
-      margin-top: 5px;
-      color: #8e9bb0;
-      font-size: 13px;
-      font-weight: 700;
-    }
-    h2 {
-      margin: 30px 0 14px;
-      color: #ffffff;
-      font-size: clamp(22px, 2.4vw, 30px);
-      font-weight: 950;
-      text-shadow: 0 8px 28px rgba(0,0,0,.28);
-    }
-    h2::before {
-      width: 8px;
-      height: 28px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, var(--lime), var(--cyan));
-      box-shadow: 0 0 22px rgba(112, 242, 210, .4);
-    }
-    .panel {
-      border-radius: 18px;
-      padding: 22px;
-      border: 1px solid rgba(112, 242, 210, .24);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.06), transparent),
-        rgba(12, 15, 24, .88);
-      box-shadow: var(--card-shadow);
-    }
-    #liveState {
-      display: inline-flex;
-      align-items: center;
-      min-height: 30px;
-      padding: 0 11px;
-      border-radius: 999px;
-      background: rgba(112, 242, 210, .1);
-      color: #dffdf5;
-      font-size: 13px;
-      font-weight: 900;
-      margin-bottom: 14px !important;
-    }
-    .live-card {
-      grid-template-columns: minmax(170px, 1fr) 92px 92px minmax(170px, 1fr) 140px;
-      min-height: 82px;
-      border-radius: 15px;
-      border: 1px solid rgba(255,255,255,.12);
-      background:
-        linear-gradient(90deg, rgba(112, 242, 210, .09), transparent 24%, rgba(155, 140, 255, .08)),
-        #151a26;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
-    }
-    .live-name {
-      font-size: clamp(20px, 2.4vw, 28px);
-      font-weight: 950;
-      color: #f8fbff;
-    }
-    .live-score {
-      height: 82px;
-      background: linear-gradient(180deg, #ffffff, #dce8f8);
-      color: #0a101c;
-      font-size: 42px;
-      font-weight: 950;
-    }
-    .live-score + .live-score {
-      background: linear-gradient(180deg, #f7ffe8, #dff1ff);
-    }
-    .live-time {
-      color: var(--amber);
-      font-size: 28px;
-      font-weight: 950;
-      text-shadow: 0 0 22px rgba(255, 211, 110, .45);
-    }
-    .grid {
-      gap: 14px;
-    }
-    .today-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(150px, 1fr));
-      gap: 12px;
-    }
-    .week-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(120px, 1fr));
-      gap: 12px;
-    }
-    .stat {
-      min-height: 118px;
-      padding: 18px 18px 16px;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.11);
-      background:
-        linear-gradient(135deg, rgba(112,242,210,.13), transparent 36%),
-        linear-gradient(180deg, rgba(255,255,255,.055), transparent),
-        var(--panel-card);
-      box-shadow: 0 14px 38px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.06);
-    }
-    .stat::before {
-      width: 5px;
-      background: linear-gradient(180deg, var(--cyan), var(--lime), transparent);
-    }
-    .stat .muted {
-      color: #b8c3d9;
-      font-size: 12px;
-      font-weight: 950;
-      text-transform: uppercase;
-    }
-    .stat strong {
-      margin-top: 12px;
-      color: #ffffff;
-      font-size: clamp(27px, 3vw, 38px);
-      font-weight: 950;
-      letter-spacing: 0;
-    }
-    .stat small {
-      margin-top: 9px;
-      color: var(--amber);
-      font-size: 13px;
-      font-weight: 900;
-    }
-    .stat.compact {
-      min-height: 98px;
-      padding: 15px 16px 14px;
-    }
-    .stat.compact strong {
-      margin-top: 9px;
-      font-size: clamp(24px, 2.2vw, 32px);
-      line-height: 1.08;
+      font-size: 14px;
       word-break: keep-all;
     }
-    .stat.compact small {
-      min-height: 16px;
-    }
-    #lifetimeRecord {
-      color: #ffffff;
-    }
-    #todayMatches,
-    #weekMatches,
-    #todayWins,
-    #todayDraws,
-    #todayLosses,
-    #todayFc,
-    #weekWins,
-    #weekDraws,
-    #weekLosses,
-    #weekFc,
-    #lifetimeMatches,
-    #lifetimeFc {
-      color: #e9fff9;
-    }
-    .table-wrap {
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.12);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.045), transparent),
-        rgba(11, 14, 22, .9);
-      box-shadow: 0 18px 46px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.05);
-    }
-    table {
-      min-width: 820px;
-      font-size: 14px;
-      font-weight: 750;
-    }
+
     th {
-      padding: 14px 12px;
-      background: linear-gradient(180deg, rgba(112,242,210,.18), rgba(28,34,48,.96));
-      color: #ecfff9;
-      font-size: 13px;
-      font-weight: 950;
-    }
-    td {
-      padding: 14px 12px;
-      color: #f7faff;
-      border-color: rgba(255,255,255,.075);
-    }
-    tbody tr:nth-child(even) {
-      background: rgba(255,255,255,.035);
-    }
-    tbody tr:hover {
-      background: rgba(112,242,210,.1);
-    }
-    tbody td:first-child {
-      color: #d8fff6;
-      font-weight: 950;
-    }
-    .ok {
-      color: var(--cyan);
-      font-weight: 950;
-    }
-    .bad {
-      color: var(--rose);
-      font-weight: 950;
-    }
-    footer {
-      margin-top: 42px;
-      color: #8c96aa;
+      background: rgba(35, 51, 72, 0.92);
+      color: #e8ffff;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 900;
     }
-    @media (max-width: 760px) {
-      main { width: min(100% - 24px, 1120px); }
-      header { min-height: 108px; padding: 22px; }
-      header h1 { font-size: 32px; }
-      #dashboard > .topbar { align-items: stretch; }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .ok { color: var(--accent); }
+    .bad { color: var(--bad); }
+    .blue { color: var(--blue); }
+    .muted { color: var(--muted); }
+
+    .flow {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      min-height: 44px;
+    }
+
+    .dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: inline-grid;
+      place-items: center;
+      font-weight: 900;
+      background: #1b2b40;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    .dot.win { background: rgba(78, 225, 182, 0.18); color: var(--accent); }
+    .dot.loss { background: rgba(255, 92, 122, 0.16); color: var(--bad); }
+    .dot.draw { background: rgba(255, 209, 102, 0.15); color: var(--gold); }
+
+    footer {
+      color: var(--muted);
+      text-align: center;
+      padding: 28px 0 6px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 820px) {
+      body { padding: 18px; }
+      header { flex-direction: column; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .search { grid-template-columns: 1fr; }
+      table { table-layout: auto; }
+      th, td { font-size: 12px; padding: 10px 7px; }
+    }
+
+    @media (max-width: 520px) {
       .grid { grid-template-columns: 1fr; }
-      .today-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .live-card { grid-template-columns: 1fr 64px 64px 1fr; }
-      .live-score { height: 64px; font-size: 31px; }
-      .live-time { font-size: 21px; }
-    }
-    @media (max-width: 430px) {
-      .today-grid { grid-template-columns: 1fr; }
-      .week-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 640px) {
-      body {
-        background-size: 28px 28px, auto;
-      }
-      main {
-        width: 100%;
-        padding: 10px 10px 28px;
-      }
-      header {
-        min-height: auto;
-        margin-bottom: 14px;
-        padding: 18px 16px;
-        border-radius: 12px;
-      }
-      header::after {
-        display: none;
-      }
-      header h1 {
-        font-size: 28px;
-        line-height: 1.08;
-      }
-      header p {
-        font-size: 13px;
-        line-height: 1.45;
-      }
-      header a,
-      button.secondary {
-        width: 100%;
-        min-height: 40px;
-      }
-      .panel {
-        padding: 12px;
-        border-radius: 12px;
-      }
-      #dashboard > .topbar {
-        margin: 14px 0;
-        padding: 14px;
-        border-radius: 12px;
-      }
-      #dashboard > .topbar h2,
-      h2 {
-        font-size: 21px;
-      }
-      h2 {
-        margin: 22px 0 10px;
-      }
-      h2::before {
-        width: 6px;
-        height: 24px;
-      }
-      .login-row {
-        gap: 8px;
-      }
-      .live-card {
-        grid-template-columns: 1fr 54px 54px 1fr;
-        min-height: 58px;
-        border-radius: 10px;
-      }
-      .live-name {
-        min-width: 0;
-        padding: 0 9px;
-        font-size: 14px;
-        line-height: 1.15;
-        overflow-wrap: anywhere;
-      }
-      .live-score {
-        height: 58px;
-        font-size: 26px;
-      }
-      .live-time {
-        height: 36px;
-        padding: 0 10px;
-        font-size: 16px;
-      }
-      .today-grid,
-      .week-grid,
-      .grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-      }
-      .stat,
-      .stat.compact {
-        min-height: 88px;
-        padding: 13px 12px 12px;
-        border-radius: 11px;
-      }
-      .stat::before {
-        width: 4px;
-      }
-      .stat .muted {
-        font-size: 11px;
-      }
-      .stat strong,
-      .stat.compact strong {
-        margin-top: 8px;
-        font-size: 22px;
-        line-height: 1.08;
-      }
-      .stat small,
-      .stat.compact small {
-        margin-top: 7px;
-        font-size: 11px;
-        line-height: 1.25;
-      }
-      .table-wrap {
-        overflow: visible;
-        border: 0;
-        background: transparent;
-        box-shadow: none;
-      }
-      table,
-      thead,
-      tbody,
-      tr,
-      th,
-      td {
-        display: block;
-        width: 100%;
-        min-width: 0;
-      }
-      table {
-        font-size: 13px;
-      }
-      thead {
-        display: none;
-      }
-      tbody tr {
-        margin-bottom: 8px;
-        overflow: hidden;
-        border: 1px solid rgba(255,255,255,.11);
-        border-radius: 11px;
-        background:
-          linear-gradient(135deg, rgba(112,242,210,.12), transparent 32%),
-          rgba(17, 21, 31, .94);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
-      }
-      tbody tr:nth-child(even) {
-        background:
-          linear-gradient(135deg, rgba(112,242,210,.12), transparent 32%),
-          rgba(17, 21, 31, .94);
-      }
-      tbody td {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        min-height: 36px;
-        padding: 9px 12px;
-        border-right: 0;
-        text-align: right;
-        white-space: normal;
-        word-break: keep-all;
-        overflow-wrap: anywhere;
-      }
-      tbody td::before {
-        flex: 0 0 auto;
-        color: #aebbd0;
-        font-size: 11px;
-        font-weight: 950;
-        text-align: left;
-      }
-      #rankingList td:nth-child(1)::before,
-      #weeklyRankingList td:nth-child(1)::before { content: "순위"; }
-      #rankingList td:nth-child(2)::before,
-      #weeklyRankingList td:nth-child(2)::before { content: "닉네임"; }
-      #rankingList td:nth-child(3)::before,
-      #weeklyRankingList td:nth-child(3)::before { content: "티어"; }
-      #rankingList td:nth-child(4)::before,
-      #weeklyRankingList td:nth-child(4)::before { content: "승"; }
-      #rankingList td:nth-child(5)::before,
-      #weeklyRankingList td:nth-child(5)::before { content: "무"; }
-      #rankingList td:nth-child(6)::before,
-      #weeklyRankingList td:nth-child(6)::before { content: "패"; }
-      #rankingList td:nth-child(7)::before,
-      #weeklyRankingList td:nth-child(7)::before { content: "총 경기"; }
-      #rankingList td:nth-child(8)::before,
-      #weeklyRankingList td:nth-child(8)::before { content: "승률"; }
-      #rankingList td:nth-child(9)::before,
-      #weeklyRankingList td:nth-child(9)::before { content: "점수"; }
-      #rankingList td:nth-child(10)::before,
-      #weeklyRankingList td:nth-child(10)::before { content: "FC"; }
-      #recentList td:nth-child(1)::before { content: "날짜"; }
-      #recentList td:nth-child(2)::before { content: "전적"; }
-      #recentList td:nth-child(3)::before { content: "경기수"; }
-      #recentList td:nth-child(4)::before { content: "승률"; }
-      #recentList td:nth-child(5)::before { content: "FC"; }
-      #rankingList td[colspan],
-      #weeklyRankingList td[colspan],
-      #recentList td[colspan] {
-        justify-content: center;
-        text-align: center;
-      }
-      #rankingList td[colspan]::before,
-      #weeklyRankingList td[colspan]::before,
-      #recentList td[colspan]::before {
-        content: "";
-      }
-    }
-    @media (max-width: 360px) {
-      main {
-        padding-left: 8px;
-        padding-right: 8px;
-      }
-      .today-grid,
-      .week-grid,
-      .grid {
-        grid-template-columns: 1fr;
-      }
-      .live-card {
-        grid-template-columns: 1fr 46px 46px 1fr;
-      }
-      .live-score {
-        font-size: 23px;
-      }
-      .live-name {
-        font-size: 13px;
-      }
-    }
-    @media (max-width: 640px) {
-      body {
-        background:
-          radial-gradient(circle at 20% 0%, rgba(112,242,210,.16), transparent 34%),
-          linear-gradient(180deg, #101827 0%, #090b12 48%, #06080d 100%);
-      }
-      main {
-        padding: 8px 10px 26px;
-      }
-      header,
-      #dashboard > .topbar,
-      .panel {
-        border-radius: 14px;
-      }
-      header {
-        padding: 16px;
-        background:
-          linear-gradient(135deg, rgba(112,242,210,.2), transparent 42%),
-          linear-gradient(180deg, rgba(255,255,255,.07), transparent),
-          #111827;
-      }
-      header h1 {
-        font-size: 25px;
-      }
-      header p {
-        display: none;
-      }
-      #dashboard > .topbar {
-        padding: 12px;
-        background: rgba(13, 18, 29, .86);
-      }
-      #dashboard > .topbar h2 {
-        font-size: 19px;
-      }
-      #lastUpdated {
-        font-size: 11px;
-      }
-      .form-strip {
-        margin: 10px 0 4px;
-        padding: 11px;
-        border-radius: 13px;
-      }
-      .form-title {
-        font-size: 13px;
-      }
-      .form-summary {
-        font-size: 11px;
-      }
-      .form-dots {
-        gap: 5px;
-      }
-      .form-dot {
-        min-height: 27px;
-        border-radius: 8px;
-        font-size: 11px;
-      }
-      .footer-actions {
-        margin-top: 22px;
-      }
-      h2 {
-        margin: 20px 0 9px;
-        font-size: 18px;
-      }
-      h2::before {
-        width: 5px;
-        height: 20px;
-      }
-      .mobile-note {
-        display: none;
-      }
-
-      .live-card {
-        grid-template-columns: 1fr 46px 46px 1fr;
-        min-height: 54px;
-        background:
-          linear-gradient(90deg, rgba(112,242,210,.12), transparent 28%, rgba(255,211,110,.08)),
-          #151b28;
-      }
-      .live-name {
-        padding: 0 8px;
-        font-size: 13px;
-      }
-      .live-score {
-        height: 54px;
-        font-size: 24px;
-      }
-      .live-time {
-        height: 32px;
-        font-size: 15px;
-      }
-
-      .today-grid,
-      .week-grid,
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
-        gap: 7px;
-      }
-      .today-grid .stat,
-      .week-grid .stat,
-      .grid .stat {
-        min-height: 62px;
-        padding: 10px 10px 9px;
-        border-radius: 12px;
-        background:
-          linear-gradient(180deg, rgba(255,255,255,.065), transparent),
-          rgba(19, 24, 36, .92);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
-      }
-      .today-grid .stat::before,
-      .week-grid .stat::before,
-      .grid .stat::before {
-        display: none;
-      }
-      .today-grid .stat .muted,
-      .week-grid .stat .muted,
-      .grid .stat .muted {
-        font-size: 10px;
-        color: #9eabc1;
-      }
-      .today-grid .stat strong,
-      .week-grid .stat strong,
-      .grid .stat strong,
-      .today-grid .stat.compact strong,
-      .week-grid .stat.compact strong {
-        margin-top: 5px;
-        font-size: 20px;
-        line-height: 1.05;
-      }
-      .today-grid .stat small,
-      .week-grid .stat small,
-      .grid .stat small {
-        margin-top: 5px;
-        font-size: 10px;
-      }
-      .today-grid .stat:first-child,
-      .week-grid .stat:first-child {
-        grid-column: 1 / -1;
-        min-height: 94px;
-        padding: 14px;
-        background:
-          linear-gradient(135deg, rgba(112,242,210,.26), rgba(217,255,116,.08)),
-          linear-gradient(180deg, rgba(255,255,255,.08), transparent),
-          #151d2b;
-      }
-      .today-grid .stat:first-child strong,
-      .week-grid .stat:first-child strong {
-        font-size: 42px;
-      }
-      .today-grid .stat:first-child .muted,
-      .week-grid .stat:first-child .muted {
-        font-size: 12px;
-        color: #dffdf5;
-      }
-      .today-grid .stat:first-child small,
-      .week-grid .stat:first-child small {
-        color: #fff1ad;
-        font-size: 12px;
-      }
-      .today-grid .stat:nth-child(2),
-      .today-grid .stat:nth-child(3),
-      .today-grid .stat:nth-child(4),
-      .week-grid .stat:nth-child(2),
-      .week-grid .stat:nth-child(3),
-      .week-grid .stat:nth-child(4) {
-        grid-column: span 2;
-        text-align: center;
-      }
-      .today-grid .stat:nth-child(5),
-      .today-grid .stat:nth-child(6),
-      .today-grid .stat:nth-child(7),
-      .today-grid .stat:nth-child(8),
-      .week-grid .stat:nth-child(5) {
-        grid-column: span 3;
-        min-height: 54px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-      }
-      .today-grid .stat:nth-child(6) strong,
-      #lifetimeTier {
-        font-size: 18px;
-        word-break: keep-all;
-      }
-      .grid .stat {
-        grid-column: span 3;
-      }
-      .grid .stat:first-child {
-        grid-column: 1 / -1;
-        min-height: 82px;
-      }
-      #lifetimeRecord {
-        font-size: 28px;
-      }
-
-      .table-wrap {
-        margin-top: 0;
-      }
-      #rankingList tr,
-      #weeklyRankingList tr {
-        display: grid;
-        grid-template-columns: 42px 1fr auto;
-        grid-template-areas:
-          "rank name rate"
-          "rank tier record";
-        gap: 3px 9px;
-        padding: 11px 12px;
-        border-radius: 14px;
-        background:
-          linear-gradient(135deg, rgba(112,242,210,.14), transparent 42%),
-          rgba(18, 23, 35, .95);
-      }
-      #rankingList td,
-      #weeklyRankingList td {
-        min-height: auto;
-        padding: 0;
-        border: 0;
-        display: block;
-        text-align: left;
-      }
-      #rankingList td::before,
-      #weeklyRankingList td::before {
-        content: "" !important;
-      }
-      #rankingList td:nth-child(1),
-      #weeklyRankingList td:nth-child(1) {
-        grid-area: rank;
-        align-self: stretch;
-        display: grid;
-        place-items: center;
-        border-radius: 10px;
-        background: rgba(112,242,210,.13);
-        color: #dffff6;
-        font-size: 16px;
-      }
-      #rankingList td:nth-child(2),
-      #weeklyRankingList td:nth-child(2) {
-        grid-area: name;
-        color: #ffffff;
-        font-size: 15px;
-        font-weight: 950;
-      }
-      #rankingList td:nth-child(3),
-      #weeklyRankingList td:nth-child(3) {
-        grid-area: tier;
-        color: #aab7ca;
-        font-size: 11px;
-      }
-      #rankingList td:nth-child(8),
-      #weeklyRankingList td:nth-child(8) {
-        grid-area: rate;
-        justify-self: end;
-        color: #ffd36e;
-        font-size: 15px;
-        font-weight: 950;
-      }
-      #rankingList td:nth-child(4),
-      #weeklyRankingList td:nth-child(4) {
-        grid-area: record;
-        justify-self: end;
-      }
-      #rankingList td:nth-child(4)::after,
-      #weeklyRankingList td:nth-child(4)::after {
-        content: "승";
-        margin-left: 2px;
-        color: #70f2d2;
-      }
-      #rankingList td:nth-child(5),
-      #rankingList td:nth-child(6),
-      #rankingList td:nth-child(7),
-      #rankingList td:nth-child(9),
-      #rankingList td:nth-child(10),
-      #weeklyRankingList td:nth-child(5),
-      #weeklyRankingList td:nth-child(6),
-      #weeklyRankingList td:nth-child(7),
-      #weeklyRankingList td:nth-child(9),
-      #weeklyRankingList td:nth-child(10) {
-        display: none;
-      }
-
-      #recentList tr {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        grid-template-areas:
-          "date rate"
-          "record matches";
-        gap: 4px 12px;
-        padding: 11px 12px;
-        border-radius: 14px;
-      }
-      #recentList td {
-        min-height: auto;
-        padding: 0;
-        border: 0;
-        display: block;
-      }
-      #recentList td::before {
-        content: "" !important;
-      }
-      #recentList td:nth-child(1) {
-        grid-area: date;
-        color: #dffff6;
-        font-size: 13px;
-        font-weight: 950;
-      }
-      #recentList td:nth-child(2) {
-        grid-area: record;
-        color: #ffffff;
-        font-size: 15px;
-        font-weight: 950;
-      }
-      #recentList td:nth-child(3) {
-        grid-area: matches;
-        color: #aab7ca;
-        font-size: 12px;
-      }
-      #recentList td:nth-child(3)::after {
-        content: " 경기";
-      }
-      #recentList td:nth-child(4) {
-        grid-area: rate;
-        color: #ffd36e;
-        font-size: 13px;
-        font-weight: 950;
-      }
-      #recentList td:nth-child(5) {
-        display: none;
-      }
-      #rankingList td[colspan],
-      #weeklyRankingList td[colspan],
-      #recentList td[colspan] {
-        display: block;
-        grid-column: 1 / -1;
-        text-align: center;
-        padding: 12px;
-      }
     }
   </style>
 </head>
 <body>
-  <main>
+  <div class="wrap">
     <header>
       <div>
-        <h1>MOONDO FC온라인 전적</h1>
-        <p class="muted">실시간 경기와 최근 기록을 10초마다 갱신합니다.</p>
+        <h1>MOONDO FC 온라인 전적</h1>
+        <p class="sub">저장된 DB 기록 기준으로 표시합니다. 프로그램 재시작 직후 0으로 들어오는 값은 화면에서 덮어쓰지 않습니다.</p>
       </div>
+      <a class="admin" href="./admin.html">관리자 페이지</a>
     </header>
 
-    <section id="loginPanel" class="panel">
-      <div class="topbar">
-        <div>
-          <h2 style="margin:0;">로그인</h2>
-          <p class="muted">회원가입 신청 후 관리자 승인 시 사용할 수 있습니다.</p>
-        </div>
+    <section>
+      <div class="search">
+        <input id="searchNick" placeholder="닉네임 입력" autocomplete="off">
+        <button onclick="searchPlayer()">검색</button>
       </div>
-      <div class="login-row">
-        <input id="loginId" placeholder="아이디">
-        <input id="loginPw" type="password" placeholder="비밀번호">
-        <input id="signupNick" placeholder="닉네임 / 표시 이름">
-        <button onclick="login()">로그인</button>
-        <button class="secondary" onclick="signup()">회원가입 신청</button>
-      </div>
-      <p id="loginMessage" class="bad" style="margin-top:12px;"></p>
+      <p id="statusText" class="sub">닉네임을 검색하면 오늘/주간/누적 전적을 확인할 수 있습니다.</p>
     </section>
 
-    <section id="dashboard" class="hidden">
-      <div class="topbar">
-        <div>
-          <h2 style="margin:0;"><span id="helloName"></span> 님 전적</h2>
-          <p id="lastUpdated" class="muted"></p>
-        </div>
+    <h2>오늘 전적</h2>
+    <section class="grid">
+      <div class="card">
+        <div class="label">오늘</div>
+        <div id="todayRecord" class="value">0승 0무 0패</div>
+        <div id="todayMeta" class="meta">FC 0</div>
       </div>
-
-      <h2>실시간 경기</h2>
-      <div class="panel">
-        <p id="liveState" class="muted" style="margin-bottom:12px;"></p>
-        <div class="live-card">
-          <div class="live-name" id="liveUsername">-</div>
-          <div class="live-score" id="liveScore">-</div>
-          <div class="live-score" id="liveOppScore">-</div>
-          <div class="live-name" id="liveOpponent">상대 OCR 대기</div>
-          <div class="live-time" id="liveTime">시간 OCR 대기</div>
-        </div>
+      <div class="card">
+        <div class="label">오늘 경기</div>
+        <div id="todayMatches" class="value">0</div>
+        <div id="todayRate" class="meta">승률 0.0%</div>
       </div>
-
-      <h2>오늘 전적</h2>
-      <div class="today-grid">
-        <div class="stat compact">
-          <span class="muted">오늘 경기 총 수</span>
-          <strong id="todayMatches">0</strong>
-          <small id="todayWinRate">승률 0.0%</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">승</span>
-          <strong id="todayWins">0</strong>
-          <small>오늘 승리</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">무</span>
-          <strong id="todayDraws">0</strong>
-          <small>오늘 무승부</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">패</span>
-          <strong id="todayLosses">0</strong>
-          <small>오늘 패배</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">FC 채굴량</span>
-          <strong id="todayFc">0</strong>
-          <small>승리 1회당 15 FC</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">현재 티어</span>
-          <strong id="todayTier">-</strong>
-          <small>실시간 기준</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">현재 점수</span>
-          <strong id="todayScore">0</strong>
-          <small>실시간 기준</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">현재 등수</span>
-          <strong id="todayRank">-</strong>
-          <small>실시간 기준</small>
-        </div>
+      <div class="card">
+        <div class="label">현재 티어</div>
+        <div id="currentTier" class="value">-</div>
+        <div id="currentScore" class="meta">점수 0</div>
       </div>
-
-      <div class="form-strip">
-        <div class="form-head">
-          <span class="form-title">최근 10판 흐름</span>
-          <span class="form-summary" id="formSummary">기록 대기</span>
-        </div>
-        <div class="form-dots" id="formDots">
-          <span class="form-dot">-</span>
-          <span class="form-dot">-</span>
-          <span class="form-dot">-</span>
-          <span class="form-dot">-</span>
-          <span class="form-dot">-</span>
-          <span class="form-dot">-</span>
-          <span class="form-dot">-</span>
-          <span class="form-dot">-</span>
-          <span class="form-dot">-</span>
-          <span class="form-dot">-</span>
-        </div>
-      </div>
-
-      <h2>오늘 승률 랭킹 TOP 10</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>순위</th>
-              <th>닉네임</th>
-              <th>티어</th>
-              <th>승</th>
-              <th>무</th>
-              <th>패</th>
-              <th>총 경기</th>
-              <th>승률</th>
-              <th>점수</th>
-              <th>FC</th>
-            </tr>
-          </thead>
-          <tbody id="rankingList"></tbody>
-        </table>
-      </div>
-
-      <h2>주간 전적</h2>
-      <div class="week-grid">
-        <div class="stat compact">
-          <span class="muted">주간 경기 총 수</span>
-          <strong id="weekMatches">0</strong>
-          <small id="weekWinRate">승률 0.0%</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">승</span>
-          <strong id="weekWins">0</strong>
-          <small>주간 승리</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">무</span>
-          <strong id="weekDraws">0</strong>
-          <small>주간 무승부</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">패</span>
-          <strong id="weekLosses">0</strong>
-          <small>주간 패배</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">FC 채굴량</span>
-          <strong id="weekFc">0</strong>
-          <small id="weekMeta">목요일 00시 기준</small>
-        </div>
-      </div>
-
-      <h2>주간 승률 랭킹 TOP 10</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>순위</th>
-              <th>닉네임</th>
-              <th>티어</th>
-              <th>승</th>
-              <th>무</th>
-              <th>패</th>
-              <th>총 경기</th>
-              <th>승률</th>
-              <th>점수</th>
-              <th>FC</th>
-            </tr>
-          </thead>
-          <tbody id="weeklyRankingList"></tbody>
-        </table>
-      </div>
-
-      <h2>최근 7일 경기</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>날짜</th>
-              <th>전적</th>
-              <th>경기수</th>
-              <th>승률</th>
-              <th>FC</th>
-            </tr>
-          </thead>
-          <tbody id="recentList"></tbody>
-        </table>
-      </div>
-      <p class="mobile-note">모바일에서는 표를 좌우로 밀어서 볼 수 있습니다.</p>
-
-      <h2>누적 전적</h2>
-      <div class="grid">
-        <div class="stat">
-          <span class="muted">전체</span>
-          <strong id="lifetimeRecord">0승 0무 0패</strong>
-          <small id="lifetimeMeta">관리자 초기화 전까지 유지</small>
-        </div>
-        <div class="stat">
-          <span class="muted">전체 경기</span>
-          <strong id="lifetimeMatches">0</strong>
-          <small id="lifetimeWinRate">승률 0.0%</small>
-        </div>
-        <div class="stat">
-          <span class="muted">누적 FC</span>
-          <strong id="lifetimeFc">0</strong>
-          <small>승리 1회당 15 FC</small>
-        </div>
-        <div class="stat">
-          <span class="muted">현재 티어</span>
-          <strong id="lifetimeTier">-</strong>
-          <small id="lifetimeScore">점수 0</small>
-        </div>
-      </div>
-      <div class="footer-actions">
-        <a href="./admin.html">관리자 페이지</a>
-        <button class="secondary" onclick="logout()">로그아웃</button>
+      <div class="card">
+        <div class="label">현재 등수</div>
+        <div id="currentRank" class="value">-</div>
+        <div class="meta">저장된 최신 정보</div>
       </div>
     </section>
+
+    <h2>최근 10판 흐름</h2>
+    <section class="card">
+      <div id="recentFlow" class="flow"></div>
+      <div id="flowSummary" class="meta">기록 대기</div>
+    </section>
+
+    <h2>오늘 승률 랭킹 TOP 10</h2>
+    <section class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>순위</th>
+            <th>닉네임</th>
+            <th>승</th>
+            <th>무</th>
+            <th>패</th>
+            <th>총 경기</th>
+            <th>승률</th>
+            <th>FC</th>
+          </tr>
+        </thead>
+        <tbody id="todayRanking"></tbody>
+      </table>
+    </section>
+
+    <h2>주간 전적</h2>
+    <section class="grid">
+      <div class="card">
+        <div class="label">주간</div>
+        <div id="weekRecord" class="value">0승 0무 0패</div>
+        <div id="weekMeta" class="meta">FC 0</div>
+      </div>
+      <div class="card">
+        <div class="label">주간 경기</div>
+        <div id="weekMatches" class="value">0</div>
+        <div id="weekRate" class="meta">승률 0.0%</div>
+      </div>
+      <div class="card">
+        <div class="label">누적 전적</div>
+        <div id="lifetimeRecord" class="value">0승 0무 0패</div>
+        <div id="lifetimeRate" class="meta">승률 0.0%</div>
+      </div>
+      <div class="card">
+        <div class="label">누적 FC</div>
+        <div id="lifetimeFc" class="value">0</div>
+        <div class="meta">관리자 초기화 전까지 유지</div>
+      </div>
+    </section>
+
+    <h2>주간 승률 랭킹 TOP 10</h2>
+    <section class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>순위</th>
+            <th>닉네임</th>
+            <th>승</th>
+            <th>무</th>
+            <th>패</th>
+            <th>총 경기</th>
+            <th>승률</th>
+            <th>FC</th>
+          </tr>
+        </thead>
+        <tbody id="weekRanking"></tbody>
+      </table>
+    </section>
+
+    <h2>최근 7일 경기</h2>
+    <section class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>날짜</th>
+            <th>전적</th>
+            <th>경기수</th>
+            <th>승률</th>
+            <th>FC</th>
+          </tr>
+        </thead>
+        <tbody id="recent7"></tbody>
+      </table>
+    </section>
+
     <footer>made by yoondo</footer>
-  </main>
+  </div>
 
   <script>
-    const CACHE_VERSION = 'stats-db-only-v4';
-    if (localStorage.getItem('moondo_cache_version') !== CACHE_VERSION) {
-      Object.keys(localStorage)
-        .filter(key => key.startsWith('moondo_stats_cache:'))
-        .forEach(key => localStorage.removeItem(key));
-      localStorage.setItem('moondo_cache_version', CACHE_VERSION);
+    const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+    let currentNick = '';
+
+    function nowKst() {
+      return new Date(Date.now() + KST_OFFSET_MS);
     }
 
-    let currentUser = JSON.parse(localStorage.getItem('moondo_user') || 'null');
-
-    function formatLocalDate(d) {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    }
-
-    function todayDate() {
-      return formatLocalDate(new Date());
-    }
-
-    function dateFromLocalKey(dateKey) {
-      const [y, m, d] = dateKey.split('-').map(Number);
-      return new Date(y, m - 1, d);
-    }
-
-    function startOfLocalDay(date = new Date()) {
-      const d = new Date(date);
-      d.setHours(0, 0, 0, 0);
-      return d;
-    }
-
-    function rolling7StartDate() {
-      const d = startOfLocalDay();
-      d.setDate(d.getDate() - 6);
-      return d;
-    }
-
-    function rolling7StartIso() {
-      return rolling7StartDate().toISOString();
-    }
-
-    function rolling7StartKey() {
-      return formatLocalDate(rolling7StartDate());
-    }
-
-    function last7DateKeys() {
-      const start = rolling7StartDate();
-      return Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        return formatLocalDate(d);
-      });
-    }
-
-    function weeklyResetDate() {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      const daysSinceThursday = (d.getDay() - 4 + 7) % 7;
-      d.setDate(d.getDate() - daysSinceThursday);
-      return formatLocalDate(d);
-    }
-
-    function weeklyResetIso() {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      const daysSinceThursday = (d.getDay() - 4 + 7) % 7;
-      d.setDate(d.getDate() - daysSinceThursday);
-      return d.toISOString();
+    function dateKey(date = nowKst()) {
+      return date.toISOString().slice(0, 10);
     }
 
     function startOfTodayIso() {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      return d.toISOString();
+      return `${dateKey()}T00:00:00+09:00`;
     }
 
-    function isOnOrAfterDateKey(dateKey, minDateKey) {
-      return dateFromLocalKey(dateKey) >= dateFromLocalKey(minDateKey);
+    function addDaysKey(days) {
+      const d = nowKst();
+      d.setUTCDate(d.getUTCDate() + days);
+      return dateKey(d);
     }
 
-    async function sha256(text) {
-      const bytes = new TextEncoder().encode(text);
-      const hash = await crypto.subtle.digest('SHA-256', bytes);
-      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    function rolling7StartKey() {
+      return addDaysKey(-6);
     }
 
-    function normalizeUsername(username) {
-      return (username || '').trim().replace(/[^a-zA-Z0-9_가-힣.-]/g, '').slice(0, 30);
+    function rolling7StartIso() {
+      return `${rolling7StartKey()}T00:00:00+09:00`;
     }
 
-    function normalizeResult(result) {
-      if (result === 'win' || result === '승') return 'win';
-      if (result === 'loss' || result === '패') return 'loss';
-      if (result === 'draw' || result === '무') return 'draw';
-      return result || '';
+    function weekStartKey() {
+      const d = nowKst();
+      const day = d.getUTCDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      d.setUTCDate(d.getUTCDate() + diff);
+      return dateKey(d);
     }
 
-    function summarizeMatches(rows) {
-      return (rows || []).reduce((acc, row) => {
-        const result = normalizeResult(row.result);
-        if (result === 'win') acc.wins += 1;
-        if (result === 'draw') acc.draws += 1;
-        if (result === 'loss') acc.losses += 1;
-        acc.matches += 1;
-        return acc;
-      }, { wins: 0, draws: 0, losses: 0, matches: 0 });
+    function weekStartIso() {
+      return `${weekStartKey()}T00:00:00+09:00`;
     }
 
     function emptyStats() {
       return { wins: 0, draws: 0, losses: 0, matches: 0 };
+    }
+
+    function normalizeStats(stats) {
+      const wins = Number(stats?.wins || 0);
+      const draws = Number(stats?.draws || 0);
+      const losses = Number(stats?.losses || 0);
+      const matches = Number(stats?.matches ?? (wins + draws + losses));
+      return { wins, draws, losses, matches };
+    }
+
+    function fc(stats) {
+      return Number(stats?.wins || 0) * 15;
+    }
+
+    function rate(stats) {
+      return stats.matches ? ((stats.wins / stats.matches) * 100).toFixed(1) : '0.0';
+    }
+
+    function isBetterStats(next, prev) {
+      return Number(next?.matches || 0) >= Number(prev?.matches || 0);
+    }
+
+    function cacheKey(name, nick = currentNick) {
+      return `moondo:${name}:${nick || 'all'}`;
+    }
+
+    function readCache(name, fallback = null, nick = currentNick) {
+      try {
+        return JSON.parse(localStorage.getItem(cacheKey(name, nick))) ?? fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function writeCache(name, value, nick = currentNick) {
+      localStorage.setItem(cacheKey(name, nick), JSON.stringify(value));
+      return value;
+    }
+
+    function keepBest(name, next, nick = currentNick) {
+      const clean = normalizeStats(next);
+      const prev = normalizeStats(readCache(name, emptyStats(), nick));
+      const chosen = isBetterStats(clean, prev) ? clean : prev;
+      writeCache(name, chosen, nick);
+      return chosen;
+    }
+
+    function resultOf(row) {
+      const value = String(row?.result || '').toLowerCase();
+      if (value === 'win' || value.includes('승')) return 'win';
+      if (value === 'draw' || value.includes('무')) return 'draw';
+      if (value === 'loss' || value.includes('패')) return 'loss';
+      return '';
+    }
+
+    function summarizeHistory(rows) {
+      const stats = emptyStats();
+      (rows || []).forEach(row => {
+        const r = resultOf(row);
+        if (!r) return;
+        if (r === 'win') stats.wins += 1;
+        if (r === 'draw') stats.draws += 1;
+        if (r === 'loss') stats.losses += 1;
+        stats.matches += 1;
+      });
+      return stats;
     }
 
     function summarizeSessions(rows) {
@@ -1613,729 +468,250 @@
       }, emptyStats());
     }
 
-    function groupHistoryByDay(rows) {
-      const grouped = {};
-      (rows || []).forEach(row => {
-        const key = row.created_at ? formatLocalDate(new Date(row.created_at)) : todayDate();
-        if (!grouped[key]) grouped[key] = emptyStats();
-        const result = normalizeResult(row.result);
-        if (result === 'win') grouped[key].wins += 1;
-        if (result === 'draw') grouped[key].draws += 1;
-        if (result === 'loss') grouped[key].losses += 1;
-        grouped[key].matches += 1;
-      });
-      return grouped;
+    function choosePersistentStats(historyStats, sessionStats) {
+      const history = normalizeStats(historyStats);
+      const session = normalizeStats(sessionStats);
+      return history.matches >= session.matches ? history : session;
     }
 
-    function groupSessionsByDay(rows) {
-      const grouped = {};
-      (rows || []).forEach(row => {
-        const key = row.session_date || (row.created_at ? formatLocalDate(new Date(row.created_at)) : todayDate());
-        if (!grouped[key]) grouped[key] = emptyStats();
-        const wins = Number(row.wins || 0);
-        const draws = Number(row.draws || 0);
-        const losses = Number(row.losses || 0);
-        grouped[key].wins += wins;
-        grouped[key].draws += draws;
-        grouped[key].losses += losses;
-        grouped[key].matches += Number(row.matches ?? (wins + draws + losses));
-      });
-      return grouped;
-    }
-
-    function dailyStatsFromMaps(dateKey, historyMap, sessionMap) {
-      const history = historyMap[dateKey];
-      if (history && history.matches > 0) return history;
-      return sessionMap[dateKey] || emptyStats();
-    }
-
-    function bestStats(...statsList) {
-      return statsList
-        .filter(Boolean)
-        .reduce((best, stats) => {
-          const normalized = {
-            wins: Number(stats.wins || 0),
-            draws: Number(stats.draws || 0),
-            losses: Number(stats.losses || 0),
-            matches: Number(stats.matches || 0),
-          };
-          if (normalized.matches > best.matches) return normalized;
-          if (normalized.matches === best.matches && normalized.wins > best.wins) return normalized;
-          return best;
-        }, emptyStats());
-    }
-
-    function firstUsefulStats(...statsList) {
-      for (const stats of statsList) {
-        const normalized = {
-          wins: Number(stats?.wins || 0),
-          draws: Number(stats?.draws || 0),
-          losses: Number(stats?.losses || 0),
-          matches: Number(stats?.matches || 0),
-        };
-        if (normalized.matches > 0) return normalized;
-      }
-      return emptyStats();
-    }
-
-    function statsCacheKey(username, scope) {
-      return `moondo_stats_cache:${username}:${scope}`;
-    }
-
-    function loadStatsCache(username, scope) {
-      try {
-        return JSON.parse(localStorage.getItem(statsCacheKey(username, scope)) || 'null');
-      } catch (_) {
-        return null;
-      }
-    }
-
-    function saveStatsCache(username, scope, value) {
-      if (!username || !value) return;
-      localStorage.setItem(statsCacheKey(username, scope), JSON.stringify(value));
-    }
-
-    function restoreStatsFromCache(username, scope, stats) {
-      const cached = loadStatsCache(username, scope);
-      if (Number(stats?.matches || 0) > 0) return stats;
-      return cached || stats;
-    }
-
-    function cacheStatsIfUseful(username, scope, stats) {
-      if (stats && Number(stats.matches || 0) > 0) {
-        saveStatsCache(username, scope, stats);
-      }
-    }
-
-    function restoreRecentRowsFromCache(username, rows) {
-      const cachedRows = loadStatsCache(username, 'recent7') || {};
-      return rows.map(row => ({
-        dateKey: row.dateKey,
-        ...restoreStatsFromCache(username, `recent7:${row.dateKey}`, row),
-      }));
-    }
-
-    function cacheRecentRowsIfUseful(username, rows) {
-      const cachedRows = loadStatsCache(username, 'recent7') || {};
-      rows.forEach(row => {
-        if (Number(row.matches || 0) > 0) {
-          cachedRows[row.dateKey] = {
-            wins: Number(row.wins || 0),
-            draws: Number(row.draws || 0),
-            losses: Number(row.losses || 0),
-            matches: Number(row.matches || 0),
-          };
-          saveStatsCache(username, `recent7:${row.dateKey}`, cachedRows[row.dateKey]);
-        }
-      });
-      saveStatsCache(username, 'recent7', cachedRows);
-    }
-
-    function applyCurrentAccountFilter(query, username = currentUser?.username) {
-      // 전적 테이블마다 user_id 컬럼 유무가 달라서 username 기준으로만 조회합니다.
-      // user_id까지 OR로 묶으면 컬럼이 없을 때 오늘/주간/최근기록이 통째로 비어 보일 수 있습니다.
-      return query.eq('username', username);
-    }
-
-    async function loadUserHistory(username, sinceIso) {
-      let query = supabaseClient
-        .from('game_history')
-        .select('*');
-      query = applyCurrentAccountFilter(query, username);
-      if (sinceIso) query = query.gte('created_at', sinceIso);
-      return query.order('created_at', { ascending: false });
-    }
-
-    async function loadUserSessions(username, sinceDateKey) {
-      let query = supabaseClient
-        .from('daily_sessions')
-        .select('*')
-        .eq('username', username);
-      if (sinceDateKey) query = query.gte('session_date', sinceDateKey);
-      return query.order('session_date', { ascending: false });
-    }
-
-    function fcFromWins(wins) {
-      return Number(wins || 0) * 15;
-    }
-
-    function winRate(stats) {
-      return stats.matches ? ((stats.wins / stats.matches) * 100).toFixed(1) : '0.0';
+    function renderStats(prefix, stats) {
+      document.getElementById(`${prefix}Record`).innerText = `${stats.wins}승 ${stats.draws}무 ${stats.losses}패`;
+      document.getElementById(`${prefix}Matches`).innerText = stats.matches;
+      document.getElementById(`${prefix}Rate`).innerText = `승률 ${rate(stats)}%`;
+      document.getElementById(`${prefix}Meta`).innerText = `FC ${fc(stats)}`;
     }
 
     function profileStats(profile) {
-      const wins = Number(profile.wins || 0);
-      const draws = Number(profile.draws || 0);
-      const losses = Number(profile.losses || 0);
-      return { wins, draws, losses, matches: wins + draws + losses };
+      const stats = normalizeStats(profile || {});
+      stats.matches = stats.wins + stats.draws + stats.losses;
+      return stats;
     }
 
-    function liveStatusStats(live) {
-      const wins = Number(live?.wins || 0);
-      const draws = Number(live?.draws || 0);
-      const losses = Number(live?.losses || 0);
-      return { wins, draws, losses, matches: Number(live?.matches ?? (wins + draws + losses)) };
+    function last7Keys() {
+      const keys = [];
+      for (let i = -6; i <= 0; i += 1) keys.push(addDaysKey(i));
+      return keys;
     }
 
-
-
-    function normalizeStats(stats) {
-      const wins = Number(stats?.wins || 0);
-      const draws = Number(stats?.draws || 0);
-      const losses = Number(stats?.losses || 0);
-      const matches = Number(stats?.matches ?? (wins + draws + losses));
-      return { wins, draws, losses, matches };
-    }
-
-    function choosePeriodStats(historyStats, sessionStats, ...fallbackStats) {
-      // 같은 경기를 game_history와 daily_sessions가 둘 다 가지고 있을 수 있으니 더 큰 쪽만 사용합니다.
-      // 둘을 더하면 중복 집계가 생길 수 있습니다.
-      const primary = bestStats(normalizeStats(historyStats), normalizeStats(sessionStats));
-      if (primary.matches > 0) return primary;
-      return firstUsefulStats(...fallbackStats, primary);
-    }
-
-    function statsUpdatedSince(row, sinceIso) {
-      if (!row) return false;
-      const stamp = row.updated_at || row.created_at;
-      if (!stamp) return true;
-      return new Date(stamp) >= new Date(sinceIso);
-    }
-
-    function liveStatsForPeriod(live, sinceIso) {
-      if (!statsUpdatedSince(live, sinceIso)) return emptyStats();
-      return liveStatusStats(live);
-    }
-
-    function profileStatsForPeriod(profile, sinceIso) {
-      if (!statsUpdatedSince(profile, sinceIso)) return emptyStats();
-      return profileStats(profile);
-    }
-
-    function currentMeta(profile, live) {
-      const tier = live?.tier || profile.tier || '-';
-      const score = live?.score ?? profile.score ?? 0;
-      const rank = live?.rank ?? profile.rank ?? '-';
-      const rankText = rank && Number(rank) > 0 ? rank : '-';
-      return { tier, score, rank: rankText };
-    }
-
-    function isUpdatedSince(row, sinceIso) {
-      if (!row?.updated_at) return true;
-      return new Date(row.updated_at) >= new Date(sinceIso);
-    }
-
-    function resultLabel(result) {
-      const r = normalizeResult(result);
-      if (r === 'win') return '<span class="ok">승</span>';
-      if (r === 'loss') return '<span class="bad">패</span>';
-      if (r === 'draw') return '무';
-      return result || '-';
-    }
-
-    function resultShort(result) {
-      const r = normalizeResult(result);
-      if (r === 'win') return '승';
-      if (r === 'loss') return '패';
-      if (r === 'draw') return '무';
-      return '-';
-    }
-
-    function streakSummary(results) {
-      if (!results.length) return '기록 대기';
-      const latest = normalizeResult(results[0]);
-      let streak = 0;
-      for (const result of results) {
-        if (normalizeResult(result) !== latest) break;
-        streak += 1;
-      }
-      const label = latest === 'win' ? '연승' : latest === 'loss' ? '연패' : latest === '연속 무';
-      const wins = results.filter(r => normalizeResult(r) === 'win').length;
-      const draws = results.filter(r => normalizeResult(r) === 'draw').length;
-      const losses = results.filter(r => normalizeResult(r) === 'loss').length;
-      return `${streak}${label} · 최근10판 ${wins}승 ${draws}무 ${losses}패`;
-    }
-
-    function expandStatsToResults(stats) {
-      const wins = Number(stats?.wins || 0);
-      const draws = Number(stats?.draws || 0);
-      const losses = Number(stats?.losses || 0);
-      return [
-        ...Array(wins).fill('win'),
-        ...Array(draws).fill('draw'),
-        ...Array(losses).fill('loss'),
-      ].slice(0, 10);
-    }
-
-    function renderRecentForm(results, sourceText = '') {
-      const dots = document.getElementById('formDots');
-      const summary = document.getElementById('formSummary');
-      if (!dots || !summary) return;
-      const cleanResults = (results || []).map(normalizeResult).filter(Boolean).slice(0, 10);
-      summary.innerText = cleanResults.length
-        ? `${streakSummary(cleanResults)}${sourceText ? ` · ${sourceText}` : ''}`
-        : '오늘 기록 대기';
-      const displayResults = [...cleanResults].reverse();
-      const padded = [...Array(Math.max(0, 10 - displayResults.length)).fill(''), ...displayResults];
-      dots.innerHTML = padded.slice(0, 10).map(result => {
-        const normalized = normalizeResult(result);
-        const cls = normalized === 'win' ? 'win' : normalized === 'loss' ? 'loss' : normalized === 'draw' ? 'draw' : '';
-        return `<span class="form-dot ${cls}">${resultShort(result)}</span>`;
-      }).join('');
-    }
-
-    function setLoginState() {
-      const loggedIn = !!currentUser;
-      document.getElementById('loginPanel').classList.toggle('hidden', loggedIn);
-      document.getElementById('dashboard').classList.toggle('hidden', !loggedIn);
-      if (loggedIn) document.getElementById('helloName').innerText = currentUser.username;
-    }
-
-    async function login() {
-      const username = normalizeUsername(document.getElementById('loginId').value);
-      const password = document.getElementById('loginPw').value.trim();
-      const message = document.getElementById('loginMessage');
-      message.innerText = '';
-
-      if (!username || !password) {
-        message.innerText = '아이디와 비밀번호를 입력해주세요.';
-        return;
-      }
-
-      const { data, error } = await supabaseClient
-        .from('app_users')
-        .select('id, username, password_hash, status')
-        .eq('username', username)
-        .limit(1);
-
-      if (error) {
-        message.innerText = '오류: ' + error.message;
-        return;
-      }
-      if (!data || data.length === 0) {
-        message.innerText = '가입되지 않은 아이디입니다.';
-        return;
-      }
-
-      const user = data[0];
-      if (user.status !== 'approved') {
-        message.innerText = '관리자 승인 후 로그인할 수 있습니다.';
-        return;
-      }
-      if (user.password_hash !== await sha256(password)) {
-        message.innerText = '비밀번호가 맞지 않습니다.';
-        return;
-      }
-
-      currentUser = { id: user.id, username: user.username };
-      localStorage.setItem('moondo_user', JSON.stringify(currentUser));
-      setLoginState();
-      refreshAll();
-    }
-
-    async function signup() {
-      const username = normalizeUsername(document.getElementById('loginId').value);
-      const password = document.getElementById('loginPw').value.trim();
-      const nickname = (document.getElementById('signupNick').value.trim() || username).slice(0, 30);
-      const message = document.getElementById('loginMessage');
-      message.className = 'bad';
-      message.innerText = '';
-
-      if (!username || !password) {
-        message.innerText = '회원가입할 아이디와 비밀번호를 입력해주세요.';
-        return;
-      }
-      if (username.length < 3) {
-        message.innerText = '아이디는 최소 3자리 이상이어야 합니다.';
-        return;
-      }
-      if (password.length < 4) {
-        message.innerText = '비밀번호는 최소 4자리 이상이어야 합니다.';
-        return;
-      }
-
-      const { data: exists, error: existsError } = await supabaseClient
-        .from('app_users')
-        .select('id')
-        .eq('username', username)
-        .limit(1);
-
-      if (existsError) {
-        message.innerText = '오류: ' + existsError.message;
-        return;
-      }
-      if (exists && exists.length > 0) {
-        message.innerText = '이미 사용 중인 아이디입니다.';
-        return;
-      }
-
-      const { error } = await supabaseClient
-        .from('app_users')
-        .insert({
-          username,
-          password_hash: await sha256(password),
-          nickname,
-          status: 'pending'
-        });
-
-      if (error) {
-        message.innerText = '회원가입 오류: ' + error.message;
-        return;
-      }
-
-      message.className = 'ok';
-      message.innerText = '회원가입 신청 완료. 관리자 승인 후 로그인 가능합니다.';
-    }
-
-    function logout() {
-      currentUser = null;
-      localStorage.removeItem('moondo_user');
-      setLoginState();
-    }
-
-    async function loadPlayerStatsMap() {
-      const { data } = await supabaseClient.from('player_stats').select('*');
-      const map = {};
-      (data || []).forEach(row => { map[row.username] = row; });
-      return map;
-    }
-
-    async function loadLiveStatus() {
-      if (!currentUser) return;
-      const { data, error } = await supabaseClient
-        .from('live_status')
-        .select('*')
-        .eq('username', currentUser.username)
-        .limit(1);
-
-      const state = document.getElementById('liveState');
-      if (error) {
-        state.innerText = '실시간 데이터 오류: ' + error.message;
-        return;
-      }
-      if (!data || data.length === 0) {
-        state.innerText = '아직 프로그램에서 올라온 실시간 데이터가 없습니다.';
-        return;
-      }
-
-      const live = data[0];
-      const hasMatchData = live.match_my_name || live.match_my_score !== null ||
-        live.match_opponent_score !== null || live.match_opponent_name || live.match_time;
-
-      document.getElementById('liveUsername').innerText = live.match_my_name || currentUser.username;
-      document.getElementById('liveScore').innerText = live.match_my_score ?? '-';
-      document.getElementById('liveOppScore').innerText = live.match_opponent_score ?? '-';
-      document.getElementById('liveOpponent').innerText = live.match_opponent_name || '상대 OCR 대기';
-      document.getElementById('liveTime').innerText = live.match_time || '시간 OCR 대기';
-      state.innerHTML = hasMatchData
-        ? '<span class="status-dot"></span>LIVE'
-        : '<span class="status-dot"></span>LIVE - 경기 OCR 대기 중';
-    }
-
-    async function loadPeriodStats(statsMap) {
-      if (!currentUser) return;
-      const weekStart = weeklyResetDate();
-      const profile = statsMap[currentUser.username] || {};
-
-      const [todayHistoryRes, todaySessionRes, weekHistoryRes, weekSessionRes, liveRes] = await Promise.all([
-        loadUserHistory(currentUser.username, startOfTodayIso()),
-        loadUserSessions(currentUser.username, todayDate()),
-        loadUserHistory(currentUser.username, weeklyResetIso()),
-        loadUserSessions(currentUser.username, weekStart),
-        supabaseClient
-          .from('live_status')
-          .select('*')
-          .eq('username', currentUser.username)
-          .limit(1),
-      ]);
-      const live = liveRes.data?.[0];
-      const meta = currentMeta(profile, live);
-
-      // 누적 전적은 player_stats 기준입니다.
-      // 날짜 필터나 브라우저 캐시에 영향받지 않아서 관리자 초기화 전까지 유지됩니다.
-      const lifetime = profileStats(profile);
-
-      // 오늘 전적은 한국 브라우저 기준 자정 00:00 이후 기록만 봅니다.
-      // 매크로를 껐다 켜도 DB에 남은 game_history/daily_sessions를 다시 읽어 누적 표시됩니다.
-      const todayHistory = summarizeMatches(todayHistoryRes.data || []);
-      const todaySessions = summarizeSessions(todaySessionRes.data || []);
-      const today = choosePeriodStats(
-        todayHistory,
-        todaySessions,
-        liveStatsForPeriod(live, startOfTodayIso()),
-      );
-
-      // 주간 전적은 매주 목요일 00:00 이후 기록만 봅니다.
-      const weekHistory = summarizeMatches(weekHistoryRes.data || []);
-      const weekSessions = summarizeSessions(weekSessionRes.data || []);
-      const week = choosePeriodStats(
-        weekHistory,
-        weekSessions,
-        liveStatsForPeriod(live, weeklyResetIso()),
-      );
-
-      document.getElementById('lifetimeRecord').innerText = `${lifetime.wins}승 ${lifetime.draws}무 ${lifetime.losses}패`;
-      document.getElementById('lifetimeMatches').innerText = lifetime.matches;
-      document.getElementById('lifetimeWinRate').innerText = `승률 ${winRate(lifetime)}%`;
-      document.getElementById('lifetimeFc').innerText = fcFromWins(lifetime.wins);
-      document.getElementById('lifetimeTier').innerText = meta.tier;
-      document.getElementById('lifetimeScore').innerText = `점수 ${meta.score} · 등수 ${meta.rank}`;
-
-      document.getElementById('todayMatches').innerText = today.matches;
-      document.getElementById('todayWins').innerText = today.wins;
-      document.getElementById('todayDraws').innerText = today.draws;
-      document.getElementById('todayLosses').innerText = today.losses;
-      document.getElementById('todayFc').innerText = fcFromWins(today.wins);
-      document.getElementById('todayTier').innerText = meta.tier;
-      document.getElementById('todayScore').innerText = meta.score;
-      document.getElementById('todayRank').innerText = meta.rank;
-      document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
-
-      document.getElementById('weekMatches').innerText = week.matches;
-      document.getElementById('weekWins').innerText = week.wins;
-      document.getElementById('weekDraws').innerText = week.draws;
-      document.getElementById('weekLosses').innerText = week.losses;
-      document.getElementById('weekFc').innerText = fcFromWins(week.wins);
-      document.getElementById('weekMeta').innerText = `${weekStart} 시작`;
-      document.getElementById('weekWinRate').innerText = `승률 ${winRate(week)}%`;
-    }
-
-    async function loadRecent() {
-      if (!currentUser) return;
-      const tbody = document.getElementById('recentList');
-      const [historyRes, sessionRes, liveRes] = await Promise.all([
-        loadUserHistory(currentUser.username, rolling7StartIso()),
-        loadUserSessions(currentUser.username, rolling7StartKey()),
-        supabaseClient
-          .from('live_status')
-          .select('*')
-          .eq('username', currentUser.username)
-          .limit(1),
-      ]);
-
-      const historyRows = historyRes.data || [];
-      const sessionRows = sessionRes.data || [];
-      if (historyRes.error && sessionRows.length === 0) {
-        const message = historyRes.error.message;
-        tbody.innerHTML = `<tr><td colspan="5">오류: ${message}</td></tr>`;
-        return;
-      }
-
-      const historyMap = groupHistoryByDay(historyRows);
-      const sessionMap = groupSessionsByDay(sessionRows);
-      const live = liveRes.data?.[0];
-      const todayLive = liveStatsForPeriod(live, startOfTodayIso());
-      if (todayLive.matches > 0 && !historyMap[todayDate()]?.matches && !sessionMap[todayDate()]?.matches) {
-        sessionMap[todayDate()] = todayLive;
-      }
-      let rows = last7DateKeys().map(dateKey => ({
-        dateKey,
-        ...dailyStatsFromMaps(dateKey, historyMap, sessionMap),
-      }));
-      // 최근 7일도 DB 기준으로만 표시합니다. 날짜가 바뀌면 자동으로 밀려납니다.
-
-      tbody.innerHTML = rows.map(row => `
-        <tr>
-          <td>${row.dateKey}</td>
-          <td>${row.wins}승 ${row.draws}무 ${row.losses}패</td>
-          <td>${row.matches}</td>
-          <td>${winRate(row)}%</td>
-          <td>${fcFromWins(row.wins)}</td>
-        </tr>
-      `).join('');
-    }
-
-    async function loadRecentForm() {
-      if (!currentUser) return;
+    async function loadUserHistory(nick, sinceIso = null, limit = null) {
       let query = supabaseClient
         .from('game_history')
-        .select('result, created_at');
-      query = applyCurrentAccountFilter(query, currentUser.username);
-      const [{ data, error }, liveRes] = await Promise.all([
-        query
-          .order('created_at', { ascending: false })
-          .limit(10),
-        supabaseClient
-          .from('live_status')
-          .select('*')
-          .eq('username', currentUser.username)
-          .limit(1),
-      ]);
-
-      if (error) {
-        const liveStats = liveStatsForPeriod(liveRes.data?.[0], startOfTodayIso());
-        renderRecentForm(expandStatsToResults(liveStats), '현재 전적 기준');
-        return;
-      }
-
-      const rows = data || [];
-      const results = rows.map(row => normalizeResult(row.result));
-      if (results.length > 0) {
-        renderRecentForm(results, '전체 최근 경기 순서');
-        return;
-      }
-
-      const liveStats = liveStatsForPeriod(liveRes.data?.[0], startOfTodayIso());
-      renderRecentForm(expandStatsToResults(liveStats), '현재 전적 기준');
+        .select('*')
+        .eq('username', nick);
+      if (sinceIso) query = query.gte('created_at', sinceIso);
+      query = query.order('created_at', { ascending: false });
+      if (limit) query = query.limit(limit);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
     }
 
-    async function loadRanking(statsMap, options = {}) {
-      const {
-        tbodyId = 'rankingList',
-        sinceIso = startOfTodayIso(),
-        sessionFromDate = todayDate(),
-        sessionExactDate = todayDate(),
-        emptyMessage = '오늘 랭킹 데이터가 없습니다.',
-      } = options;
-      const tbody = document.getElementById(tbodyId);
-
-      let sessionQuery = supabaseClient
+    async function loadUserSessions(nick, sinceDate = null, exactDate = null) {
+      let query = supabaseClient
         .from('daily_sessions')
-        .select('*');
-      if (sessionExactDate) {
-        sessionQuery = sessionQuery.eq('session_date', sessionExactDate);
-      } else if (sessionFromDate) {
-        sessionQuery = sessionQuery.gte('session_date', sessionFromDate);
-      }
+        .select('*')
+        .eq('username', nick);
+      if (exactDate) query = query.eq('session_date', exactDate);
+      if (sinceDate) query = query.gte('session_date', sinceDate);
+      const { data, error } = await query.order('session_date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
 
-      const [historyRes, sessionRes, liveRes] = await Promise.all([
-        supabaseClient
-          .from('game_history')
-          .select('*')
-          .gte('created_at', sinceIso),
-        sessionQuery,
-        supabaseClient
-          .from('live_status')
-          .select('*')
-          .gte('updated_at', sinceIso),
+    async function loadProfile(nick) {
+      const { data, error } = await supabaseClient
+        .from('player_stats')
+        .select('*')
+        .eq('username', nick)
+        .limit(1);
+      if (error) return null;
+      return data?.[0] || null;
+    }
+
+    async function searchPlayer() {
+      const nick = document.getElementById('searchNick').value.trim();
+      if (!nick) return;
+      currentNick = nick;
+      document.getElementById('statusText').innerText = `${nick} 님 기록을 불러오는 중입니다.`;
+      try {
+        await Promise.all([
+          loadSummary(nick),
+          loadRecentFlow(nick),
+          loadRecent7(nick),
+        ]);
+        document.getElementById('statusText').innerText = `${nick} 님 기록 표시 중. 새로고침해도 이전보다 작은 값은 덮어쓰지 않습니다.`;
+      } catch (error) {
+        document.getElementById('statusText').innerText = `오류: ${error.message}`;
+      }
+    }
+
+    async function loadSummary(nick) {
+      const [todayHistory, todaySessions, weekHistory, weekSessions, profile] = await Promise.all([
+        loadUserHistory(nick, startOfTodayIso()),
+        loadUserSessions(nick, null, dateKey()),
+        loadUserHistory(nick, weekStartIso()),
+        loadUserSessions(nick, weekStartKey()),
+        loadProfile(nick),
       ]);
 
-      if (historyRes.error && sessionRes.error) {
-        tbody.innerHTML = `<tr><td colspan="10">오류: ${historyRes.error.message}</td></tr>`;
-        return;
-      }
+      const today = keepBest(`today:${dateKey()}`, choosePersistentStats(summarizeHistory(todayHistory), summarizeSessions(todaySessions)), nick);
+      const week = keepBest(`week:${weekStartKey()}`, choosePersistentStats(summarizeHistory(weekHistory), summarizeSessions(weekSessions)), nick);
 
-      const historyGrouped = {};
-      (historyRes.data || []).forEach(row => {
-        const username = row.username || '-';
-        if (!historyGrouped[username]) historyGrouped[username] = emptyStats();
-        const result = normalizeResult(row.result);
-        if (result === 'win') historyGrouped[username].wins += 1;
-        if (result === 'draw') historyGrouped[username].draws += 1;
-        if (result === 'loss') historyGrouped[username].losses += 1;
-        historyGrouped[username].matches += 1;
-      });
+      const profileClean = profileStats(profile);
+      const lifetime = keepBest('lifetime', profileClean, nick);
 
-      const sessionGrouped = {};
-      (sessionRes.data || []).forEach(row => {
-        const username = row.username || '-';
-        if (!sessionGrouped[username]) sessionGrouped[username] = emptyStats();
-        const wins = Number(row.wins || 0);
-        const draws = Number(row.draws || 0);
-        const losses = Number(row.losses || 0);
-        sessionGrouped[username].wins += wins;
-        sessionGrouped[username].draws += draws;
-        sessionGrouped[username].losses += losses;
-        sessionGrouped[username].matches += Number(row.matches ?? (wins + draws + losses));
-      });
+      renderStats('today', today);
+      renderStats('week', week);
+      document.getElementById('lifetimeRecord').innerText = `${lifetime.wins}승 ${lifetime.draws}무 ${lifetime.losses}패`;
+      document.getElementById('lifetimeRate').innerText = `승률 ${rate(lifetime)}%`;
+      document.getElementById('lifetimeFc').innerText = fc(lifetime);
 
-      const liveGrouped = {};
-      (liveRes.data || []).forEach(row => {
-        const username = row.username || '-';
-        const stats = liveStatsForPeriod(row, sinceIso);
-        if (stats.matches <= 0) return;
-        liveGrouped[username] = stats;
-      });
+      document.getElementById('currentTier').innerText = profile?.tier || '-';
+      document.getElementById('currentScore').innerText = `점수 ${Number(profile?.score || 0)}`;
+      document.getElementById('currentRank').innerText = Number(profile?.rank || 0) || '-';
+    }
 
-      const profileGrouped = {};
-      Object.values(statsMap || {}).forEach(profile => {
-        const username = profile.username || '-';
-        const stats = profileStatsForPeriod(profile, sinceIso);
-        if (stats.matches <= 0) return;
-        profileGrouped[username] = stats;
-      });
+    async function loadRecentFlow(nick) {
+      const rows = await loadUserHistory(nick, null, 10);
+      const results = rows.map(resultOf).filter(Boolean);
+      const cached = readCache('recentFlow', [], nick);
+      const display = results.length ? results : cached;
+      if (results.length) writeCache('recentFlow', results, nick);
 
-      const usernames = new Set([
-        ...Object.keys(historyGrouped),
-        ...Object.keys(sessionGrouped),
-        ...Object.keys(liveGrouped),
-        ...Object.keys(profileGrouped),
+      const flow = document.getElementById('recentFlow');
+      const padded = [...Array(Math.max(0, 10 - display.length)).fill(''), ...display].slice(-10);
+      flow.innerHTML = padded.map(r => {
+        const cls = r === 'win' ? 'win' : r === 'loss' ? 'loss' : r === 'draw' ? 'draw' : '';
+        const txt = r === 'win' ? '승' : r === 'loss' ? '패' : r === 'draw' ? '무' : '-';
+        return `<span class="dot ${cls}">${txt}</span>`;
+      }).join('');
+
+      const stats = summarizeHistory(display.map(result => ({ result })));
+      document.getElementById('flowSummary').innerText = display.length
+        ? `최근 ${display.length}판 ${stats.wins}승 ${stats.draws}무 ${stats.losses}패`
+        : '최근 10판 기록이 없습니다.';
+    }
+
+    async function loadRecent7(nick) {
+      const [historyRows, sessionRows] = await Promise.all([
+        loadUserHistory(nick, rolling7StartIso()),
+        loadUserSessions(nick, rolling7StartKey()),
       ]);
-      const ranking = [...usernames]
-        .map(username => {
-          const stats = choosePeriodStats(
-            historyGrouped[username],
-            sessionGrouped[username],
-            liveGrouped[username],
-            profileGrouped[username],
-          );
-          const profile = statsMap[username] || {};
-          return {
-            username,
-            ...stats,
-            tier: profile.tier || '-',
-            score: profile.score ?? 0,
-            fc: fcFromWins(stats.wins),
-            rate: stats.matches ? stats.wins / stats.matches : 0,
-          };
-        })
-        .filter(row => row.username && row.username !== '-' && row.matches > 0)
-        .sort((a, b) => b.rate - a.rate || b.wins - a.wins || b.matches - a.matches || b.score - a.score)
-        .slice(0, 10);
 
-      if (ranking.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10">${emptyMessage}</td></tr>`;
-        return;
-      }
+      const byHistory = {};
+      historyRows.forEach(row => {
+        const key = dateKey(new Date(row.created_at).getTime() ? new Date(new Date(row.created_at).getTime() + KST_OFFSET_MS) : nowKst());
+        byHistory[key] ||= emptyStats();
+        const r = resultOf(row);
+        if (r === 'win') byHistory[key].wins += 1;
+        if (r === 'draw') byHistory[key].draws += 1;
+        if (r === 'loss') byHistory[key].losses += 1;
+        if (r) byHistory[key].matches += 1;
+      });
 
-      tbody.innerHTML = ranking.map((row, i) => `
+      const bySession = {};
+      sessionRows.forEach(row => {
+        bySession[row.session_date] = summarizeSessions([row]);
+      });
+
+      const rows = last7Keys().map(key => {
+        const stats = keepBest(`recent7:${key}`, choosePersistentStats(byHistory[key], bySession[key]), nick);
+        return { key, ...stats };
+      });
+
+      document.getElementById('recent7').innerHTML = rows.map(row => `
         <tr>
-          <td>${i + 1}</td>
-          <td>${row.username}</td>
-          <td>${row.tier}</td>
-          <td class="ok">${row.wins}</td>
-          <td>${row.draws}</td>
-          <td class="bad">${row.losses}</td>
+          <td>${row.key}</td>
+          <td>${row.wins}승 ${row.draws}무 ${row.losses}패</td>
           <td>${row.matches}</td>
-          <td>${(row.rate * 100).toFixed(1)}%</td>
-          <td>${row.score}</td>
-          <td>${row.fc}</td>
+          <td>${rate(row)}%</td>
+          <td>${fc(row)}</td>
         </tr>
       `).join('');
     }
 
-    async function refreshAll() {
-      const statsMap = await loadPlayerStatsMap();
-      await Promise.all([
-        loadRanking(statsMap, {
-          tbodyId: 'rankingList',
-          sinceIso: startOfTodayIso(),
-          sessionFromDate: todayDate(),
-          sessionExactDate: todayDate(),
-          emptyMessage: '오늘 랭킹 데이터가 없습니다.',
-        }),
-        loadRanking(statsMap, {
-          tbodyId: 'weeklyRankingList',
-          sinceIso: weeklyResetIso(),
-          sessionFromDate: weeklyResetDate(),
-          sessionExactDate: null,
-          emptyMessage: '이번 주 랭킹 데이터가 없습니다.',
-        }),
-      ]);
-      if (currentUser) {
-        await Promise.all([
-          loadLiveStatus(),
-          loadPeriodStats(statsMap),
-          loadRecent(),
-          loadRecentForm(),
+    async function loadRanking(tbodyId, sinceIso, sinceDate, exactDate = null) {
+      const tbody = document.getElementById(tbodyId);
+      try {
+        let sessionQuery = supabaseClient.from('daily_sessions').select('*');
+        if (exactDate) sessionQuery = sessionQuery.eq('session_date', exactDate);
+        else if (sinceDate) sessionQuery = sessionQuery.gte('session_date', sinceDate);
+
+        const [historyRes, sessionRes] = await Promise.all([
+          supabaseClient.from('game_history').select('*').gte('created_at', sinceIso),
+          sessionQuery,
         ]);
-        document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
+
+        const grouped = {};
+
+        (historyRes.data || []).forEach(row => {
+          const name = row.username || '-';
+          grouped[name] ||= emptyStats();
+          const r = resultOf(row);
+          if (r === 'win') grouped[name].wins += 1;
+          if (r === 'draw') grouped[name].draws += 1;
+          if (r === 'loss') grouped[name].losses += 1;
+          if (r) grouped[name].matches += 1;
+        });
+
+        const sessionGrouped = {};
+        (sessionRes.data || []).forEach(row => {
+          const name = row.username || '-';
+          sessionGrouped[name] ||= emptyStats();
+          const stats = summarizeSessions([row]);
+          sessionGrouped[name].wins += stats.wins;
+          sessionGrouped[name].draws += stats.draws;
+          sessionGrouped[name].losses += stats.losses;
+          sessionGrouped[name].matches += stats.matches;
+        });
+
+        Object.keys(sessionGrouped).forEach(name => {
+          grouped[name] = choosePersistentStats(grouped[name], sessionGrouped[name]);
+        });
+
+        const rows = Object.entries(grouped)
+          .map(([username, stats]) => ({ username, ...normalizeStats(stats) }))
+          .filter(row => row.matches > 0)
+          .sort((a, b) => Number(rate(b)) - Number(rate(a)) || b.wins - a.wins || b.matches - a.matches)
+          .slice(0, 10);
+
+        tbody.innerHTML = rows.length ? rows.map((row, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${row.username}</td>
+            <td class="ok">${row.wins}</td>
+            <td>${row.draws}</td>
+            <td class="bad">${row.losses}</td>
+            <td>${row.matches}</td>
+            <td>${rate(row)}%</td>
+            <td>${fc(row)}</td>
+          </tr>
+        `).join('') : '<tr><td colspan="8" class="muted">랭킹 데이터가 없습니다.</td></tr>';
+      } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="8">오류: ${error.message}</td></tr>`;
       }
     }
 
-    setLoginState();
-    refreshAll();
-    setInterval(refreshAll, 3000);
+    async function refreshRankings() {
+      await Promise.all([
+        loadRanking('todayRanking', startOfTodayIso(), null, dateKey()),
+        loadRanking('weekRanking', weekStartIso(), weekStartKey()),
+      ]);
+    }
+
+    document.getElementById('searchNick').addEventListener('keydown', event => {
+      if (event.key === 'Enter') searchPlayer();
+    });
+
+    refreshRankings();
+    setInterval(() => {
+      refreshRankings();
+      if (currentNick) {
+        loadSummary(currentNick);
+        loadRecentFlow(currentNick);
+        loadRecent7(currentNick);
+      }
+    }, 10000);
   </script>
 </body>
 </html>
