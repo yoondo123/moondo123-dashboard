@@ -1497,6 +1497,16 @@
 
     let currentUser = JSON.parse(localStorage.getItem('moondo_user') || 'null');
 
+    function db() {
+      if (window.supabaseClient) return window.supabaseClient;
+      if (typeof supabaseClient !== 'undefined') return supabaseClient;
+      if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_KEY !== 'undefined' && window.supabase) {
+        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        return window.supabaseClient;
+      }
+      throw new Error('Supabase 설정을 찾을 수 없습니다. config.js의 SUPABASE_URL / SUPABASE_KEY를 확인하세요.');
+    }
+
     function formatLocalDate(d) {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -1732,14 +1742,13 @@
     }
 
     function applyCurrentAccountFilter(query, username = currentUser?.username) {
-      if (currentUser?.id && username === currentUser.username) {
-        return query.or(`username.eq.${username},user_id.eq.${currentUser.id}`);
-      }
+      // 기존 DB는 username 기준으로 저장되는 구조라 user_id 조건을 섞으면
+      // user_id 컬럼이 없는 테이블에서 조회가 전부 실패할 수 있습니다.
       return query.eq('username', username);
     }
 
     async function loadUserHistory(username, sinceIso) {
-      let query = supabaseClient
+      let query = db()
         .from('game_history')
         .select('*');
       query = applyCurrentAccountFilter(query, username);
@@ -1748,7 +1757,7 @@
     }
 
     async function loadUserSessions(username, sinceDateKey) {
-      let query = supabaseClient
+      let query = db()
         .from('daily_sessions')
         .select('*')
         .eq('username', username);
@@ -1868,7 +1877,7 @@
         return;
       }
 
-      const { data, error } = await supabaseClient
+      const { data, error } = await db()
         .from('app_users')
         .select('id, username, password_hash, status')
         .eq('username', username)
@@ -1920,7 +1929,7 @@
         return;
       }
 
-      const { data: exists, error: existsError } = await supabaseClient
+      const { data: exists, error: existsError } = await db()
         .from('app_users')
         .select('id')
         .eq('username', username)
@@ -1935,7 +1944,7 @@
         return;
       }
 
-      const { error } = await supabaseClient
+      const { error } = await db()
         .from('app_users')
         .insert({
           username,
@@ -1960,7 +1969,7 @@
     }
 
     async function loadPlayerStatsMap() {
-      const { data } = await supabaseClient.from('player_stats').select('*');
+      const { data } = await db().from('player_stats').select('*');
       const map = {};
       (data || []).forEach(row => { map[row.username] = row; });
       return map;
@@ -1968,7 +1977,7 @@
 
     async function loadLiveStatus() {
       if (!currentUser) return;
-      const { data, error } = await supabaseClient
+      const { data, error } = await db()
         .from('live_status')
         .select('*')
         .eq('username', currentUser.username)
@@ -2008,7 +2017,7 @@
         loadUserSessions(currentUser.username, todayDate()),
         loadUserHistory(currentUser.username, weeklyResetIso()),
         loadUserSessions(currentUser.username, weekStart),
-        supabaseClient
+        db()
           .from('live_status')
           .select('*')
           .eq('username', currentUser.username)
@@ -2107,7 +2116,7 @@
 
     async function loadRecentForm() {
       if (!currentUser) return;
-      let query = supabaseClient
+      let query = db()
         .from('game_history')
         .select('result, created_at');
       query = applyCurrentAccountFilter(query, currentUser.username);
@@ -2141,7 +2150,7 @@
         emptyMessage = '오늘 24시간 랭킹 데이터가 없습니다.',
       } = options;
       const tbody = document.getElementById(tbodyId);
-      let sessionQuery = supabaseClient
+      let sessionQuery = db()
         .from('daily_sessions')
         .select('*');
       if (sessionExactDate) {
@@ -2150,12 +2159,12 @@
         sessionQuery = sessionQuery.gte('session_date', sessionFromDate);
       }
       const [historyRes, sessionRes, liveRes] = await Promise.all([
-        supabaseClient
+        db()
           .from('game_history')
           .select('*')
           .gte('created_at', sinceIso),
         sessionQuery,
-        supabaseClient
+        db()
           .from('live_status')
           .select('*')
           .gte('updated_at', sinceIso),
@@ -2242,31 +2251,37 @@
     }
 
     async function refreshAll() {
-      const statsMap = await loadPlayerStatsMap();
-      await Promise.all([
-        loadRanking(statsMap, {
-          tbodyId: 'rankingList',
-          sinceIso: startOfTodayIso(),
-          sessionFromDate: todayDate(),
-          sessionExactDate: todayDate(),
-          emptyMessage: '오늘 랭킹 데이터가 없습니다.',
-        }),
-        loadRanking(statsMap, {
-          tbodyId: 'weeklyRankingList',
-          sinceIso: weeklyResetIso(),
-          sessionFromDate: weeklyResetDate(),
-          sessionExactDate: null,
-          emptyMessage: '이번 주 랭킹 데이터가 없습니다.',
-        }),
-      ]);
-      if (currentUser) {
+      try {
+        const statsMap = await loadPlayerStatsMap();
         await Promise.all([
-          loadLiveStatus(),
-          loadPeriodStats(statsMap),
-          loadRecent(),
-          loadRecentForm(),
+          loadRanking(statsMap, {
+            tbodyId: 'rankingList',
+            sinceIso: startOfTodayIso(),
+            sessionFromDate: todayDate(),
+            sessionExactDate: todayDate(),
+            emptyMessage: '오늘 랭킹 데이터가 없습니다.',
+          }),
+          loadRanking(statsMap, {
+            tbodyId: 'weeklyRankingList',
+            sinceIso: weeklyResetIso(),
+            sessionFromDate: weeklyResetDate(),
+            sessionExactDate: null,
+            emptyMessage: '이번 주 랭킹 데이터가 없습니다.',
+          }),
         ]);
-        document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
+        if (currentUser) {
+          await Promise.all([
+            loadLiveStatus(),
+            loadPeriodStats(statsMap),
+            loadRecent(),
+            loadRecentForm(),
+          ]);
+          document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
+        }
+      } catch (error) {
+        console.error('[MOONDO] refreshAll error', error);
+        const lastUpdated = document.getElementById('lastUpdated');
+        if (lastUpdated) lastUpdated.innerText = '연동 오류: ' + (error?.message || error);
       }
     }
 
