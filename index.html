@@ -540,6 +540,18 @@
       return { wins, draws, losses, matches: wins + draws + losses };
     }
 
+    function liveStatusStats(live) {
+      const wins = Number(live?.wins || 0);
+      const draws = Number(live?.draws || 0);
+      const losses = Number(live?.losses || 0);
+      return { wins, draws, losses, matches: Number(live?.matches ?? (wins + draws + losses)) };
+    }
+
+    function isUpdatedSince(row, sinceIso) {
+      if (!row?.updated_at) return true;
+      return new Date(row.updated_at) >= new Date(sinceIso);
+    }
+
     function resultLabel(result) {
       const r = normalizeResult(result);
       if (r === 'win') return '<span class="ok">승</span>';
@@ -647,14 +659,20 @@
       const weekStart = weeklyResetDate();
       const profile = statsMap[currentUser.username] || {};
 
-      const [historyRes, sessionRes, todayHistoryRes, todaySessionRes, weekHistoryRes, weekSessionRes] = await Promise.all([
+      const [historyRes, sessionRes, todayHistoryRes, todaySessionRes, weekHistoryRes, weekSessionRes, liveRes] = await Promise.all([
         loadUserHistory(currentUser.username, rolling7StartIso()),
         loadUserSessions(currentUser.username, rolling7StartKey()),
         loadUserHistory(currentUser.username, startOfTodayIso()),
         loadUserSessions(currentUser.username, todayDate()),
         loadUserHistory(currentUser.username, weeklyResetIso()),
         loadUserSessions(currentUser.username, weekStart),
+        supabaseClient
+          .from('live_status')
+          .select('*')
+          .eq('username', currentUser.username)
+          .limit(1),
       ]);
+      const live = liveRes.data?.[0];
 
       const history7 = summarizeMatches(historyRes.data || []);
       const sessions7 = summarizeSessions(sessionRes.data || []);
@@ -663,11 +681,17 @@
 
       const todayHistory = summarizeMatches(todayHistoryRes.data || []);
       const todaySessions = summarizeSessions(todaySessionRes.data || []);
-      const today = todayHistory.matches ? todayHistory : todaySessions;
+      let today = todayHistory.matches ? todayHistory : todaySessions;
+      if (!today.matches && live && isUpdatedSince(live, startOfTodayIso())) {
+        today = liveStatusStats(live);
+      }
 
       const weekHistory = summarizeMatches(weekHistoryRes.data || []);
       const weekSessions = summarizeSessions(weekSessionRes.data || []);
-      const week = weekHistory.matches ? weekHistory : weekSessions;
+      let week = weekHistory.matches ? weekHistory : weekSessions;
+      if (!week.matches && live && isUpdatedSince(live, weeklyResetIso())) {
+        week = liveStatusStats(live);
+      }
 
       document.getElementById('lifetimeRecord').innerText = `${lifetime.wins}승 ${lifetime.draws}무 ${lifetime.losses}패`;
       document.getElementById('lifetimeMatches').innerText = lifetime.matches;
@@ -690,14 +714,20 @@
     async function loadRecent() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentList');
-      const [historyRes, sessionRes] = await Promise.all([
+      const [historyRes, sessionRes, liveRes] = await Promise.all([
         loadUserHistory(currentUser.username, rolling7StartIso()),
         loadUserSessions(currentUser.username, rolling7StartKey()),
+        supabaseClient
+          .from('live_status')
+          .select('*')
+          .eq('username', currentUser.username)
+          .limit(1),
       ]);
 
       const historyRows = historyRes.data || [];
       const sessionRows = sessionRes.data || [];
-      if (historyRes.error && sessionRows.length === 0) {
+      const liveRows = liveRes.data || [];
+      if (historyRes.error && sessionRows.length === 0 && liveRows.length === 0) {
         const message = historyRes.error.message;
         tbody.innerHTML = `<tr><td colspan="5">오류: ${message}</td></tr>`;
         return;
@@ -705,15 +735,14 @@
 
       const historyMap = groupHistoryByDay(historyRows);
       const sessionMap = groupSessionsByDay(sessionRows);
+      const live = liveRows[0];
+      if (live && isUpdatedSince(live, startOfTodayIso()) && liveStatusStats(live).matches > 0) {
+        sessionMap[todayDate()] = liveStatusStats(live);
+      }
       const rows = last7DateKeys().map(dateKey => ({
         dateKey,
         ...dailyStatsFromMaps(dateKey, historyMap, sessionMap),
       }));
-
-      if (!rows.some(row => row.matches > 0)) {
-        tbody.innerHTML = '<tr><td colspan="5">최근 7일 경기 기록이 없습니다.</td></tr>';
-        return;
-      }
 
       tbody.innerHTML = rows.map(row => `
         <tr>
@@ -728,7 +757,7 @@
 
     async function loadRanking(statsMap) {
       const tbody = document.getElementById('rankingList');
-      const [historyRes, sessionRes] = await Promise.all([
+      const [historyRes, sessionRes, liveRes] = await Promise.all([
         supabaseClient
           .from('game_history')
           .select('*')
@@ -737,15 +766,14 @@
           .from('daily_sessions')
           .select('*')
           .eq('session_date', todayDate()),
+        supabaseClient
+          .from('live_status')
+          .select('*')
+          .gte('updated_at', startOfTodayIso()),
       ]);
 
       const historyRows = historyRes.data || [];
       const sessionRows = sessionRes.data || [];
-      if (historyRes.error && sessionRows.length === 0) {
-        const message = historyRes.error.message;
-        tbody.innerHTML = `<tr><td colspan="10">오류: ${message}</td></tr>`;
-        return;
-      }
 
       const grouped = {};
       historyRows.forEach(row => {
@@ -773,6 +801,24 @@
             losses,
             matches: Number(row.matches ?? (wins + draws + losses)),
           };
+        });
+      }
+
+      if (Object.keys(grouped).length === 0) {
+        (liveRes.data || []).forEach(row => {
+          const username = row.username || '-';
+          const stats = liveStatusStats(row);
+          if (stats.matches <= 0) return;
+          grouped[username] = { username, ...stats };
+        });
+      }
+
+      if (Object.keys(grouped).length === 0) {
+        Object.values(statsMap || {}).forEach(profile => {
+          const username = profile.username || '-';
+          const stats = profileStats(profile);
+          if (stats.matches <= 0) return;
+          grouped[username] = { username, ...stats };
         });
       }
 
