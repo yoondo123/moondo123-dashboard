@@ -534,13 +534,19 @@
     .stat.compact small {
       min-height: 16px;
     }
-    #todayRecord,
-    #weekRecord,
     #lifetimeRecord {
       color: #ffffff;
     }
     #todayMatches,
     #weekMatches,
+    #todayWins,
+    #todayDraws,
+    #todayLosses,
+    #todayFc,
+    #weekWins,
+    #weekDraws,
+    #weekLosses,
+    #weekFc,
     #lifetimeMatches,
     #lifetimeFc {
       color: #e9fff9;
@@ -722,16 +728,31 @@
       </div>
 
       <h2>주간 전적</h2>
-      <div class="grid">
-        <div class="stat">
-          <span class="muted">주간</span>
-          <strong id="weekRecord">0승 0무 0패</strong>
-          <small id="weekMeta">FC 0 · 목요일 00시 기준</small>
-        </div>
-        <div class="stat">
-          <span class="muted">주간 경기</span>
+      <div class="today-grid">
+        <div class="stat compact">
+          <span class="muted">주간 경기 총 수</span>
           <strong id="weekMatches">0</strong>
           <small id="weekWinRate">승률 0.0%</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">승</span>
+          <strong id="weekWins">0</strong>
+          <small>주간 승리</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">무</span>
+          <strong id="weekDraws">0</strong>
+          <small>주간 무승부</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">패</span>
+          <strong id="weekLosses">0</strong>
+          <small>주간 패배</small>
+        </div>
+        <div class="stat compact">
+          <span class="muted">FC 채굴량</span>
+          <strong id="weekFc">0</strong>
+          <small id="weekMeta">목요일 00시 기준</small>
         </div>
       </div>
 
@@ -1219,9 +1240,12 @@
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
 
-      document.getElementById('weekRecord').innerText = `${week.wins}승 ${week.draws}무 ${week.losses}패`;
       document.getElementById('weekMatches').innerText = week.matches;
-      document.getElementById('weekMeta').innerText = `FC ${fcFromWins(week.wins)} · ${weekStart} 시작`;
+      document.getElementById('weekWins').innerText = week.wins;
+      document.getElementById('weekDraws').innerText = week.draws;
+      document.getElementById('weekLosses').innerText = week.losses;
+      document.getElementById('weekFc').innerText = fcFromWins(week.wins);
+      document.getElementById('weekMeta').innerText = `${weekStart} 시작`;
       document.getElementById('weekWinRate').innerText = `승률 ${winRate(week)}%`;
     }
 
@@ -1300,51 +1324,46 @@
       const sessionRows = sessionRes.data || [];
 
       const grouped = {};
+      function mergeRankingStats(username, stats) {
+        if (!username || username === '-' || !stats || Number(stats.matches || 0) <= 0) return;
+        grouped[username] = {
+          username,
+          ...bestStats(grouped[username], stats),
+        };
+      }
       historyRows.forEach(row => {
         const username = row.username || '-';
-        if (!grouped[username]) {
-          grouped[username] = { username, wins: 0, draws: 0, losses: 0, matches: 0 };
-        }
+        const current = grouped[username] || emptyStats();
         const result = normalizeResult(row.result);
-        if (result === 'win') grouped[username].wins += 1;
-        if (result === 'draw') grouped[username].draws += 1;
-        if (result === 'loss') grouped[username].losses += 1;
-        grouped[username].matches += 1;
+        const next = {
+          wins: current.wins + (result === 'win' ? 1 : 0),
+          draws: current.draws + (result === 'draw' ? 1 : 0),
+          losses: current.losses + (result === 'loss' ? 1 : 0),
+          matches: current.matches + 1,
+        };
+        grouped[username] = { username, ...next };
       });
 
-      if (Object.keys(grouped).length === 0) {
-        sessionRows.forEach(row => {
-          const username = row.username || '-';
-          const wins = Number(row.wins || 0);
-          const draws = Number(row.draws || 0);
-          const losses = Number(row.losses || 0);
-          grouped[username] = {
-            username,
-            wins,
-            draws,
-            losses,
-            matches: Number(row.matches ?? (wins + draws + losses)),
-          };
+      sessionRows.forEach(row => {
+        const wins = Number(row.wins || 0);
+        const draws = Number(row.draws || 0);
+        const losses = Number(row.losses || 0);
+        mergeRankingStats(row.username || '-', {
+          wins,
+          draws,
+          losses,
+          matches: Number(row.matches ?? (wins + draws + losses)),
         });
-      }
+      });
 
-      if (Object.keys(grouped).length === 0) {
-        (liveRes.data || []).forEach(row => {
-          const username = row.username || '-';
-          const stats = liveStatusStats(row);
-          if (stats.matches <= 0) return;
-          grouped[username] = { username, ...stats };
-        });
-      }
+      (liveRes.data || []).forEach(row => {
+        mergeRankingStats(row.username || '-', liveStatusStats(row));
+      });
 
-      if (Object.keys(grouped).length === 0) {
-        Object.values(statsMap || {}).forEach(profile => {
-          const username = profile.username || '-';
-          const stats = profileStats(profile);
-          if (stats.matches <= 0) return;
-          grouped[username] = { username, ...stats };
-        });
-      }
+      Object.values(statsMap || {}).forEach(profile => {
+        if (!isUpdatedSince(profile, startOfTodayIso())) return;
+        mergeRankingStats(profile.username || '-', profileStats(profile));
+      });
 
       const ranking = Object.values(grouped)
         .filter(row => row.matches > 0)
