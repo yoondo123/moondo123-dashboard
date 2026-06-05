@@ -1874,6 +1874,389 @@ footer{color:#6f7d7a!important}
   }
 }
 
+
+/* === Mobile App Look Patch v3: better mobile cards, rankings, spacing === */
+@media (max-width: 760px) {
+  body {
+    background:
+      radial-gradient(circle at 50% -10%, rgba(0,224,194,.16), transparent 34%),
+      linear-gradient(180deg, #071117 0%, #05080b 52%, #030506 100%) !important;
+  }
+
+  main {
+    padding: 8px 8px 28px !important;
+  }
+
+  header {
+    margin: 0 0 10px !important;
+    padding: 16px 15px !important;
+    border-radius: 18px !important;
+    background:
+      linear-gradient(135deg, rgba(0,224,194,.14), transparent 48%),
+      rgba(8,13,18,.92) !important;
+  }
+
+  header::before {
+    inset: 8px !important;
+    border-radius: 14px !important;
+  }
+
+  h1 {
+    font-size: 23px !important;
+    letter-spacing: -.055em !important;
+  }
+
+  #dashboard > .topbar {
+    margin: 10px 0 8px !important;
+    padding: 12px 13px !important;
+  }
+
+  #dashboard > .topbar h2 {
+    font-size: 18px !important;
+  }
+
+  .moondo-tabs {
+    top: 4px !important;
+    margin-bottom: 14px !important;
+    padding: 5px !important;
+    border-radius: 16px !important;
+  }
+
+  .moondo-tab {
+    height: 38px !important;
+    font-size: 12px !important;
+  }
+
+  h2 {
+    margin: 18px 0 9px !important;
+    font-size: 17px !important;
+  }
+
+  h2::before {
+    width: 5px !important;
+    height: 20px !important;
+  }
+
+  .panel {
+    padding: 11px !important;
+    border-radius: 17px !important;
+  }
+
+  .live-card {
+    grid-template-columns: 1fr 46px 46px 1fr !important;
+    min-height: 54px !important;
+    border-radius: 15px !important;
+  }
+
+  .live-name {
+    padding: 0 8px !important;
+    font-size: 12px !important;
+  }
+
+  .live-score {
+    height: 54px !important;
+    font-size: 24px !important;
+  }
+
+  .live-time {
+    height: 31px !important;
+    font-size: 14px !important;
+  }
+
+  /* 핵심: 모바일 통계 카드 2열 앱형 */
+  .today-grid,
+  .week-grid,
+  .grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .today-grid .stat,
+  .week-grid .stat,
+  .grid .stat,
+  .today-grid .stat:nth-child(n),
+  .week-grid .stat:nth-child(n),
+  .grid .stat:nth-child(n) {
+    grid-column: auto !important;
+    min-height: 82px !important;
+    padding: 12px !important;
+    border-radius: 16px !important;
+    background:
+      linear-gradient(135deg, rgba(0,224,194,.075), transparent 42%),
+      linear-gradient(180deg, rgba(255,255,255,.04), transparent),
+      rgba(14,22,29,.94) !important;
+    text-align: left !important;
+  }
+
+  .today-grid .stat:first-child,
+  .week-grid .stat:first-child,
+  .grid .stat:first-child {
+    grid-column: 1 / -1 !important;
+    min-height: 96px !important;
+    padding: 15px !important;
+    background:
+      linear-gradient(135deg, rgba(0,224,194,.16), rgba(217,185,111,.06)),
+      rgba(14,22,29,.96) !important;
+  }
+
+  .today-grid .stat:nth-child(2),
+  .today-grid .stat:nth-child(3),
+  .today-grid .stat:nth-child(4),
+  .week-grid .stat:nth-child(2),
+  .week-grid .stat:nth-child(3),
+  .week-grid .stat:nth-child(4) {
+    text-align: center !important;
+  }
+
+  .stat .muted {
+    font-size: 10px !important;
+    color: #93a4a1 !important;
+  }
+
+  .stat strong,
+  .stat.compact strong {
+    margin-top: 6px !important;
+    font-size: 24px !important;
+    letter-spacing: -.045em !important;
+  }
+
+  .today-grid .stat:first-child strong,
+  .week-grid .stat:first-child strong {
+    font-size: 38px !important;
+  }
+
+  .grid .stat:first-child strong {
+    font-size: 26px !important;
+  }
+
+  .stat small,
+  .stat.compact small {
+    margin-top: 6px !important;
+    font-size: 10px !important;
+    color: #d9b96f !important;
+  }
+
+  #todayTier,
+  #lifetimeTier {
+    font-size: 17px !important;
+    line-height: 1.12 !important;
+  }
+
+  .form-strip {
+    margin-top: 8px !important;
+    padding: 11px !important;
+    border-radius: 16px !important;
+  }
+
+  .form-dots {
+    gap: 4px !important;
+  }
+
+  .form-dot {
+    min-height: 25px !important;
+    font-size: 10px !important;
+    border-radius: 999px !important;
+  }
+
+  /* 랭킹은 표 느낌 제거, 랭킹 카드형 */
+  #rankingList tr,
+  #weeklyRankingList tr {
+    display: grid !important;
+    grid-template-columns: 42px 1fr auto !important;
+    grid-template-areas:
+      "rank name rate"
+      "rank tier record" !important;
+    align-items: center !important;
+    gap: 4px 10px !important;
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+    border-radius: 17px !important;
+    border: 1px solid rgba(168,232,224,.12) !important;
+    background:
+      linear-gradient(135deg, rgba(0,224,194,.095), transparent 38%),
+      rgba(12,18,24,.96) !important;
+  }
+
+  #rankingList td,
+  #weeklyRankingList td {
+    display: block !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    text-align: left !important;
+  }
+
+  #rankingList td::before,
+  #weeklyRankingList td::before {
+    content: "" !important;
+  }
+
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1) {
+    grid-area: rank !important;
+    align-self: stretch !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 13px !important;
+    background: rgba(0,224,194,.12) !important;
+    color: #6fffe2 !important;
+    font-size: 17px !important;
+    font-weight: 950 !important;
+  }
+
+  #rankingList tr:first-child td:nth-child(1),
+  #weeklyRankingList tr:first-child td:nth-child(1) {
+    background: linear-gradient(180deg, rgba(217,185,111,.95), rgba(141,107,43,.95)) !important;
+    color: #07100e !important;
+  }
+
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2) {
+    grid-area: name !important;
+    color: #f5faf7 !important;
+    font-size: 15px !important;
+    font-weight: 950 !important;
+    line-height: 1.2 !important;
+  }
+
+  #rankingList td:nth-child(3),
+  #weeklyRankingList td:nth-child(3) {
+    grid-area: tier !important;
+    color: #8c9b98 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+  }
+
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8) {
+    grid-area: rate !important;
+    justify-self: end !important;
+    color: #d9b96f !important;
+    font-size: 15px !important;
+    font-weight: 950 !important;
+  }
+
+  #rankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(4) {
+    grid-area: record !important;
+    justify-self: end !important;
+    color: #6fffe2 !important;
+    font-size: 12px !important;
+    font-weight: 950 !important;
+  }
+
+  #rankingList td:nth-child(4)::before,
+  #weeklyRankingList td:nth-child(4)::before {
+    content: "승 " !important;
+    color: #8c9b98 !important;
+  }
+
+  #rankingList td:nth-child(5),
+  #rankingList td:nth-child(6),
+  #rankingList td:nth-child(7),
+  #rankingList td:nth-child(9),
+  #rankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(5),
+  #weeklyRankingList td:nth-child(6),
+  #weeklyRankingList td:nth-child(7),
+  #weeklyRankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(10) {
+    display: none !important;
+  }
+
+  /* 최근 7일은 작은 카드 리스트 */
+  #recentList tr {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-areas:
+      "date rate"
+      "record matches" !important;
+    gap: 4px 10px !important;
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+    border-radius: 16px !important;
+    background:
+      linear-gradient(135deg, rgba(0,224,194,.075), transparent 40%),
+      rgba(12,18,24,.95) !important;
+  }
+
+  #recentList td {
+    display: block !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    text-align: left !important;
+  }
+
+  #recentList td::before {
+    content: "" !important;
+  }
+
+  #recentList td:nth-child(1) {
+    grid-area: date !important;
+    color: #6fffe2 !important;
+    font-size: 13px !important;
+    font-weight: 950 !important;
+  }
+
+  #recentList td:nth-child(2) {
+    grid-area: record !important;
+    color: #f5faf7 !important;
+    font-size: 14px !important;
+    font-weight: 950 !important;
+  }
+
+  #recentList td:nth-child(3) {
+    grid-area: matches !important;
+    justify-self: end !important;
+    color: #8c9b98 !important;
+    font-size: 12px !important;
+  }
+
+  #recentList td:nth-child(3)::after {
+    content: " 경기" !important;
+  }
+
+  #recentList td:nth-child(4) {
+    grid-area: rate !important;
+    justify-self: end !important;
+    color: #d9b96f !important;
+    font-size: 13px !important;
+    font-weight: 950 !important;
+  }
+
+  #recentList td:nth-child(5) {
+    display: none !important;
+  }
+
+  #rankingList td[colspan],
+  #weeklyRankingList td[colspan],
+  #recentList td[colspan] {
+    display: block !important;
+    grid-column: 1 / -1 !important;
+    text-align: center !important;
+    padding: 14px 0 !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .today-grid,
+  .week-grid,
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .today-grid .stat,
+  .week-grid .stat,
+  .grid .stat,
+  .today-grid .stat:nth-child(n),
+  .week-grid .stat:nth-child(n),
+  .grid .stat:nth-child(n) {
+    grid-column: 1 / -1 !important;
+  }
+}
+
 </style>
 </head>
 <body>
