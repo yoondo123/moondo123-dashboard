@@ -1787,10 +1787,29 @@
       return { wins, draws, losses, matches };
     }
 
-    function choosePeriodStats(historyStats, sessionStats) {
+    function choosePeriodStats(historyStats, sessionStats, ...fallbackStats) {
       // 같은 경기를 game_history와 daily_sessions가 둘 다 가지고 있을 수 있으니 더 큰 쪽만 사용합니다.
       // 둘을 더하면 중복 집계가 생길 수 있습니다.
-      return bestStats(normalizeStats(historyStats), normalizeStats(sessionStats));
+      const primary = bestStats(normalizeStats(historyStats), normalizeStats(sessionStats));
+      if (primary.matches > 0) return primary;
+      return firstUsefulStats(...fallbackStats, primary);
+    }
+
+    function statsUpdatedSince(row, sinceIso) {
+      if (!row) return false;
+      const stamp = row.updated_at || row.created_at;
+      if (!stamp) return true;
+      return new Date(stamp) >= new Date(sinceIso);
+    }
+
+    function liveStatsForPeriod(live, sinceIso) {
+      if (!statsUpdatedSince(live, sinceIso)) return emptyStats();
+      return liveStatusStats(live);
+    }
+
+    function profileStatsForPeriod(profile, sinceIso) {
+      if (!statsUpdatedSince(profile, sinceIso)) return emptyStats();
+      return profileStats(profile);
     }
 
     function currentMeta(profile, live) {
@@ -2040,12 +2059,20 @@
       // 매크로를 껐다 켜도 DB에 남은 game_history/daily_sessions를 다시 읽어 누적 표시됩니다.
       const todayHistory = summarizeMatches(todayHistoryRes.data || []);
       const todaySessions = summarizeSessions(todaySessionRes.data || []);
-      const today = choosePeriodStats(todayHistory, todaySessions);
+      const today = choosePeriodStats(
+        todayHistory,
+        todaySessions,
+        liveStatsForPeriod(live, startOfTodayIso()),
+      );
 
       // 주간 전적은 매주 목요일 00:00 이후 기록만 봅니다.
       const weekHistory = summarizeMatches(weekHistoryRes.data || []);
       const weekSessions = summarizeSessions(weekSessionRes.data || []);
-      const week = choosePeriodStats(weekHistory, weekSessions);
+      const week = choosePeriodStats(
+        weekHistory,
+        weekSessions,
+        liveStatsForPeriod(live, weeklyResetIso()),
+      );
 
       document.getElementById('lifetimeRecord').innerText = `${lifetime.wins}승 ${lifetime.draws}무 ${lifetime.losses}패`;
       document.getElementById('lifetimeMatches').innerText = lifetime.matches;
@@ -2076,9 +2103,14 @@
     async function loadRecent() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentList');
-      const [historyRes, sessionRes] = await Promise.all([
+      const [historyRes, sessionRes, liveRes] = await Promise.all([
         loadUserHistory(currentUser.username, rolling7StartIso()),
         loadUserSessions(currentUser.username, rolling7StartKey()),
+        supabaseClient
+          .from('live_status')
+          .select('*')
+          .eq('username', currentUser.username)
+          .limit(1),
       ]);
 
       const historyRows = historyRes.data || [];
@@ -2091,6 +2123,11 @@
 
       const historyMap = groupHistoryByDay(historyRows);
       const sessionMap = groupSessionsByDay(sessionRows);
+      const live = liveRes.data?.[0];
+      const todayLive = liveStatsForPeriod(live, startOfTodayIso());
+      if (todayLive.matches > 0 && !historyMap[todayDate()]?.matches && !sessionMap[todayDate()]?.matches) {
+        sessionMap[todayDate()] = todayLive;
+      }
       let rows = last7DateKeys().map(dateKey => ({
         dateKey,
         ...dailyStatsFromMaps(dateKey, historyMap, sessionMap),
@@ -2114,18 +2151,32 @@
         .from('game_history')
         .select('result, created_at');
       query = applyCurrentAccountFilter(query, currentUser.username);
-      const { data, error } = await query
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const [{ data, error }, liveRes] = await Promise.all([
+        query
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabaseClient
+          .from('live_status')
+          .select('*')
+          .eq('username', currentUser.username)
+          .limit(1),
+      ]);
 
       if (error) {
-        renderRecentForm([], '전적 조회 오류');
+        const liveStats = liveStatsForPeriod(liveRes.data?.[0], startOfTodayIso());
+        renderRecentForm(expandStatsToResults(liveStats), '현재 전적 기준');
         return;
       }
 
       const rows = data || [];
       const results = rows.map(row => normalizeResult(row.result));
-      renderRecentForm(results, '전체 최근 경기 순서');
+      if (results.length > 0) {
+        renderRecentForm(results, '전체 최근 경기 순서');
+        return;
+      }
+
+      const liveStats = liveStatsForPeriod(liveRes.data?.[0], startOfTodayIso());
+      renderRecentForm(expandStatsToResults(liveStats), '현재 전적 기준');
     }
 
     async function loadRanking(statsMap, options = {}) {
@@ -2147,12 +2198,16 @@
         sessionQuery = sessionQuery.gte('session_date', sessionFromDate);
       }
 
-      const [historyRes, sessionRes] = await Promise.all([
+      const [historyRes, sessionRes, liveRes] = await Promise.all([
         supabaseClient
           .from('game_history')
           .select('*')
           .gte('created_at', sinceIso),
         sessionQuery,
+        supabaseClient
+          .from('live_status')
+          .select('*')
+          .gte('updated_at', sinceIso),
       ]);
 
       if (historyRes.error && sessionRes.error) {
@@ -2184,10 +2239,36 @@
         sessionGrouped[username].matches += Number(row.matches ?? (wins + draws + losses));
       });
 
-      const usernames = new Set([...Object.keys(historyGrouped), ...Object.keys(sessionGrouped)]);
+      const liveGrouped = {};
+      (liveRes.data || []).forEach(row => {
+        const username = row.username || '-';
+        const stats = liveStatsForPeriod(row, sinceIso);
+        if (stats.matches <= 0) return;
+        liveGrouped[username] = stats;
+      });
+
+      const profileGrouped = {};
+      Object.values(statsMap || {}).forEach(profile => {
+        const username = profile.username || '-';
+        const stats = profileStatsForPeriod(profile, sinceIso);
+        if (stats.matches <= 0) return;
+        profileGrouped[username] = stats;
+      });
+
+      const usernames = new Set([
+        ...Object.keys(historyGrouped),
+        ...Object.keys(sessionGrouped),
+        ...Object.keys(liveGrouped),
+        ...Object.keys(profileGrouped),
+      ]);
       const ranking = [...usernames]
         .map(username => {
-          const stats = choosePeriodStats(historyGrouped[username], sessionGrouped[username]);
+          const stats = choosePeriodStats(
+            historyGrouped[username],
+            sessionGrouped[username],
+            liveGrouped[username],
+            profileGrouped[username],
+          );
           const profile = statsMap[username] || {};
           return {
             username,
