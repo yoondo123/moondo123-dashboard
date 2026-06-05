@@ -1847,7 +1847,8 @@
       summary.innerText = cleanResults.length
         ? `${streakSummary(cleanResults)}${sourceText ? ` · ${sourceText}` : ''}`
         : '오늘 기록 대기';
-      const padded = [...cleanResults, ...Array(Math.max(0, 10 - cleanResults.length)).fill('')];
+      const displayResults = [...cleanResults].reverse();
+      const padded = [...Array(Math.max(0, 10 - displayResults.length)).fill(''), ...displayResults];
       dots.innerHTML = padded.slice(0, 10).map(result => {
         const normalized = normalizeResult(result);
         const cls = normalized === 'win' ? 'win' : normalized === 'loss' ? 'loss' : normalized === 'draw' ? 'draw' : '';
