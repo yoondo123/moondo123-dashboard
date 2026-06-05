@@ -142,18 +142,6 @@
       gap: 10px;
       margin-top: 16px;
     }
-    .remote-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-end;
-    }
-    .remote-message {
-      min-height: 20px;
-      margin: -8px 0 12px;
-      font-size: 13px;
-      font-weight: 800;
-    }
     .form-strip {
       display: grid;
       gap: 10px;
@@ -366,8 +354,6 @@
       header, .topbar { flex-direction: column; }
       header { padding: 16px; }
       .login-row input, .login-row button { width: 100%; }
-      .remote-actions { width: 100%; justify-content: stretch; }
-      .remote-actions button { flex: 1; min-width: 0; }
       .footer-actions { display: grid; grid-template-columns: 1fr 1fr; }
       .footer-actions a, .footer-actions button { width: 100%; min-width: 0; }
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -970,25 +956,6 @@
       #lastUpdated {
         font-size: 11px;
       }
-      .remote-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        width: 100%;
-      }
-      .remote-actions button {
-        width: 100%;
-        min-height: 38px;
-        padding: 0 10px;
-        font-size: 12px;
-      }
-      .remote-actions {
-        grid-template-columns: 1fr;
-      }
-      .remote-message {
-        margin: -5px 2px 10px;
-        font-size: 12px;
-        line-height: 1.35;
-      }
       .form-strip {
         margin: 10px 0 4px;
         padding: 11px;
@@ -1323,11 +1290,7 @@
           <h2 style="margin:0;"><span id="helloName"></span> 님 전적</h2>
           <p id="lastUpdated" class="muted"></p>
         </div>
-        <div class="remote-actions">
-          <button onclick="requestStopAfterResult()">경기 후 중지</button>
-        </div>
       </div>
-      <p id="remoteCommandMessage" class="muted remote-message"></p>
 
       <h2>실시간 경기</h2>
       <div class="panel">
@@ -1865,6 +1828,33 @@
       return `${streak}${label} · 최근10판 ${wins}승 ${draws}무 ${losses}패`;
     }
 
+    function expandStatsToResults(stats) {
+      const wins = Number(stats?.wins || 0);
+      const draws = Number(stats?.draws || 0);
+      const losses = Number(stats?.losses || 0);
+      return [
+        ...Array(wins).fill('win'),
+        ...Array(draws).fill('draw'),
+        ...Array(losses).fill('loss'),
+      ].slice(0, 10);
+    }
+
+    function renderRecentForm(results, sourceText = '') {
+      const dots = document.getElementById('formDots');
+      const summary = document.getElementById('formSummary');
+      if (!dots || !summary) return;
+      const cleanResults = (results || []).map(normalizeResult).filter(Boolean).slice(0, 10);
+      summary.innerText = cleanResults.length
+        ? `${streakSummary(cleanResults)}${sourceText ? ` · ${sourceText}` : ''}`
+        : '오늘 기록 대기';
+      const padded = [...cleanResults, ...Array(Math.max(0, 10 - cleanResults.length)).fill('')];
+      dots.innerHTML = padded.slice(0, 10).map(result => {
+        const normalized = normalizeResult(result);
+        const cls = normalized === 'win' ? 'win' : normalized === 'loss' ? 'loss' : normalized === 'draw' ? 'draw' : '';
+        return `<span class="form-dot ${cls}">${resultShort(result)}</span>`;
+      }).join('');
+    }
+
     function setLoginState() {
       const loggedIn = !!currentUser;
       document.getElementById('loginPanel').classList.toggle('hidden', loggedIn);
@@ -1974,78 +1964,6 @@
       setLoginState();
     }
 
-    function setRemoteMessage(text, ok = true) {
-      const el = document.getElementById('remoteCommandMessage');
-      if (!el) return;
-      el.className = ok ? 'ok remote-message' : 'bad remote-message';
-      el.innerText = text || '';
-    }
-
-    async function requestStopAfterResult() {
-      if (!currentUser) return;
-      setRemoteMessage('원격 중지 예약을 전송하는 중입니다...');
-      try {
-        const { data: existing, error: existingError } = await supabaseClient
-          .from('remote_commands')
-          .select('id, status, created_at')
-          .eq('user_id', currentUser.id)
-          .eq('action', 'stop_after_result')
-          .in('status', ['pending', 'accepted'])
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (existingError) throw existingError;
-        if (existing && existing.length > 0) {
-          setRemoteMessage('이미 경기 종료 후 중지가 예약되어 있습니다.');
-          return;
-        }
-
-        const { error } = await supabaseClient
-          .from('remote_commands')
-          .insert({
-            user_id: currentUser.id,
-            username: currentUser.username,
-            action: 'stop_after_result',
-            status: 'pending',
-            message: '웹에서 경기 종료 후 중지를 요청했습니다.',
-          });
-
-        if (error) throw error;
-        setRemoteMessage('예약 완료: 다음 경기 결과 저장 후 프로그램이 중지됩니다.');
-        loadRemoteCommandStatus();
-      } catch (error) {
-        setRemoteMessage(
-          '원격 중지 예약 실패: remote_commands 테이블이 있는지 확인해주세요. ' + (error?.message || error),
-          false
-        );
-      }
-    }
-
-    async function loadRemoteCommandStatus() {
-      if (!currentUser) return;
-      try {
-        const { data, error } = await supabaseClient
-          .from('remote_commands')
-          .select('status, message, created_at, accepted_at, completed_at')
-          .eq('user_id', currentUser.id)
-          .eq('action', 'stop_after_result')
-          .order('created_at', { ascending: false })
-          .limit(1);
-        if (error) throw error;
-        const command = data?.[0];
-        if (!command) return;
-        if (command.status === 'pending') {
-          setRemoteMessage('원격 중지 대기 중: 프로그램이 명령을 확인하면 접수됩니다.');
-        } else if (command.status === 'accepted') {
-          setRemoteMessage('원격 중지 접수됨: 다음 경기 결과 저장 후 중지됩니다.');
-        } else if (command.status === 'completed') {
-          setRemoteMessage('원격 중지 완료: 경기 결과 저장 후 프로그램을 중지했습니다.');
-        }
-      } catch (_) {
-        // The setup SQL may not have been installed yet.
-      }
-    }
-
     async function loadPlayerStatsMap() {
       const { data } = await supabaseClient.from('player_stats').select('*');
       const map = {};
@@ -2150,6 +2068,7 @@
       document.getElementById('todayScore').innerText = meta.score;
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
+      renderRecentForm(expandStatsToResults(today), '오늘 전적 기준');
 
       document.getElementById('weekMatches').innerText = week.matches;
       document.getElementById('weekWins').innerText = week.wins;
@@ -2216,30 +2135,23 @@
 
     async function loadRecentForm() {
       if (!currentUser) return;
-      const dots = document.getElementById('formDots');
-      const summary = document.getElementById('formSummary');
       let query = supabaseClient
         .from('game_history')
         .select('result, created_at');
       query = applyCurrentAccountFilter(query, currentUser.username);
       const { data, error } = await query
+        .gte('created_at', startOfTodayIso())
         .order('created_at', { ascending: false })
         .limit(10);
 
       if (error) {
-        summary.innerText = '흐름 데이터 오류';
         return;
       }
 
       const rows = data || [];
+      if (!rows.length) return;
       const results = rows.map(row => normalizeResult(row.result));
-      summary.innerText = streakSummary(results);
-      const padded = [...results, ...Array(Math.max(0, 10 - results.length)).fill('')];
-      dots.innerHTML = padded.slice(0, 10).map(result => {
-        const normalized = normalizeResult(result);
-        const cls = normalized === 'win' ? 'win' : normalized === 'loss' ? 'loss' : normalized === 'draw' ? 'draw' : '';
-        return `<span class="form-dot ${cls}">${resultShort(result)}</span>`;
-      }).join('');
+      renderRecentForm(results, '오늘 경기 순서');
     }
 
     async function loadRanking(statsMap, options = {}) {
@@ -2381,7 +2293,6 @@
           loadPeriodStats(statsMap),
           loadRecent(),
           loadRecentForm(),
-          loadRemoteCommandStatus(),
         ]);
         document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
       }
