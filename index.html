@@ -2059,7 +2059,6 @@
       document.getElementById('todayScore').innerText = meta.score;
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
-      renderRecentForm(expandStatsToResults(today), '오늘 전적 기준');
 
       document.getElementById('weekMatches').innerText = week.matches;
       document.getElementById('weekWins').innerText = week.wins;
@@ -2113,18 +2112,24 @@
         .select('result, created_at');
       query = applyCurrentAccountFilter(query, currentUser.username);
       const { data, error } = await query
-        .gte('created_at', startOfTodayIso())
         .order('created_at', { ascending: false })
         .limit(10);
 
       if (error) {
+        const cached = loadStatsCache(currentUser.username, 'recent10form');
+        if (cached?.length) renderRecentForm(cached, '저장된 최근 흐름');
         return;
       }
 
       const rows = data || [];
-      if (!rows.length) return;
+      if (!rows.length) {
+        const cached = loadStatsCache(currentUser.username, 'recent10form');
+        if (cached?.length) renderRecentForm(cached, '저장된 최근 흐름');
+        return;
+      }
       const results = rows.map(row => normalizeResult(row.result));
-      renderRecentForm(results, '오늘 경기 순서');
+      saveStatsCache(currentUser.username, 'recent10form', results);
+      renderRecentForm(results, '전체 최근 경기 순서');
     }
 
     async function loadRanking(statsMap, options = {}) {
