@@ -637,13 +637,15 @@
       <div class="topbar">
         <div>
           <h2 style="margin:0;">로그인</h2>
-          <p class="muted">프로그램에서 가입한 ID로 로그인합니다.</p>
+          <p class="muted">회원가입 신청 후 관리자 승인 시 사용할 수 있습니다.</p>
         </div>
       </div>
       <div class="login-row">
         <input id="loginId" placeholder="아이디">
         <input id="loginPw" type="password" placeholder="비밀번호">
+        <input id="signupNick" placeholder="닉네임 / 표시 이름">
         <button onclick="login()">로그인</button>
+        <button class="secondary" onclick="signup()">회원가입 신청</button>
       </div>
       <p id="loginMessage" class="bad" style="margin-top:12px;"></p>
     </section>
@@ -893,6 +895,10 @@
       return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
+    function normalizeUsername(username) {
+      return (username || '').trim().replace(/[^a-zA-Z0-9_가-힣.-]/g, '').slice(0, 30);
+    }
+
     function normalizeResult(result) {
       if (result === 'win' || result === '승') return 'win';
       if (result === 'loss' || result === '패') return 'loss';
@@ -1101,7 +1107,7 @@
     }
 
     async function login() {
-      const username = document.getElementById('loginId').value.trim();
+      const username = normalizeUsername(document.getElementById('loginId').value);
       const password = document.getElementById('loginPw').value.trim();
       const message = document.getElementById('loginMessage');
       message.innerText = '';
@@ -1140,6 +1146,60 @@
       localStorage.setItem('moondo_user', JSON.stringify(currentUser));
       setLoginState();
       refreshAll();
+    }
+
+    async function signup() {
+      const username = normalizeUsername(document.getElementById('loginId').value);
+      const password = document.getElementById('loginPw').value.trim();
+      const nickname = (document.getElementById('signupNick').value.trim() || username).slice(0, 30);
+      const message = document.getElementById('loginMessage');
+      message.className = 'bad';
+      message.innerText = '';
+
+      if (!username || !password) {
+        message.innerText = '회원가입할 아이디와 비밀번호를 입력해주세요.';
+        return;
+      }
+      if (username.length < 3) {
+        message.innerText = '아이디는 최소 3자리 이상이어야 합니다.';
+        return;
+      }
+      if (password.length < 4) {
+        message.innerText = '비밀번호는 최소 4자리 이상이어야 합니다.';
+        return;
+      }
+
+      const { data: exists, error: existsError } = await supabaseClient
+        .from('app_users')
+        .select('id')
+        .eq('username', username)
+        .limit(1);
+
+      if (existsError) {
+        message.innerText = '오류: ' + existsError.message;
+        return;
+      }
+      if (exists && exists.length > 0) {
+        message.innerText = '이미 사용 중인 아이디입니다.';
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from('app_users')
+        .insert({
+          username,
+          password_hash: await sha256(password),
+          nickname,
+          status: 'pending'
+        });
+
+      if (error) {
+        message.innerText = '회원가입 오류: ' + error.message;
+        return;
+      }
+
+      message.className = 'ok';
+      message.innerText = '회원가입 신청 완료. 관리자 승인 후 로그인 가능합니다.';
     }
 
     function logout() {
