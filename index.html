@@ -341,31 +341,7 @@
         </div>
       </div>
 
-      <h2>누적 전적</h2>
-      <div class="grid">
-        <div class="stat">
-          <span class="muted">전체</span>
-          <strong id="lifetimeRecord">0승 0무 0패</strong>
-          <small id="lifetimeMeta">회원 탈퇴 전까지 유지</small>
-        </div>
-        <div class="stat">
-          <span class="muted">전체 경기</span>
-          <strong id="lifetimeMatches">0</strong>
-          <small id="lifetimeWinRate">승률 0.0%</small>
-        </div>
-        <div class="stat">
-          <span class="muted">누적 FC</span>
-          <strong id="lifetimeFc">0</strong>
-          <small>승리 1회당 15 FC</small>
-        </div>
-        <div class="stat">
-          <span class="muted">현재 티어</span>
-          <strong id="lifetimeTier">-</strong>
-          <small id="lifetimeScore">점수 0</small>
-        </div>
-      </div>
-
-      <h2>오늘 / 주간 전적</h2>
+      <h2>오늘 전적</h2>
       <div class="grid">
         <div class="stat">
           <span class="muted">오늘</span>
@@ -377,6 +353,31 @@
           <strong id="todayMatches">0</strong>
           <small id="todayWinRate">승률 0.0%</small>
         </div>
+      </div>
+
+      <h2>24시간 승률 랭킹 TOP 10</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>닉네임</th>
+              <th>티어</th>
+              <th>승</th>
+              <th>무</th>
+              <th>패</th>
+              <th>총 경기</th>
+              <th>승률</th>
+              <th>점수</th>
+              <th>FC</th>
+            </tr>
+          </thead>
+          <tbody id="rankingList"></tbody>
+        </table>
+      </div>
+
+      <h2>주간 전적</h2>
+      <div class="grid">
         <div class="stat">
           <span class="muted">주간</span>
           <strong id="weekRecord">0승 0무 0패</strong>
@@ -405,28 +406,31 @@
         </table>
       </div>
       <p class="mobile-note">모바일에서는 표를 좌우로 밀어서 볼 수 있습니다.</p>
-    </section>
 
-    <h2>24시간 승률 랭킹 TOP 10</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>순위</th>
-            <th>닉네임</th>
-            <th>티어</th>
-            <th>승</th>
-            <th>무</th>
-            <th>패</th>
-            <th>총 경기</th>
-            <th>승률</th>
-            <th>점수</th>
-            <th>FC</th>
-          </tr>
-        </thead>
-        <tbody id="rankingList"></tbody>
-      </table>
-    </div>
+      <h2>누적 전적</h2>
+      <div class="grid">
+        <div class="stat">
+          <span class="muted">전체</span>
+          <strong id="lifetimeRecord">0승 0무 0패</strong>
+          <small id="lifetimeMeta">관리자 초기화 전까지 유지</small>
+        </div>
+        <div class="stat">
+          <span class="muted">전체 경기</span>
+          <strong id="lifetimeMatches">0</strong>
+          <small id="lifetimeWinRate">승률 0.0%</small>
+        </div>
+        <div class="stat">
+          <span class="muted">누적 FC</span>
+          <strong id="lifetimeFc">0</strong>
+          <small>승리 1회당 15 FC</small>
+        </div>
+        <div class="stat">
+          <span class="muted">현재 티어</span>
+          <strong id="lifetimeTier">-</strong>
+          <small id="lifetimeScore">점수 0</small>
+        </div>
+      </div>
+    </section>
     <footer>made by yoondo</footer>
   </main>
 
@@ -747,9 +751,7 @@
       const weekStart = weeklyResetDate();
       const profile = statsMap[currentUser.username] || {};
 
-      const [historyRes, sessionRes, todayHistoryRes, todaySessionRes, weekHistoryRes, weekSessionRes, liveRes] = await Promise.all([
-        loadUserHistory(currentUser.username, rolling7StartIso()),
-        loadUserSessions(currentUser.username, rolling7StartKey()),
+      const [todayHistoryRes, todaySessionRes, weekHistoryRes, weekSessionRes, liveRes] = await Promise.all([
         loadUserHistory(currentUser.username, startOfTodayIso()),
         loadUserSessions(currentUser.username, todayDate()),
         loadUserHistory(currentUser.username, weeklyResetIso()),
@@ -763,10 +765,7 @@
       const live = liveRes.data?.[0];
       const meta = currentMeta(profile, live);
 
-      const history7 = summarizeMatches(historyRes.data || []);
-      const sessions7 = summarizeSessions(sessionRes.data || []);
-      let lifetime = history7.matches ? history7 : sessions7;
-      if (!lifetime.matches) lifetime = profileStats(profile);
+      const lifetime = profileStats(profile);
 
       const todayHistory = summarizeMatches(todayHistoryRes.data || []);
       const todaySessions = summarizeSessions(todaySessionRes.data || []);
@@ -787,7 +786,7 @@
       document.getElementById('lifetimeWinRate').innerText = `승률 ${winRate(lifetime)}%`;
       document.getElementById('lifetimeFc').innerText = fcFromWins(lifetime.wins);
       document.getElementById('lifetimeTier').innerText = meta.tier;
-      document.getElementById('lifetimeScore').innerText = `최근 7일 합산 · 점수 ${meta.score}`;
+      document.getElementById('lifetimeScore').innerText = `점수 ${meta.score} · 등수 ${meta.rank}`;
 
       document.getElementById('todayRecord').innerText = `${today.wins}승 ${today.draws}무 ${today.losses}패`;
       document.getElementById('todayMatches').innerText = today.matches;
