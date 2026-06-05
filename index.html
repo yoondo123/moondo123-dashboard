@@ -6,6 +6,8 @@
   <title>MOONDO FC온라인 전적</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   <style>
     * { box-sizing: border-box; }
     :root {
@@ -292,6 +294,297 @@
     @media (max-width: 430px) {
       .grid { grid-template-columns: 1fr; }
       .stat { min-height: 88px; }
+    }
+
+    /* Visual refresh */
+    :root {
+      --bg: #090b12;
+      --ink: #f7f8ff;
+      --soft: #aeb7c9;
+      --cyan: #70f2d2;
+      --lime: #d9ff74;
+      --amber: #ffd36e;
+      --rose: #ff5f75;
+      --violet: #9b8cff;
+      --panel-deep: rgba(13, 16, 25, .92);
+      --panel-card: rgba(22, 27, 39, .9);
+      --stroke: rgba(255, 255, 255, .1);
+      --stroke-hot: rgba(112, 242, 210, .48);
+      --card-shadow: 0 20px 60px rgba(0, 0, 0, .34);
+    }
+    body {
+      background:
+        linear-gradient(135deg, rgba(112, 242, 210, .1) 0 1px, transparent 1px 100%),
+        linear-gradient(180deg, #101726 0%, #090b12 48%, #07080d 100%);
+      background-size: 42px 42px, auto;
+      font-family: "Pretendard", "SUIT", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+      color: var(--ink);
+    }
+    body::before {
+      border-top: 0;
+      background:
+        linear-gradient(90deg, rgba(112, 242, 210, .18), rgba(217, 255, 116, .12), rgba(155, 140, 255, .14)),
+        linear-gradient(180deg, rgba(255,255,255,.04), transparent 140px);
+      height: 6px;
+      bottom: auto;
+    }
+    main {
+      width: min(1120px, calc(100% - 48px));
+      padding: 28px 0 42px;
+    }
+    header {
+      position: relative;
+      align-items: center;
+      min-height: 120px;
+      padding: 26px 30px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(112, 242, 210, .18), transparent 28%),
+        linear-gradient(110deg, rgba(255, 211, 110, .12), transparent 52%),
+        rgba(14, 18, 28, .9);
+      box-shadow: var(--card-shadow), inset 0 1px 0 rgba(255, 255, 255, .08);
+    }
+    header::after {
+      content: "M";
+      position: absolute;
+      right: 36px;
+      bottom: -38px;
+      color: rgba(255,255,255,.035);
+      font-size: 150px;
+      font-weight: 950;
+      line-height: 1;
+      pointer-events: none;
+    }
+    header h1 {
+      font-size: clamp(34px, 5vw, 58px);
+      font-weight: 950;
+      letter-spacing: 0;
+      color: #ffffff;
+    }
+    header h1::first-letter {
+      color: var(--cyan);
+    }
+    header p {
+      margin-top: 8px;
+      color: #c8d2e6;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    header a,
+    button.secondary {
+      position: relative;
+      z-index: 1;
+      display: inline-grid;
+      place-items: center;
+      min-height: 38px;
+      padding: 0 16px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+      color: #f5f8ff;
+      font-size: 13px;
+      font-weight: 900;
+    }
+    #dashboard > .topbar {
+      align-items: center;
+      margin: 24px 0 18px;
+      padding: 18px 20px;
+      border: 1px solid rgba(112, 242, 210, .22);
+      border-radius: 16px;
+      background: rgba(12, 15, 23, .78);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+    }
+    #dashboard > .topbar h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 950;
+    }
+    #dashboard > .topbar h2::before {
+      width: 8px;
+      height: 30px;
+      border-radius: 99px;
+      background: linear-gradient(180deg, var(--cyan), var(--lime));
+    }
+    #lastUpdated {
+      margin-top: 5px;
+      color: #8e9bb0;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    h2 {
+      margin: 30px 0 14px;
+      color: #ffffff;
+      font-size: clamp(22px, 2.4vw, 30px);
+      font-weight: 950;
+      text-shadow: 0 8px 28px rgba(0,0,0,.28);
+    }
+    h2::before {
+      width: 8px;
+      height: 28px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--lime), var(--cyan));
+      box-shadow: 0 0 22px rgba(112, 242, 210, .4);
+    }
+    .panel {
+      border-radius: 18px;
+      padding: 22px;
+      border: 1px solid rgba(112, 242, 210, .24);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06), transparent),
+        rgba(12, 15, 24, .88);
+      box-shadow: var(--card-shadow);
+    }
+    #liveState {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 11px;
+      border-radius: 999px;
+      background: rgba(112, 242, 210, .1);
+      color: #dffdf5;
+      font-size: 13px;
+      font-weight: 900;
+      margin-bottom: 14px !important;
+    }
+    .live-card {
+      grid-template-columns: minmax(170px, 1fr) 92px 92px minmax(170px, 1fr) 140px;
+      min-height: 82px;
+      border-radius: 15px;
+      border: 1px solid rgba(255,255,255,.12);
+      background:
+        linear-gradient(90deg, rgba(112, 242, 210, .09), transparent 24%, rgba(155, 140, 255, .08)),
+        #151a26;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .live-name {
+      font-size: clamp(20px, 2.4vw, 28px);
+      font-weight: 950;
+      color: #f8fbff;
+    }
+    .live-score {
+      height: 82px;
+      background: linear-gradient(180deg, #ffffff, #dce8f8);
+      color: #0a101c;
+      font-size: 42px;
+      font-weight: 950;
+    }
+    .live-score + .live-score {
+      background: linear-gradient(180deg, #f7ffe8, #dff1ff);
+    }
+    .live-time {
+      color: var(--amber);
+      font-size: 28px;
+      font-weight: 950;
+      text-shadow: 0 0 22px rgba(255, 211, 110, .45);
+    }
+    .grid {
+      gap: 14px;
+    }
+    .stat {
+      min-height: 118px;
+      padding: 18px 18px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.11);
+      background:
+        linear-gradient(135deg, rgba(112,242,210,.13), transparent 36%),
+        linear-gradient(180deg, rgba(255,255,255,.055), transparent),
+        var(--panel-card);
+      box-shadow: 0 14px 38px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .stat::before {
+      width: 5px;
+      background: linear-gradient(180deg, var(--cyan), var(--lime), transparent);
+    }
+    .stat .muted {
+      color: #b8c3d9;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+    .stat strong {
+      margin-top: 12px;
+      color: #ffffff;
+      font-size: clamp(27px, 3vw, 38px);
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+    .stat small {
+      margin-top: 9px;
+      color: var(--amber);
+      font-size: 13px;
+      font-weight: 900;
+    }
+    #todayRecord,
+    #weekRecord,
+    #lifetimeRecord {
+      color: #ffffff;
+    }
+    #todayMatches,
+    #weekMatches,
+    #lifetimeMatches,
+    #lifetimeFc {
+      color: #e9fff9;
+    }
+    .table-wrap {
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.045), transparent),
+        rgba(11, 14, 22, .9);
+      box-shadow: 0 18px 46px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    table {
+      min-width: 820px;
+      font-size: 14px;
+      font-weight: 750;
+    }
+    th {
+      padding: 14px 12px;
+      background: linear-gradient(180deg, rgba(112,242,210,.18), rgba(28,34,48,.96));
+      color: #ecfff9;
+      font-size: 13px;
+      font-weight: 950;
+    }
+    td {
+      padding: 14px 12px;
+      color: #f7faff;
+      border-color: rgba(255,255,255,.075);
+    }
+    tbody tr:nth-child(even) {
+      background: rgba(255,255,255,.035);
+    }
+    tbody tr:hover {
+      background: rgba(112,242,210,.1);
+    }
+    tbody td:first-child {
+      color: #d8fff6;
+      font-weight: 950;
+    }
+    .ok {
+      color: var(--cyan);
+      font-weight: 950;
+    }
+    .bad {
+      color: var(--rose);
+      font-weight: 950;
+    }
+    footer {
+      margin-top: 42px;
+      color: #8c96aa;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    @media (max-width: 760px) {
+      main { width: min(100% - 24px, 1120px); }
+      header { min-height: 108px; padding: 22px; }
+      header h1 { font-size: 32px; }
+      #dashboard > .topbar { align-items: stretch; }
+      .grid { grid-template-columns: 1fr; }
+      .live-card { grid-template-columns: 1fr 64px 64px 1fr; }
+      .live-score { height: 64px; font-size: 31px; }
+      .live-time { font-size: 21px; }
     }
   </style>
 </head>
