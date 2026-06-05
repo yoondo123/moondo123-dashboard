@@ -547,6 +547,14 @@
       return { wins, draws, losses, matches: Number(live?.matches ?? (wins + draws + losses)) };
     }
 
+    function currentMeta(profile, live) {
+      const tier = live?.tier || profile.tier || '-';
+      const score = live?.score ?? profile.score ?? 0;
+      const rank = live?.rank ?? profile.rank ?? '-';
+      const rankText = rank && Number(rank) > 0 ? rank : '-';
+      return { tier, score, rank: rankText };
+    }
+
     function isUpdatedSince(row, sinceIso) {
       if (!row?.updated_at) return true;
       return new Date(row.updated_at) >= new Date(sinceIso);
@@ -673,6 +681,7 @@
           .limit(1),
       ]);
       const live = liveRes.data?.[0];
+      const meta = currentMeta(profile, live);
 
       const history7 = summarizeMatches(historyRes.data || []);
       const sessions7 = summarizeSessions(sessionRes.data || []);
@@ -697,12 +706,12 @@
       document.getElementById('lifetimeMatches').innerText = lifetime.matches;
       document.getElementById('lifetimeWinRate').innerText = `승률 ${winRate(lifetime)}%`;
       document.getElementById('lifetimeFc').innerText = fcFromWins(lifetime.wins);
-      document.getElementById('lifetimeTier').innerText = profile.tier || '-';
-      document.getElementById('lifetimeScore').innerText = `최근 7일 합산 · 점수 ${profile.score ?? 0}`;
+      document.getElementById('lifetimeTier').innerText = meta.tier;
+      document.getElementById('lifetimeScore').innerText = `최근 7일 합산 · 점수 ${meta.score}`;
 
       document.getElementById('todayRecord').innerText = `${today.wins}승 ${today.draws}무 ${today.losses}패`;
       document.getElementById('todayMatches').innerText = today.matches;
-      document.getElementById('todayMeta').innerText = `FC ${fcFromWins(today.wins)} · 티어 ${profile.tier || '-'}`;
+      document.getElementById('todayMeta').innerText = `FC ${fcFromWins(today.wins)} · 티어 ${meta.tier} · 점수 ${meta.score} · 등수 ${meta.rank}`;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
 
       document.getElementById('weekRecord').innerText = `${week.wins}승 ${week.draws}무 ${week.losses}패`;
