@@ -3365,6 +3365,304 @@ footer {
     font-size: 11px !important;
   }
 }
+
+/* Second pass: denser, cleaner dashboard scale */
+#rankingList tr:nth-child(-n + 3) td:nth-child(1),
+#weeklyRankingList tr:nth-child(-n + 3) td:nth-child(1) {
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  text-indent: -9999px !important;
+  overflow: hidden !important;
+}
+
+#rankingList tr:nth-child(-n + 3) td:nth-child(1) *,
+#weeklyRankingList tr:nth-child(-n + 3) td:nth-child(1) * {
+  display: none !important;
+}
+
+.moondo-tabs {
+  border-color: rgba(126,255,236,.18) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.035), transparent),
+    rgba(2, 8, 9, .92) !important;
+}
+
+.moondo-tab.active {
+  background:
+    linear-gradient(180deg, rgba(156,255,235,.98), rgba(36,213,184,.94)) !important;
+}
+
+.panel,
+.stat,
+.table-wrap {
+  box-shadow: 0 14px 34px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.045) !important;
+}
+
+@media (min-width: 761px) {
+  main {
+    width: min(900px, calc(100% - 32px)) !important;
+    padding: 14px 0 24px !important;
+  }
+
+  header {
+    padding: 12px 18px !important;
+    border-radius: 18px !important;
+  }
+
+  h1 {
+    font-size: clamp(24px, 2.8vw, 34px) !important;
+  }
+
+  #dashboard > .topbar {
+    padding: 11px 14px !important;
+    border-radius: 18px !important;
+  }
+
+  #dashboard > .topbar h2 {
+    font-size: 18px !important;
+  }
+
+  .moondo-tabs {
+    margin-bottom: 13px !important;
+    padding: 4px !important;
+  }
+
+  .moondo-tab {
+    height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  h2 {
+    margin: 16px 0 8px !important;
+    font-size: clamp(17px, 1.75vw, 21px) !important;
+  }
+
+  h2::before,
+  #dashboard > .topbar h2::before {
+    height: 19px !important;
+  }
+
+  .panel {
+    padding: 13px !important;
+    border-radius: 17px !important;
+  }
+
+  .live-card {
+    grid-template-columns: minmax(140px,1fr) 68px 68px minmax(140px,1fr) 100px !important;
+    min-height: 58px !important;
+    border-radius: 15px !important;
+  }
+
+  .live-name {
+    padding: 0 14px !important;
+    font-size: clamp(15px, 1.55vw, 19px) !important;
+  }
+
+  .live-score {
+    height: 58px !important;
+    font-size: 29px !important;
+  }
+
+  .live-time {
+    font-size: 17px !important;
+  }
+
+  .today-grid,
+  .week-grid,
+  .grid {
+    gap: 8px !important;
+  }
+
+  .stat {
+    min-height: 82px !important;
+    padding: 11px 12px 10px !important;
+    border-radius: 15px !important;
+  }
+
+  .stat .muted {
+    font-size: 10px !important;
+  }
+
+  .stat strong {
+    margin-top: 5px !important;
+    font-size: clamp(20px, 2vw, 27px) !important;
+  }
+
+  .stat small {
+    margin-top: 5px !important;
+    font-size: 10px !important;
+  }
+
+  .stat.compact {
+    min-height: 78px !important;
+    padding: 11px 11px 10px !important;
+  }
+
+  .stat.compact strong,
+  #todayTier,
+  #lifetimeTier {
+    font-size: clamp(18px, 1.65vw, 23px) !important;
+  }
+
+  .form-strip {
+    padding: 10px !important;
+    border-radius: 15px !important;
+  }
+
+  .form-dot {
+    min-height: 25px !important;
+    font-size: 10px !important;
+  }
+
+  table {
+    min-width: 700px !important;
+    font-size: 11px !important;
+  }
+
+  th,
+  td {
+    padding: 8px 7px !important;
+  }
+
+  th {
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  main {
+    padding: 6px 7px 24px !important;
+  }
+
+  header {
+    padding: 10px 11px !important;
+    border-radius: 15px !important;
+  }
+
+  h1 {
+    font-size: 21px !important;
+  }
+
+  #dashboard > .topbar {
+    padding: 11px 12px !important;
+    border-radius: 15px !important;
+  }
+
+  #dashboard > .topbar h2 {
+    font-size: 16px !important;
+  }
+
+  .moondo-tabs {
+    margin-bottom: 10px !important;
+    padding: 4px !important;
+  }
+
+  .moondo-tab {
+    height: 35px !important;
+    font-size: 12px !important;
+  }
+
+  h2 {
+    margin: 14px 0 8px !important;
+    font-size: 17px !important;
+  }
+
+  h2::before {
+    height: 18px !important;
+  }
+
+  .panel {
+    padding: 10px !important;
+    border-radius: 15px !important;
+  }
+
+  .live-card {
+    grid-template-columns: 1fr 41px 41px 1fr !important;
+    min-height: 50px !important;
+    border-radius: 14px !important;
+  }
+
+  .live-name {
+    padding: 0 7px !important;
+    font-size: 12px !important;
+  }
+
+  .live-score {
+    height: 50px !important;
+    font-size: 23px !important;
+  }
+
+  .live-time {
+    height: 28px !important;
+    font-size: 12px !important;
+  }
+
+  .today-grid,
+  .week-grid {
+    gap: 6px !important;
+  }
+
+  .today-grid .stat,
+  .week-grid .stat,
+  .grid .stat {
+    min-height: 66px !important;
+    padding: 8px 7px !important;
+    border-radius: 13px !important;
+  }
+
+  .today-grid .stat strong,
+  .week-grid .stat strong,
+  .grid .stat strong,
+  .today-grid .stat.compact strong,
+  .week-grid .stat.compact strong,
+  .grid .stat.compact strong {
+    margin-top: 4px !important;
+    font-size: 19px !important;
+  }
+
+  .today-grid .stat .muted,
+  .week-grid .stat .muted,
+  .grid .stat .muted {
+    font-size: 9px !important;
+  }
+
+  .today-grid .stat small,
+  .week-grid .stat small,
+  .grid .stat small {
+    margin-top: 4px !important;
+    font-size: 9px !important;
+  }
+
+  #todayTier,
+  #lifetimeTier {
+    font-size: 14px !important;
+  }
+
+  #rankingList tr,
+  #weeklyRankingList tr {
+    grid-template-columns: 39px 1fr auto !important;
+    min-height: 54px !important;
+    padding: 7px 8px !important;
+    gap: 3px 8px !important;
+  }
+
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1) {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2) {
+    font-size: 13px !important;
+  }
+
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8) {
+    font-size: 13px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -4442,9 +4740,61 @@ footer {
         ) {
           currentGroup = 'home';
         }
+        if (
+          title.includes('주간 전적') ||
+          title.includes('주간 승률') ||
+          title.includes('최근 7일') ||
+          title.includes('누적 전적')
+        ) {
+          currentGroup = 'stats';
+        } else if (
+          title.includes('실시간 경기') ||
+          title.includes('오늘 전적') ||
+          title.includes('오늘 승률')
+        ) {
+          currentGroup = 'home';
+        }
+      }
+
+      if (el.tagName === 'H2') {
+        const title = (el.textContent || '').trim();
+        if (/(\uc8fc\uac04 \uc804\uc801|\uc8fc\uac04 \uc2b9\ub960|\ucd5c\uadfc 7\uc77c|\ub204\uc801 \uc804\uc801)/.test(title)) {
+          currentGroup = 'stats';
+        } else if (/(\uc2e4\uc2dc\uac04 \uacbd\uae30|\uc624\ub298 \uc804\uc801|\uc624\ub298 \uc2b9\ub960)/.test(title)) {
+          currentGroup = 'home';
+        }
       }
 
       el.dataset.tabGroup = currentGroup;
+    });
+
+    let forcedGroup = 'home';
+    children.forEach(el => {
+      if (el.classList.contains('topbar') || el.classList.contains('footer-actions')) {
+        el.dataset.tabGroup = 'always';
+        return;
+      }
+
+      if (el.tagName === 'H2') {
+        const next = el.nextElementSibling;
+        const hasStatsContent = next && (
+          next.classList.contains('week-grid') ||
+          next.querySelector('#weeklyRankingList, #recentList, #lifetimeRecord, #lifetimeMatches, #lifetimeFc')
+        );
+        const hasHomeContent = next && (
+          next.classList.contains('today-grid') ||
+          next.querySelector('#liveState, #rankingList')
+        );
+
+        if (hasStatsContent) forcedGroup = 'stats';
+        if (hasHomeContent) forcedGroup = 'home';
+      }
+
+      if (el.classList.contains('form-strip')) {
+        forcedGroup = 'home';
+      }
+
+      el.dataset.tabGroup = forcedGroup;
     });
 
     function showTab(tabName) {
