@@ -40,6 +40,7 @@
     }
     .approve { background:#2563eb; color:white; border:0; cursor:pointer; }
     .reject { background:#dc2626; color:white; border:0; cursor:pointer; }
+    .reset { background:#b45309; color:white; border:0; cursor:pointer; }
     .delete { background:#7f1d1d; color:white; border:0; cursor:pointer; }
     .logout { float:right; background:#475569; color:white; border:0; cursor:pointer; }
     a { color:#93c5fd; }
@@ -143,6 +144,7 @@
           <td>
             <button class="approve" onclick="updateUserStatus('${user.id}', 'approved')">승인</button>
             <button class="reject" onclick="updateUserStatus('${user.id}', 'rejected')">거절</button>
+            <button class="reset" onclick="resetPlayerStats('${user.id}', ${JSON.stringify(user.username || '')})">누적 초기화</button>
           </td>
         </tr>
       `).join('');
@@ -161,6 +163,42 @@
 
       alert(status === 'approved' ? '승인 완료' : '거절 완료');
       loadUsers();
+    }
+
+    async function resetPlayerStats(userId, username) {
+      if (!confirm(`${username} 님의 누적 전적을 초기화할까요?\n승/무/패, 누적 FC, 승률만 0으로 바꾸고 티어/점수/등수는 유지됩니다.`)) return;
+
+      const { data } = await supabaseClient
+        .from('player_stats')
+        .select('*')
+        .eq('user_id', userId)
+        .limit(1);
+
+      const current = data && data.length ? data[0] : {};
+      const payload = {
+        user_id: userId,
+        username,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        fc_mined: 0,
+        win_rate: 0,
+        tier: current.tier || 'Unranked',
+        score: Number(current.score || 0),
+        rank: Number(current.rank || 0),
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabaseClient
+        .from('player_stats')
+        .upsert(payload, { onConflict: 'user_id' });
+
+      if (error) {
+        alert('오류 : ' + error.message);
+        return;
+      }
+
+      alert('누적 전적 초기화 완료');
     }
 
     async function addMatch() {
