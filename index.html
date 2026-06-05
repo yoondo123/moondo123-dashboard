@@ -2658,6 +2658,108 @@ footer{color:#6f7d7a!important}
   }
 }
 
+
+/* === Mobile Grid Balance Patch v5: no lonely last card === */
+@media (max-width: 760px) {
+  /* 누적 전적은 4개가 2x2로 딱 맞게 */
+  h2:has(+ .grid) + .grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  h2:has(+ .grid) + .grid .stat,
+  h2:has(+ .grid) + .grid .stat:nth-child(n),
+  h2:has(+ .grid) + .grid .stat:first-child {
+    grid-column: auto !important;
+    min-height: 82px !important;
+    padding: 12px !important;
+    border-radius: 16px !important;
+  }
+
+  h2:has(+ .grid) + .grid .stat strong,
+  h2:has(+ .grid) + .grid .stat:first-child strong {
+    font-size: 22px !important;
+    line-height: 1.08 !important;
+  }
+
+  h2:has(+ .grid) + .grid .stat:first-child {
+    background:
+      linear-gradient(135deg, rgba(0,224,194,.075), transparent 42%),
+      linear-gradient(180deg, rgba(255,255,255,.04), transparent),
+      rgba(14,22,29,.94) !important;
+  }
+
+  /* 누적 전적 첫 카드가 너무 커져 혼자 튀는 현상 제거 */
+  #lifetimeRecord {
+    font-size: 22px !important;
+    white-space: nowrap !important;
+  }
+
+  #lifetimeTier {
+    font-size: 16px !important;
+    line-height: 1.1 !important;
+  }
+
+  #lifetimeScore {
+    font-size: 10px !important;
+  }
+
+  /* 오늘 전적 8개는 4x2로 균등 */
+  .today-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .today-grid .stat,
+  .today-grid .stat:nth-child(n),
+  .today-grid .stat:first-child {
+    grid-column: auto !important;
+  }
+
+  /* 주간 전적 5개는 5칸으로 한 줄 */
+  .week-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  .week-grid .stat,
+  .week-grid .stat:nth-child(n),
+  .week-grid .stat:first-child {
+    grid-column: auto !important;
+  }
+
+  /* 버튼도 균등하게 */
+  .footer-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .footer-actions a,
+  .footer-actions button {
+    border-radius: 999px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  /* 390px 이하에서도 누적은 2x2 유지 */
+  h2:has(+ .grid) + .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  h2:has(+ .grid) + .grid .stat,
+  h2:has(+ .grid) + .grid .stat:nth-child(n),
+  h2:has(+ .grid) + .grid .stat:first-child {
+    grid-column: auto !important;
+  }
+
+  #lifetimeRecord {
+    font-size: 20px !important;
+  }
+
+  #lifetimeTier {
+    font-size: 14px !important;
+  }
+}
+
 </style>
 </head>
 <body>
