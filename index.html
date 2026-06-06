@@ -4000,6 +4000,65 @@ footer {
   }
 }
 
+
+/* === Today Ranking Live Rank Column Patch === */
+#rankingList td:nth-child(10) {
+  color: var(--mo-gold, #d9b96f) !important;
+  font-weight: 950 !important;
+}
+
+@media (min-width: 641px) {
+  #rankingList {
+    font-size: 13px !important;
+  }
+  #rankingList th,
+  #rankingList td {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  #rankingList tr {
+    grid-template-columns: 42px 1fr auto !important;
+    grid-template-areas:
+      "rank name rate"
+      "rank tier record"
+      "rank score liveRank" !important;
+  }
+
+  #rankingList td:nth-child(9) {
+    display: block !important;
+    grid-area: score !important;
+    color: #aebbb7 !important;
+    font-size: 11px !important;
+    font-weight: 850 !important;
+  }
+
+  #rankingList td:nth-child(9)::before {
+    content: "점수 " !important;
+    color: #6fffe2 !important;
+  }
+
+  #rankingList td:nth-child(10) {
+    display: block !important;
+    grid-area: liveRank !important;
+    justify-self: end !important;
+    color: #d9b96f !important;
+    font-size: 11px !important;
+    font-weight: 950 !important;
+  }
+
+  #rankingList td:nth-child(10)::before {
+    content: "실시간 " !important;
+    color: #8c9b98 !important;
+  }
+
+  #rankingList td:nth-child(11) {
+    display: none !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4125,6 +4184,7 @@ footer {
               <th>총 경기</th>
               <th>승률</th>
               <th>점수</th>
+              <th>실시간 순위</th>
               <th>FC</th>
             </tr>
           </thead>
@@ -4899,6 +4959,7 @@ footer {
         sessionFromDate = todayDate(),
         sessionExactDate = todayDate(),
         emptyMessage = '오늘 랭킹 데이터가 없습니다.',
+        showLiveRank = false,
       } = options;
       const tbody = document.getElementById(tbodyId);
 
@@ -4911,18 +4972,30 @@ footer {
         sessionQuery = sessionQuery.gte('session_date', sessionFromDate);
       }
 
-      const [historyRes, sessionRes] = await Promise.all([
+      const [historyRes, sessionRes, liveRankRes] = await Promise.all([
         supabaseClient
           .from('game_history')
           .select('*')
           .gte('created_at', sinceIso),
         sessionQuery,
+        showLiveRank
+          ? supabaseClient.from('live_status').select('username, rank')
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
+      const colCount = showLiveRank ? 11 : 10;
+
       if (historyRes.error && sessionRes.error) {
-        tbody.innerHTML = `<tr><td colspan="10">오류: ${historyRes.error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colCount}">오류: ${historyRes.error.message}</td></tr>`;
         return;
       }
+
+      const liveRankMap = {};
+      (liveRankRes.data || []).forEach(row => {
+        if (!row.username) return;
+        const value = row.rank ?? '-';
+        liveRankMap[row.username] = value && Number(value) > 0 ? value : '-';
+      });
 
       const historyGrouped = {};
       (historyRes.data || []).forEach(row => {
@@ -4958,6 +5031,7 @@ footer {
             ...stats,
             tier: profile.tier || '-',
             score: profile.score ?? 0,
+            liveRank: showLiveRank ? (liveRankMap[username] ?? profile.rank ?? '-') : undefined,
             fc: fcFromWins(stats.wins),
             rate: stats.matches ? stats.wins / stats.matches : 0,
           };
@@ -4972,7 +5046,7 @@ footer {
       if (ranking.length) saveStatsCache('__ranking__', rankingScope, ranking);
 
       if (displayRanking.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10">${emptyMessage}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colCount}">${emptyMessage}</td></tr>`;
         return;
       }
 
@@ -4987,6 +5061,7 @@ footer {
           <td>${row.matches}</td>
           <td>${(row.rate * 100).toFixed(1)}%</td>
           <td>${row.score}</td>
+          ${showLiveRank ? `<td>${row.liveRank ?? '-'}</td>` : ''}
           <td>${row.fc}</td>
         </tr>
       `).join('');
@@ -5001,6 +5076,7 @@ footer {
           sessionFromDate: todayDate(),
           sessionExactDate: todayDate(),
           emptyMessage: '오늘 랭킹 데이터가 없습니다.',
+          showLiveRank: true,
         }),
         loadRanking(statsMap, {
           tbodyId: 'weeklyRankingList',
