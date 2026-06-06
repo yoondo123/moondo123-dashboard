@@ -4000,107 +4000,6 @@ footer {
   }
 }
 
-
-/* === Today Ranking Live Rank Column Patch === */
-#rankingList td:nth-child(10) {
-  color: var(--mo-gold, #d9b96f) !important;
-  font-weight: 950 !important;
-}
-
-@media (min-width: 641px) {
-  #rankingList {
-    font-size: 13px !important;
-  }
-  #rankingList th,
-  #rankingList td {
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-  }
-}
-
-@media (max-width: 640px) {
-  #rankingList tr {
-    grid-template-columns: 42px 1fr auto !important;
-    grid-template-areas:
-      "rank name rate"
-      "rank tier record"
-      "rank score liveRank" !important;
-  }
-
-  #rankingList td:nth-child(9) {
-    display: block !important;
-    grid-area: score !important;
-    color: #aebbb7 !important;
-    font-size: 11px !important;
-    font-weight: 850 !important;
-  }
-
-  #rankingList td:nth-child(9)::before {
-    content: "점수 " !important;
-    color: #6fffe2 !important;
-  }
-
-  #rankingList td:nth-child(10) {
-    display: block !important;
-    grid-area: liveRank !important;
-    justify-self: end !important;
-    color: #d9b96f !important;
-    font-size: 11px !important;
-    font-weight: 950 !important;
-  }
-
-  #rankingList td:nth-child(10)::before {
-    content: "실시간 " !important;
-    color: #8c9b98 !important;
-  }
-
-  #rankingList td:nth-child(11) {
-    display: none !important;
-  }
-}
-
-
-/* === PC Ranking Medal Patch === */
-.rank-medal {
-  display: inline-grid !important;
-  place-items: center !important;
-  width: 34px !important;
-  height: 34px !important;
-  margin: 0 auto !important;
-  border-radius: 50% !important;
-  font-size: 18px !important;
-  line-height: 1 !important;
-  font-weight: 950 !important;
-  border: 1px solid rgba(255,255,255,.16) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.20), 0 10px 22px rgba(0,0,0,.24) !important;
-}
-.rank-medal.gold {
-  background: linear-gradient(180deg, #fff2a8, #d9a83f) !important;
-  color: #2d2106 !important;
-}
-.rank-medal.silver {
-  background: linear-gradient(180deg, #f4f7fb, #9fa9b8) !important;
-  color: #111827 !important;
-}
-.rank-medal.bronze {
-  background: linear-gradient(180deg, #f3bb82, #9b5d2e) !important;
-  color: #fff6eb !important;
-}
-.rank-medal.normal {
-  background: rgba(0,224,194,.10) !important;
-  color: #dffff6 !important;
-}
-
-@media (max-width: 640px) {
-  .rank-medal {
-    width: 34px !important;
-    height: 100% !important;
-    min-height: 48px !important;
-    font-size: 17px !important;
-    border-radius: 10px !important;
-  }
-}
-
 </style>
 </head>
 <body>
@@ -4226,7 +4125,6 @@ footer {
               <th>총 경기</th>
               <th>승률</th>
               <th>점수</th>
-              <th>실시간 순위</th>
               <th>FC</th>
             </tr>
           </thead>
@@ -4994,23 +4892,6 @@ footer {
       renderRecentForm(displayResults, '전체 최근 경기 순서');
     }
 
-
-    function rankMedalHtml(rank) {
-      const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
-      const classes = { 1: 'gold', 2: 'silver', 3: 'bronze' };
-      const label = medals[rank] || rank;
-      const cls = classes[rank] || 'normal';
-      return `<span class="rank-medal ${cls}" aria-label="${rank}위">${label}</span>`;
-    }
-
-    function rankMedalHtml(rank) {
-      const medals = { 1: '금', 2: '은', 3: '동' };
-      const classes = { 1: 'gold', 2: 'silver', 3: 'bronze' };
-      const label = medals[rank] || rank;
-      const cls = classes[rank] || 'normal';
-      return `<span class="rank-medal ${cls}" aria-label="${rank}위">${label}</span>`;
-    }
-
     async function loadRanking(statsMap, options = {}) {
       const {
         tbodyId = 'rankingList',
@@ -5018,7 +4899,6 @@ footer {
         sessionFromDate = todayDate(),
         sessionExactDate = todayDate(),
         emptyMessage = '오늘 랭킹 데이터가 없습니다.',
-        showLiveRank = false,
       } = options;
       const tbody = document.getElementById(tbodyId);
 
@@ -5031,30 +4911,18 @@ footer {
         sessionQuery = sessionQuery.gte('session_date', sessionFromDate);
       }
 
-      const [historyRes, sessionRes, liveRankRes] = await Promise.all([
+      const [historyRes, sessionRes] = await Promise.all([
         supabaseClient
           .from('game_history')
           .select('*')
           .gte('created_at', sinceIso),
         sessionQuery,
-        showLiveRank
-          ? supabaseClient.from('live_status').select('username, rank')
-          : Promise.resolve({ data: [], error: null }),
       ]);
 
-      const colCount = showLiveRank ? 11 : 10;
-
       if (historyRes.error && sessionRes.error) {
-        tbody.innerHTML = `<tr><td colspan="${colCount}">오류: ${historyRes.error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10">오류: ${historyRes.error.message}</td></tr>`;
         return;
       }
-
-      const liveRankMap = {};
-      (liveRankRes.data || []).forEach(row => {
-        if (!row.username) return;
-        const value = row.rank ?? '-';
-        liveRankMap[row.username] = value && Number(value) > 0 ? value : '-';
-      });
 
       const historyGrouped = {};
       (historyRes.data || []).forEach(row => {
@@ -5090,7 +4958,6 @@ footer {
             ...stats,
             tier: profile.tier || '-',
             score: profile.score ?? 0,
-            liveRank: showLiveRank ? (liveRankMap[username] ?? profile.rank ?? '-') : undefined,
             fc: fcFromWins(stats.wins),
             rate: stats.matches ? stats.wins / stats.matches : 0,
           };
@@ -5105,13 +4972,13 @@ footer {
       if (ranking.length) saveStatsCache('__ranking__', rankingScope, ranking);
 
       if (displayRanking.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${colCount}">${emptyMessage}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10">${emptyMessage}</td></tr>`;
         return;
       }
 
       tbody.innerHTML = displayRanking.map((row, i) => `
         <tr>
-          <td>${rankMedalHtml(i + 1)}</td>
+          <td>${i + 1}</td>
           <td>${row.username}</td>
           <td>${row.tier}</td>
           <td class="ok">${row.wins}</td>
@@ -5120,7 +4987,6 @@ footer {
           <td>${row.matches}</td>
           <td>${(row.rate * 100).toFixed(1)}%</td>
           <td>${row.score}</td>
-          ${showLiveRank ? `<td>${row.liveRank ?? '-'}</td>` : ''}
           <td>${row.fc}</td>
         </tr>
       `).join('');
@@ -5135,7 +5001,6 @@ footer {
           sessionFromDate: todayDate(),
           sessionExactDate: todayDate(),
           emptyMessage: '오늘 랭킹 데이터가 없습니다.',
-          showLiveRank: true,
         }),
         loadRanking(statsMap, {
           tbodyId: 'weeklyRankingList',
@@ -5444,82 +5309,6 @@ footer {
   });
 })();
 </script>
-
-
-
-<style>
-/* === PC rank medal visibility hotfix === */
-@media (min-width: 761px) {
-  #rankingList td:first-child,
-  #weeklyRankingList td:first-child {
-    width: 68px !important;
-    color: #dffff6 !important;
-    font-size: 13px !important;
-    line-height: 1 !important;
-    text-indent: 0 !important;
-    overflow: visible !important;
-    text-align: center !important;
-    vertical-align: middle !important;
-  }
-
-  #rankingList tr:nth-child(-n + 3) td:nth-child(1),
-  #weeklyRankingList tr:nth-child(-n + 3) td:nth-child(1) {
-    color: #ffffff !important;
-    font-size: 0 !important;
-    line-height: 1 !important;
-    text-indent: 0 !important;
-    overflow: visible !important;
-  }
-
-  #rankingList td:first-child *,
-  #weeklyRankingList td:first-child * {
-    display: inline-grid !important;
-  }
-
-  .rank-medal {
-    width: 34px !important;
-    height: 34px !important;
-    margin: 0 auto !important;
-    place-items: center !important;
-    border-radius: 999px !important;
-    border: 1px solid rgba(255,255,255,.14) !important;
-    background: rgba(0,224,194,.08) !important;
-    color: #dffff6 !important;
-    font-size: 14px !important;
-    font-weight: 950 !important;
-    line-height: 1 !important;
-    text-indent: 0 !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.06) !important;
-  }
-
-  .rank-medal.gold {
-    background: linear-gradient(180deg, #ffe58a, #bd8430) !important;
-    color: #161006 !important;
-    font-size: 19px !important;
-    box-shadow: 0 0 18px rgba(255,213,93,.22), inset 0 1px 0 rgba(255,255,255,.35) !important;
-  }
-
-  .rank-medal.silver {
-    background: linear-gradient(180deg, #f3f7ff, #8e9aaa) !important;
-    color: #111923 !important;
-    font-size: 19px !important;
-    box-shadow: 0 0 18px rgba(210,226,255,.16), inset 0 1px 0 rgba(255,255,255,.35) !important;
-  }
-
-  .rank-medal.bronze {
-    background: linear-gradient(180deg, #e6a46c, #855038) !important;
-    color: #fff3e8 !important;
-    font-size: 19px !important;
-    box-shadow: 0 0 18px rgba(214,132,77,.16), inset 0 1px 0 rgba(255,255,255,.24) !important;
-  }
-
-  .rank-medal.normal {
-    background: rgba(87, 58, 31, .55) !important;
-    border-color: rgba(217,185,111,.18) !important;
-    color: #d9b96f !important;
-  }
-}
-</style>
 
 </body>
 </html>
