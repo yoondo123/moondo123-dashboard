@@ -4059,6 +4059,48 @@ footer {
   }
 }
 
+
+/* === PC Ranking Medal Patch === */
+.rank-medal {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  margin: 0 auto !important;
+  border-radius: 50% !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  font-weight: 950 !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.20), 0 10px 22px rgba(0,0,0,.24) !important;
+}
+.rank-medal.gold {
+  background: linear-gradient(180deg, #fff2a8, #d9a83f) !important;
+  color: #2d2106 !important;
+}
+.rank-medal.silver {
+  background: linear-gradient(180deg, #f4f7fb, #9fa9b8) !important;
+  color: #111827 !important;
+}
+.rank-medal.bronze {
+  background: linear-gradient(180deg, #f3bb82, #9b5d2e) !important;
+  color: #fff6eb !important;
+}
+.rank-medal.normal {
+  background: rgba(0,224,194,.10) !important;
+  color: #dffff6 !important;
+}
+
+@media (max-width: 640px) {
+  .rank-medal {
+    width: 34px !important;
+    height: 100% !important;
+    min-height: 48px !important;
+    font-size: 17px !important;
+    border-radius: 10px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4952,6 +4994,15 @@ footer {
       renderRecentForm(displayResults, '전체 최근 경기 순서');
     }
 
+
+    function rankMedalHtml(rank) {
+      const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
+      const classes = { 1: 'gold', 2: 'silver', 3: 'bronze' };
+      const label = medals[rank] || rank;
+      const cls = classes[rank] || 'normal';
+      return `<span class="rank-medal ${cls}" aria-label="${rank}위">${label}</span>`;
+    }
+
     async function loadRanking(statsMap, options = {}) {
       const {
         tbodyId = 'rankingList',
@@ -5052,7 +5103,7 @@ footer {
 
       tbody.innerHTML = displayRanking.map((row, i) => `
         <tr>
-          <td>${i + 1}</td>
+          <td>${rankMedalHtml(i + 1)}</td>
           <td>${row.username}</td>
           <td>${row.tier}</td>
           <td class="ok">${row.wins}</td>
