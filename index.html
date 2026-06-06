@@ -5003,6 +5003,14 @@ footer {
       return `<span class="rank-medal ${cls}" aria-label="${rank}위">${label}</span>`;
     }
 
+    function rankMedalHtml(rank) {
+      const medals = { 1: '금', 2: '은', 3: '동' };
+      const classes = { 1: 'gold', 2: 'silver', 3: 'bronze' };
+      const label = medals[rank] || rank;
+      const cls = classes[rank] || 'normal';
+      return `<span class="rank-medal ${cls}" aria-label="${rank}위">${label}</span>`;
+    }
+
     async function loadRanking(statsMap, options = {}) {
       const {
         tbodyId = 'rankingList',
