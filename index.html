@@ -4246,8 +4246,8 @@ tbody td:first-child,
 
 </style>
 
-<style id="moondo-dark-purple-sage-final-v2">
-/* === MOONDO Dark Purple + Sage Theme V2 === */
+<style id="moondo-dark-purple-sage-compact-mobile">
+/* === MOONDO Dark Purple + Sage Theme + Compact Mobile Ranking === */
 :root{
   --mo-bg:#07070a;
   --mo-card:#111216;
@@ -4474,7 +4474,7 @@ tbody td:first-child{color:#a9bca9!important;}
 
 footer{color:#7f887f!important;}
 
-/* === Mobile ranking complete rebuild === */
+/* === Mobile ranking compact one-line list === */
 @media(max-width:640px){
   body{
     background:
@@ -4484,280 +4484,142 @@ footer{color:#7f887f!important;}
   }
 
   .table-wrap{
-    overflow:visible!important;
+    overflow-x:auto!important;
+    overflow-y:visible!important;
+    border:1px solid rgba(126,113,151,.16)!important;
+    border-radius:14px!important;
+    background:rgba(8,9,12,.92)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.03)!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  table{
+    display:table!important;
+    width:100%!important;
+    min-width:620px!important;
+    border-collapse:collapse!important;
+    table-layout:fixed!important;
+    font-size:11px!important;
+  }
+
+  thead{
+    display:table-header-group!important;
+  }
+
+  tbody{
+    display:table-row-group!important;
+  }
+
+  tr{
+    display:table-row!important;
+    width:auto!important;
+    margin:0!important;
+    padding:0!important;
     border:0!important;
+    border-radius:0!important;
     background:transparent!important;
     box-shadow:none!important;
   }
 
-  table,
-  thead,
-  tbody,
-  tr,
   th,
   td{
-    min-width:0!important;
-  }
-
-  table{
-    display:block!important;
-    width:100%!important;
-  }
-
-  thead{
-    display:none!important;
-  }
-
-  tbody{
-    display:block!important;
-    width:100%!important;
-  }
-
-  #rankingList tr,
-  #weeklyRankingList tr{
-    display:grid!important;
-    width:100%!important;
-    grid-template-columns:42px 1fr 82px!important;
-    grid-template-areas:
-      "rank name rate"
-      "rank tier rate"
-      "record record record"
-      "meta meta meta"!important;
-    gap:8px 10px!important;
-    margin:0 0 9px!important;
-    padding:12px!important;
-    border-radius:16px!important;
-    border:1px solid rgba(126,113,151,.17)!important;
-    background:
-      linear-gradient(135deg,rgba(106,90,130,.072),transparent 44%),
-      rgba(10,11,14,.96)!important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.035)!important;
-  }
-
-  #rankingList td,
-  #weeklyRankingList td{
-    position:static!important;
-    display:block!important;
+    display:table-cell!important;
     width:auto!important;
     min-width:0!important;
     max-width:none!important;
+    height:34px!important;
     min-height:0!important;
-    height:auto!important;
-    padding:0!important;
-    margin:0!important;
-    border:0!important;
-    text-align:left!important;
+    padding:7px 6px!important;
+    border-right:1px solid rgba(126,113,151,.07)!important;
+    border-bottom:1px solid rgba(126,113,151,.08)!important;
+    text-align:center!important;
+    vertical-align:middle!important;
     white-space:nowrap!important;
     word-break:normal!important;
-    overflow-wrap:normal!important;
-    line-height:1.2!important;
-    background:none!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    line-height:1.15!important;
+    background:transparent!important;
   }
 
-  #rankingList td::before,
-  #rankingList td::after,
-  #weeklyRankingList td::before,
-  #weeklyRankingList td::after{
+  th{
+    height:32px!important;
+    font-size:10px!important;
+    color:#cfc8dd!important;
+    background:linear-gradient(180deg,rgba(106,90,130,.13),rgba(17,18,23,.98))!important;
+  }
+
+  td::before,
+  td::after,
+  th::before,
+  th::after{
     content:none!important;
     display:none!important;
   }
 
+  tbody tr:nth-child(even){
+    background:rgba(233,236,233,.016)!important;
+  }
+
+  tbody tr:hover{
+    background:rgba(106,90,130,.055)!important;
+  }
+
+  /* column widths */
+  #rankingList th:nth-child(1),
   #rankingList td:nth-child(1),
-  #weeklyRankingList td:nth-child(1){
-    grid-area:rank!important;
-    display:grid!important;
-    place-items:center!important;
-    width:42px!important;
-    height:56px!important;
-    border-radius:12px!important;
-    background:rgba(143,165,146,.09)!important;
-    color:#dce9dc!important;
-    font-size:16px!important;
-    font-weight:950!important;
-  }
+  #weeklyRankingList th:nth-child(1),
+  #weeklyRankingList td:nth-child(1){width:44px!important;}
 
+  #rankingList th:nth-child(2),
   #rankingList td:nth-child(2),
-  #weeklyRankingList td:nth-child(2){
-    grid-area:name!important;
-    color:#fff!important;
-    font-size:14px!important;
-    font-weight:950!important;
-    overflow:hidden!important;
-    text-overflow:ellipsis!important;
-  }
+  #weeklyRankingList th:nth-child(2),
+  #weeklyRankingList td:nth-child(2){width:112px!important;text-align:left!important;font-weight:950!important;color:#fff!important;}
 
+  #rankingList th:nth-child(3),
   #rankingList td:nth-child(3),
-  #weeklyRankingList td:nth-child(3){
-    grid-area:tier!important;
-    color:#8d968d!important;
-    font-size:11px!important;
-    overflow:hidden!important;
-    text-overflow:ellipsis!important;
-  }
+  #weeklyRankingList th:nth-child(3),
+  #weeklyRankingList td:nth-child(3){width:86px!important;color:#a9bca9!important;}
 
+  #rankingList th:nth-child(4),
+  #rankingList td:nth-child(4),
+  #weeklyRankingList th:nth-child(4),
+  #weeklyRankingList td:nth-child(4){width:40px!important;color:#80b894!important;font-weight:950!important;}
+
+  #rankingList th:nth-child(5),
+  #rankingList td:nth-child(5),
+  #weeklyRankingList th:nth-child(5),
+  #weeklyRankingList td:nth-child(5){width:38px!important;}
+
+  #rankingList th:nth-child(6),
+  #rankingList td:nth-child(6),
+  #weeklyRankingList th:nth-child(6),
+  #weeklyRankingList td:nth-child(6){width:40px!important;color:#d15f70!important;font-weight:950!important;}
+
+  #rankingList th:nth-child(7),
+  #rankingList td:nth-child(7),
+  #weeklyRankingList th:nth-child(7),
+  #weeklyRankingList td:nth-child(7){width:50px!important;}
+
+  #rankingList th:nth-child(8),
   #rankingList td:nth-child(8),
-  #weeklyRankingList td:nth-child(8){
-    grid-area:rate!important;
-    justify-self:end!important;
-    align-self:start!important;
-    color:#a9bca9!important;
-    font-size:13px!important;
-    font-weight:950!important;
-    text-align:right!important;
-  }
+  #weeklyRankingList th:nth-child(8),
+  #weeklyRankingList td:nth-child(8){width:58px!important;color:#a9bca9!important;font-weight:950!important;}
 
-  #rankingList td:nth-child(8)::before,
-  #weeklyRankingList td:nth-child(8)::before{
-    content:"승률 "!important;
-    display:inline!important;
-    color:#8d968d!important;
-    font-size:10px!important;
-    margin-right:2px!important;
-  }
-
-  #rankingList td:nth-child(4),
-  #rankingList td:nth-child(5),
-  #rankingList td:nth-child(6),
-  #rankingList td:nth-child(7),
-  #weeklyRankingList td:nth-child(4),
-  #weeklyRankingList td:nth-child(5),
-  #weeklyRankingList td:nth-child(6),
-  #weeklyRankingList td:nth-child(7){
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    height:28px!important;
-    border-radius:10px!important;
-    background:rgba(233,236,233,.045)!important;
-    font-size:12px!important;
-    font-weight:950!important;
-    text-align:center!important;
-  }
-
-  #rankingList td:nth-child(4),
-  #weeklyRankingList td:nth-child(4){
-    grid-column:1!important;
-    grid-row:3!important;
-    color:#80b894!important;
-  }
-  #rankingList td:nth-child(5),
-  #weeklyRankingList td:nth-child(5){
-    grid-column:2!important;
-    grid-row:3!important;
-    color:#e9ece9!important;
-  }
-  #rankingList td:nth-child(6),
-  #weeklyRankingList td:nth-child(6){
-    grid-column:3!important;
-    grid-row:3!important;
-    color:#d15f70!important;
-  }
-  #rankingList td:nth-child(7),
-  #weeklyRankingList td:nth-child(7){
-    grid-column:1 / -1!important;
-    grid-row:4!important;
-    color:#e9ece9!important;
-  }
-
-  #rankingList td:nth-child(4)::before,
-  #weeklyRankingList td:nth-child(4)::before{
-    content:"승 "!important;
-    display:inline!important;
-    color:#8d968d!important;
-    font-size:10px!important;
-    margin-right:4px!important;
-  }
-  #rankingList td:nth-child(5)::before,
-  #weeklyRankingList td:nth-child(5)::before{
-    content:"무 "!important;
-    display:inline!important;
-    color:#8d968d!important;
-    font-size:10px!important;
-    margin-right:4px!important;
-  }
-  #rankingList td:nth-child(6)::before,
-  #weeklyRankingList td:nth-child(6)::before{
-    content:"패 "!important;
-    display:inline!important;
-    color:#8d968d!important;
-    font-size:10px!important;
-    margin-right:4px!important;
-  }
-  #rankingList td:nth-child(7)::before,
-  #weeklyRankingList td:nth-child(7)::before{
-    content:"총 경기 "!important;
-    display:inline!important;
-    color:#8d968d!important;
-    font-size:10px!important;
-    margin-right:4px!important;
-  }
-
+  #rankingList th:nth-child(9),
   #rankingList td:nth-child(9),
+  #weeklyRankingList th:nth-child(9),
+  #weeklyRankingList td:nth-child(9){width:56px!important;}
+
+  #rankingList th:nth-child(10),
   #rankingList td:nth-child(10),
+  #weeklyRankingList th:nth-child(10),
+  #weeklyRankingList td:nth-child(10){width:64px!important;color:#a9bca9!important;}
+
+  #rankingList th:nth-child(11),
   #rankingList td:nth-child(11),
-  #weeklyRankingList td:nth-child(9),
-  #weeklyRankingList td:nth-child(10),
-  #weeklyRankingList td:nth-child(11){
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    height:28px!important;
-    border-radius:10px!important;
-    background:rgba(106,90,130,.09)!important;
-    color:#e2dde9!important;
-    font-size:12px!important;
-    font-weight:950!important;
-    text-align:center!important;
-  }
-
-  #rankingList td:nth-child(9),
-  #weeklyRankingList td:nth-child(9){
-    grid-column:1!important;
-    grid-row:5!important;
-  }
-  #rankingList td:nth-child(10),
-  #weeklyRankingList td:nth-child(10){
-    grid-column:2!important;
-    grid-row:5!important;
-  }
-  #rankingList td:nth-child(11),
-  #weeklyRankingList td:nth-child(11){
-    grid-column:3!important;
-    grid-row:5!important;
-  }
-
-  #rankingList td:nth-child(9)::before,
-  #weeklyRankingList td:nth-child(9)::before{
-    content:"점수 "!important;
-    display:inline!important;
-    color:#8d968d!important;
-    font-size:10px!important;
-    margin-right:4px!important;
-  }
-  #rankingList td:nth-child(10)::before,
-  #weeklyRankingList td:nth-child(10)::before{
-    content:"순위 "!important;
-    display:inline!important;
-    color:#8d968d!important;
-    font-size:10px!important;
-    margin-right:4px!important;
-  }
-  #rankingList td:nth-child(11)::before,
-  #weeklyRankingList td:nth-child(11)::before{
-    content:"FC "!important;
-    display:inline!important;
-    color:#8d968d!important;
-    font-size:10px!important;
-    margin-right:4px!important;
-  }
-
-  #rankingList td[colspan],
-  #weeklyRankingList td[colspan]{
-    display:block!important;
-    grid-column:1 / -1!important;
-    text-align:center!important;
-    padding:12px!important;
-  }
+  #weeklyRankingList th:nth-child(11),
+  #weeklyRankingList td:nth-child(11){width:48px!important;}
 }
 </style>
 
