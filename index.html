@@ -4269,6 +4269,214 @@ tbody td:first-child{
 }
 </style>
 
+
+<style id="moondo-eye-comfort-final">
+/* === MOONDO EYE COMFORT PATCH === */
+/* CSS only. 구조/모바일/테이블/JS 수정 없음. */
+
+/* 1) 전체 배경을 더 어둡고 무광으로 */
+html{
+  background:#050607 !important;
+}
+
+body{
+  background:
+    radial-gradient(circle at 50% -18%,rgba(106,90,130,.045),transparent 30%),
+    linear-gradient(180deg,#090a0d 0%,#060708 48%,#030404 100%) !important;
+  color:#E7EAE7 !important;
+}
+
+/* 격자/글로우 거의 제거 */
+body::before{
+  border-top:0 !important;
+  background:
+    linear-gradient(rgba(255,255,255,.010) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.008) 1px,transparent 1px) !important;
+  background-size:72px 72px !important;
+  opacity:.35 !important;
+}
+
+body::after{
+  background:
+    radial-gradient(circle at 50% 110%,rgba(143,165,146,.025),transparent 32%) !important;
+  opacity:.75 !important;
+}
+
+/* 2) 헤더/카드 배경을 차콜로 통일 */
+header,
+.panel,
+#dashboard > .topbar,
+.live-card,
+.stat,
+.form-strip,
+.table-wrap{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.026),transparent),
+    #0d1012 !important;
+  border-color:rgba(143,165,146,.075) !important;
+  box-shadow:
+    0 18px 52px rgba(0,0,0,.42),
+    inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+
+/* 카드 안 민트/보라 번짐 줄이기 */
+.panel::before,
+.stat::after{
+  display:none !important;
+}
+
+.stat{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.024),transparent),
+    #111519 !important;
+}
+
+.stat::before{
+  background:linear-gradient(180deg,rgba(143,165,146,.55),rgba(106,90,130,.35),transparent) !important;
+  opacity:.55 !important;
+}
+
+/* 3) 제목/라인 포인트 약하게 */
+h1::first-letter,
+header h1::first-letter{
+  color:#746582 !important;
+}
+
+h2::before,
+#dashboard > .topbar h2::before{
+  background:linear-gradient(180deg,#7f927f,#5d526e) !important;
+  box-shadow:none !important;
+  opacity:.85 !important;
+}
+
+h1,h2,.ok,.live-time,.stat small{
+  text-shadow:none !important;
+}
+
+/* 4) 탭 버튼 보라색 밝기 줄이기 */
+.moondo-tab.active{
+  background:linear-gradient(180deg,#5f536f,#40394a) !important;
+  color:#F1F3F1 !important;
+  border-color:rgba(120,105,140,.22) !important;
+  box-shadow:none !important;
+}
+
+.moondo-tab:hover{
+  background:rgba(120,105,140,.045) !important;
+}
+
+/* 5) 일반 버튼도 무광 */
+button{
+  background:linear-gradient(180deg,#5f536f,#3f3949) !important;
+  color:#F3F5F3 !important;
+  border-color:rgba(120,105,140,.20) !important;
+  box-shadow:none !important;
+}
+
+/* 6) LIVE / 승률 / 보조 텍스트 세이지를 더 어둡게 */
+#liveState{
+  background:rgba(143,165,146,.055) !important;
+  border-color:rgba(143,165,146,.10) !important;
+  color:#C4D0C3 !important;
+}
+
+.status-dot{
+  background:#7f927f !important;
+  box-shadow:none !important;
+}
+
+.ok{
+  color:#8fa592 !important;
+}
+
+.live-time,
+.stat small,
+.form-summary{
+  color:#9EAD9E !important;
+}
+
+/* 7) 스코어 박스 밝기 낮추기. 흰/골드 튐 완화 */
+.live-score{
+  background:linear-gradient(180deg,#D5DBD5,#A8B2A8) !important;
+  color:#09100c !important;
+}
+
+.live-score + .live-score{
+  background:linear-gradient(180deg,#B8B18A,#8E855C) !important;
+  color:#10100B !important;
+}
+
+/* 8) 테이블은 더 조용하게 */
+th{
+  background:linear-gradient(180deg,rgba(106,90,130,.10),rgba(15,18,23,.98)) !important;
+  color:#DDE1DD !important;
+}
+
+td{
+  color:#E8ECE8 !important;
+}
+
+tbody tr:nth-child(even){
+  background:rgba(255,255,255,.012) !important;
+}
+
+tbody tr:hover{
+  background:rgba(143,165,146,.035) !important;
+}
+
+tbody td:first-child{
+  color:#9EAD9E !important;
+}
+
+/* 9) 최근 10판 버튼도 채도 낮추기 */
+.form-dot.win{
+  background:linear-gradient(180deg,rgba(103,145,116,.82),rgba(52,84,61,.90)) !important;
+  box-shadow:none !important;
+}
+
+.form-dot.loss{
+  background:linear-gradient(180deg,rgba(173,83,96,.80),rgba(80,36,46,.90)) !important;
+  box-shadow:none !important;
+}
+
+.form-dot.draw{
+  background:linear-gradient(180deg,rgba(118,124,120,.70),rgba(52,56,54,.88)) !important;
+}
+
+/* 10) 모바일도 같은 톤 */
+@media(max-width:640px){
+  body{
+    background:
+      radial-gradient(circle at 50% -15%,rgba(106,90,130,.045),transparent 32%),
+      linear-gradient(180deg,#090a0d 0%,#060708 48%,#030404 100%) !important;
+  }
+
+  header,
+  #dashboard > .topbar,
+  .panel,
+  #rankingList tr,
+  #weeklyRankingList tr,
+  #recentList tr{
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.024),transparent),
+      #0d1012 !important;
+    border-color:rgba(143,165,146,.075) !important;
+  }
+
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1){
+    background:rgba(143,165,146,.055) !important;
+    color:#CAD5CA !important;
+  }
+
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8),
+  #recentList td:nth-child(4){
+    color:#9EAD9E !important;
+  }
+}
+</style>
+
 </head>
 <body>
   <main>
