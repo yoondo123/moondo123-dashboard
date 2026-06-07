@@ -4059,6 +4059,191 @@ footer {
   }
 }
 
+
+
+/* === MOONDO Premium Champagne Gold Theme + Mobile Ranking Detail Patch === */
+:root{
+  --mo-bg:#08090b;
+  --mo-card:#15161a;
+  --mo-card2:#1b1d22;
+  --mo-line:rgba(214,184,115,.16);
+  --mo-line2:rgba(214,184,115,.28);
+  --mo-text:#ece9e1;
+  --mo-strong:#fffaf0;
+  --mo-muted:#9b968c;
+  --mo-teal:#d6b873;
+  --mo-teal2:#ead8aa;
+  --mo-gold:#d6b873;
+  --mo-red:#d15a64;
+  --mo-win:#5f9b77;
+  --mo-shadow:0 26px 76px rgba(0,0,0,.58);
+}
+html{background:var(--mo-bg)!important}
+body{
+  color:var(--mo-text)!important;
+  background:
+    radial-gradient(circle at 16% -8%,rgba(214,184,115,.13),transparent 29%),
+    radial-gradient(circle at 90% 0%,rgba(255,255,255,.035),transparent 24%),
+    linear-gradient(180deg,#111215 0%,#090a0d 48%,#050608 100%)!important;
+}
+body::before{
+  background:
+    linear-gradient(rgba(214,184,115,.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(214,184,115,.018) 1px,transparent 1px)!important;
+  background-size:60px 60px!important;
+}
+body::after{
+  background:
+    linear-gradient(130deg,transparent 0 32%,rgba(214,184,115,.045) 41%,transparent 52%),
+    radial-gradient(circle at 50% 108%,rgba(214,184,115,.055),transparent 30%)!important;
+}
+header{
+  border-color:rgba(214,184,115,.18)!important;
+  background:
+    linear-gradient(135deg,rgba(214,184,115,.13),transparent 38%),
+    linear-gradient(120deg,rgba(255,255,255,.035),transparent 64%),
+    rgba(13,14,17,.93)!important;
+}
+header::before{border-color:rgba(214,184,115,.08)!important}
+header::after{color:rgba(255,250,240,.035)!important}
+h1::first-letter{color:#ead8aa!important}
+h2::before,
+#dashboard>.topbar h2::before{
+  background:linear-gradient(180deg,#ead8aa,#b8904e)!important;
+  box-shadow:0 0 20px rgba(214,184,115,.28)!important;
+}
+a{color:#ead8aa!important}
+a:hover{color:#fff2c9!important}
+button{
+  border-color:rgba(214,184,115,.32)!important;
+  background:linear-gradient(180deg,#d9bd7a,#8d6a32)!important;
+  color:#100d07!important;
+  box-shadow:0 18px 34px rgba(214,184,115,.12)!important;
+}
+button:hover{box-shadow:0 22px 42px rgba(214,184,115,.18)!important}
+button.secondary,
+.footer-actions a,
+.footer-actions button,
+header a{
+  border-color:rgba(214,184,115,.16)!important;
+  background:rgba(255,250,240,.045)!important;
+  color:var(--mo-text)!important;
+}
+button.secondary:hover,
+.footer-actions a:hover,
+.footer-actions button:hover{
+  border-color:rgba(214,184,115,.34)!important;
+  background:rgba(214,184,115,.08)!important;
+}
+input{border-color:rgba(214,184,115,.15)!important;background:rgba(6,7,9,.74)!important}
+input:focus{border-color:rgba(214,184,115,.55)!important;box-shadow:0 0 0 4px rgba(214,184,115,.10),inset 0 1px 0 rgba(255,255,255,.045)!important}
+.panel,
+#dashboard>.topbar,
+.table-wrap,
+.form-strip,
+.moondo-tabs{
+  border-color:rgba(214,184,115,.15)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),transparent),rgba(12,13,16,.90)!important;
+}
+.panel::before{
+  background:linear-gradient(135deg,rgba(214,184,115,.055),transparent 40%,rgba(255,255,255,.018))!important;
+}
+.moondo-tab.active{
+  color:#100d07!important;
+  border-color:rgba(234,216,170,.38)!important;
+  background:linear-gradient(180deg,#ead8aa,#a77f3d)!important;
+  box-shadow:0 14px 28px rgba(214,184,115,.16)!important;
+}
+.moondo-tab:hover{background:rgba(214,184,115,.055)!important}
+#liveState{
+  border-color:rgba(214,184,115,.24)!important;
+  background:rgba(214,184,115,.10)!important;
+  color:#f4e5bf!important;
+}
+.status-dot{background:#d6b873!important;box-shadow:0 0 16px rgba(214,184,115,.62)!important}
+.live-card{
+  border-color:rgba(214,184,115,.16)!important;
+  background:linear-gradient(90deg,rgba(214,184,115,.07),transparent 30%,rgba(255,255,255,.02)),#141519!important;
+}
+.live-score{background:linear-gradient(180deg,#eeeeea,#a7a39a)!important;color:#07080a!important}
+.live-score+.live-score{background:linear-gradient(180deg,#e6d19a,#b28b43)!important;color:#090704!important}
+.live-time{color:#d6b873!important;text-shadow:0 0 18px rgba(214,184,115,.24)!important}
+.stat{
+  border-color:rgba(214,184,115,.14)!important;
+  background:
+    linear-gradient(135deg,rgba(214,184,115,.055),transparent 39%),
+    linear-gradient(180deg,rgba(255,255,255,.035),transparent),
+    var(--mo-card)!important;
+}
+.stat::before{background:linear-gradient(180deg,#ead8aa,#8b6a35,transparent)!important}
+.stat small,
+.form-summary{color:#d6b873!important}
+.ok{color:#6fb98a!important}
+.bad{color:#d15a64!important}
+.form-dot.win{background:linear-gradient(180deg,#5f9b77,#345744)!important;color:#edf8f1!important;box-shadow:none!important}
+.form-dot.loss{background:linear-gradient(180deg,#b94c57,#4b2025)!important;color:#fae9e9!important;box-shadow:none!important}
+.form-dot.draw{background:linear-gradient(180deg,#77766f,#3b3b38)!important}
+th{
+  background:linear-gradient(180deg,rgba(214,184,115,.16),rgba(22,23,27,.98))!important;
+  color:#fff4d7!important;
+}
+td{border-color:rgba(214,184,115,.075)!important}
+tbody tr:hover{background:rgba(214,184,115,.055)!important}
+tbody td:first-child,
+#rankingList td:nth-child(10){color:#d6b873!important}
+#rankingList td:nth-child(9)::before{color:#d6b873!important}
+
+@media(max-width:640px){
+  body{
+    background:
+      radial-gradient(circle at 22% 0%,rgba(214,184,115,.105),transparent 34%),
+      linear-gradient(180deg,#111215 0%,#090a0d 48%,#050608 100%)!important;
+  }
+  header{background:linear-gradient(135deg,rgba(214,184,115,.115),transparent 42%),linear-gradient(180deg,rgba(255,255,255,.045),transparent),#111215!important}
+  .live-card{background:linear-gradient(90deg,rgba(214,184,115,.08),transparent 28%,rgba(255,255,255,.018)),#141519!important}
+  .today-grid .stat:first-child,
+  .week-grid .stat:first-child{
+    background:linear-gradient(135deg,rgba(214,184,115,.13),rgba(255,255,255,.025)),#15161a!important;
+  }
+  .today-grid .stat:first-child .muted,
+  .week-grid .stat:first-child .muted{color:#f4e5bf!important}
+
+  /* 오늘 승률 랭킹 모바일 상세 표시: 승/무/패/총경기/점수/실시간순위/FC */
+  #rankingList tr{
+    display:grid!important;
+    grid-template-columns:42px 1fr auto auto auto!important;
+    grid-template-areas:
+      "rank name name rate rate"
+      "rank tier tier score liveRank"
+      "rank win draw loss matches"
+      "rank fc fc fc fc"!important;
+    gap:5px 8px!important;
+    padding:11px 12px!important;
+    border-color:rgba(214,184,115,.14)!important;
+    background:linear-gradient(135deg,rgba(214,184,115,.075),transparent 38%),rgba(14,15,18,.96)!important;
+  }
+  #rankingList td{display:block!important;border:0!important;padding:0!important;min-height:auto!important;text-align:left!important}
+  #rankingList td::before{content:""!important}
+  #rankingList td:nth-child(1){grid-area:rank!important;align-self:stretch!important;display:grid!important;place-items:center!important;border-radius:10px!important;background:rgba(214,184,115,.12)!important;color:#ead8aa!important;font-size:15px!important;font-weight:950!important}
+  #rankingList td:nth-child(2){grid-area:name!important;color:#fffaf0!important;font-size:14px!important;font-weight:950!important}
+  #rankingList td:nth-child(3){grid-area:tier!important;color:#a9a299!important;font-size:11px!important;font-weight:800!important}
+  #rankingList td:nth-child(4){grid-area:win!important;color:#6fb98a!important;font-size:11px!important;font-weight:950!important}
+  #rankingList td:nth-child(5){grid-area:draw!important;color:#d7d0c2!important;font-size:11px!important;font-weight:950!important}
+  #rankingList td:nth-child(6){grid-area:loss!important;color:#d15a64!important;font-size:11px!important;font-weight:950!important}
+  #rankingList td:nth-child(7){grid-area:matches!important;color:#d6b873!important;font-size:11px!important;font-weight:950!important;justify-self:end!important}
+  #rankingList td:nth-child(8){grid-area:rate!important;justify-self:end!important;color:#d6b873!important;font-size:13px!important;font-weight:950!important}
+  #rankingList td:nth-child(9){grid-area:score!important;color:#c5bba6!important;font-size:11px!important;font-weight:850!important}
+  #rankingList td:nth-child(10){grid-area:liveRank!important;justify-self:end!important;color:#d6b873!important;font-size:11px!important;font-weight:950!important}
+  #rankingList td:nth-child(11){grid-area:fc!important;display:block!important;color:#c5bba6!important;font-size:11px!important;font-weight:850!important;text-align:right!important}
+  #rankingList td:nth-child(4)::before{content:"승 "!important;color:#8d9a86!important}
+  #rankingList td:nth-child(5)::before{content:"무 "!important;color:#8d9a86!important}
+  #rankingList td:nth-child(6)::before{content:"패 "!important;color:#8d9a86!important}
+  #rankingList td:nth-child(7)::before{content:"총 "!important;color:#8d9a86!important}
+  #rankingList td:nth-child(9)::before{content:"점수 "!important;color:#8d9a86!important}
+  #rankingList td:nth-child(10)::before{content:"실시간 "!important;color:#8d9a86!important}
+  #rankingList td:nth-child(11)::before{content:"FC "!important;color:#8d9a86!important}
+}
+
 </style>
 </head>
 <body>
