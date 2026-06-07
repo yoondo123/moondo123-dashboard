@@ -4245,6 +4245,439 @@ tbody td:first-child,
 }
 
 </style>
+
+<style id="moondo-sage-final-theme">
+/* === MOONDO Sage Forest Final Theme Override === */
+:root{
+  --mo-bg:#070a08;
+  --mo-card:#121713;
+  --mo-card2:#171d18;
+  --mo-line:rgba(143,165,146,.16);
+  --mo-line2:rgba(143,165,146,.28);
+  --mo-text:#e8eee9;
+  --mo-strong:#f7faf7;
+  --mo-muted:#89958b;
+  --mo-teal:#8fa592;
+  --mo-teal2:#a8bba8;
+  --mo-gold:#aeb89d;
+  --mo-red:#b85b66;
+  --mo-shadow:0 26px 76px rgba(0,0,0,.56);
+}
+
+html{background:var(--mo-bg)!important}
+
+body{
+  color:var(--mo-text)!important;
+  background:
+    radial-gradient(circle at 18% -8%,rgba(143,165,146,.13),transparent 32%),
+    radial-gradient(circle at 86% 6%,rgba(88,108,91,.09),transparent 30%),
+    linear-gradient(180deg,#0b100d 0%,#070a08 48%,#040605 100%)!important;
+}
+
+body::before{
+  background:
+    linear-gradient(rgba(143,165,146,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(143,165,146,.02) 1px,transparent 1px)!important;
+  background-size:64px 64px!important;
+  border-top:0!important;
+}
+
+body::after{
+  background:
+    linear-gradient(130deg,transparent 0 34%,rgba(143,165,146,.045) 43%,transparent 56%),
+    radial-gradient(circle at 50% 110%,rgba(143,165,146,.075),transparent 34%)!important;
+}
+
+header{
+  border-color:rgba(143,165,146,.15)!important;
+  background:
+    linear-gradient(135deg,rgba(143,165,146,.105),transparent 42%),
+    linear-gradient(180deg,rgba(255,255,255,.035),transparent),
+    rgba(8,12,10,.92)!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.54),inset 0 1px 0 rgba(255,255,255,.045)!important;
+}
+
+header::before{
+  border-color:rgba(143,165,146,.06)!important;
+}
+
+header::after{
+  color:rgba(232,238,233,.035)!important;
+}
+
+h1::first-letter,
+header h1::first-letter{
+  color:#9fb49f!important;
+}
+
+h2::before,
+#dashboard>.topbar h2::before{
+  background:linear-gradient(180deg,#a8bba8,#637766)!important;
+  box-shadow:0 0 18px rgba(143,165,146,.22)!important;
+}
+
+a{color:#c1d1c2!important}
+a:hover{color:#d8e5d7!important}
+
+button{
+  border-color:rgba(143,165,146,.26)!important;
+  background:linear-gradient(180deg,rgba(139,162,142,.92),rgba(74,91,76,.94))!important;
+  color:#f5faf5!important;
+  box-shadow:0 16px 32px rgba(58,76,61,.18)!important;
+}
+
+button:hover{
+  box-shadow:0 20px 40px rgba(58,76,61,.24)!important;
+}
+
+button.secondary,
+.footer-actions a,
+.footer-actions button,
+header a{
+  border-color:rgba(143,165,146,.14)!important;
+  background:rgba(232,238,233,.045)!important;
+  color:var(--mo-text)!important;
+}
+
+button.secondary:hover,
+.footer-actions a:hover,
+.footer-actions button:hover{
+  border-color:rgba(143,165,146,.33)!important;
+  background:rgba(143,165,146,.085)!important;
+}
+
+input{
+  border-color:rgba(143,165,146,.14)!important;
+  background:rgba(4,7,5,.72)!important;
+  color:var(--mo-text)!important;
+}
+
+input:focus{
+  border-color:rgba(143,165,146,.48)!important;
+  box-shadow:0 0 0 4px rgba(143,165,146,.095),inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+
+.panel,
+#dashboard>.topbar{
+  border-color:rgba(143,165,146,.15)!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.035),transparent),
+    rgba(9,14,11,.9)!important;
+}
+
+.panel::before{
+  background:linear-gradient(135deg,rgba(143,165,146,.065),transparent 40%,rgba(92,112,95,.035))!important;
+}
+
+.moondo-tabs{
+  border-color:rgba(143,165,146,.14)!important;
+  background:rgba(5,9,6,.76)!important;
+}
+
+.moondo-tab{
+  color:#8e9b90!important;
+}
+
+.moondo-tab:hover{
+  background:rgba(143,165,146,.06)!important;
+  color:#e8eee9!important;
+}
+
+.moondo-tab.active{
+  color:#f5faf5!important;
+  border-color:rgba(143,165,146,.32)!important;
+  background:linear-gradient(180deg,rgba(119,143,122,.95),rgba(62,82,66,.95))!important;
+  box-shadow:0 12px 26px rgba(58,76,61,.18)!important;
+}
+
+#liveState{
+  border-color:rgba(143,165,146,.22)!important;
+  background:rgba(143,165,146,.095)!important;
+  color:#dce9dc!important;
+}
+
+.status-dot{
+  background:#9fb49f!important;
+  box-shadow:0 0 14px rgba(143,165,146,.58)!important;
+}
+
+.live-card{
+  border-color:rgba(143,165,146,.14)!important;
+  background:
+    linear-gradient(90deg,rgba(143,165,146,.075),transparent 32%,rgba(95,114,98,.04)),
+    #101411!important;
+}
+
+.live-score{
+  background:linear-gradient(180deg,#dfe5df,#aeb9ae)!important;
+  color:#061008!important;
+}
+
+.live-score + .live-score{
+  background:linear-gradient(180deg,#c4d2c4,#738672)!important;
+  color:#061008!important;
+}
+
+.live-time{
+  color:#a8bba8!important;
+  text-shadow:0 0 18px rgba(143,165,146,.22)!important;
+}
+
+.stat{
+  border-color:rgba(143,165,146,.14)!important;
+  background:
+    linear-gradient(135deg,rgba(143,165,146,.07),transparent 40%),
+    linear-gradient(180deg,rgba(255,255,255,.035),transparent),
+    #121713!important;
+  box-shadow:0 18px 44px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+
+.stat::before{
+  background:linear-gradient(180deg,#9fb49f,#596b5c,transparent)!important;
+}
+
+.stat .muted{
+  color:#8f9b91!important;
+}
+
+.stat small,
+.form-summary{
+  color:#a8bba8!important;
+}
+
+.ok{
+  color:#78b590!important;
+}
+
+.bad{
+  color:#d35f70!important;
+}
+
+.form-strip{
+  border-color:rgba(143,165,146,.14)!important;
+  background:linear-gradient(135deg,rgba(143,165,146,.065),transparent 42%),rgba(8,13,10,.9)!important;
+}
+
+.form-dot{
+  border-color:rgba(143,165,146,.13)!important;
+  background:rgba(232,238,233,.045)!important;
+}
+
+.form-dot.win{
+  background:linear-gradient(180deg,rgba(83,132,98,.92),rgba(43,74,53,.96))!important;
+  color:#eef8ef!important;
+  box-shadow:none!important;
+}
+
+.form-dot.loss{
+  background:linear-gradient(180deg,rgba(184,91,102,.9),rgba(78,35,42,.96))!important;
+  color:#fae8e9!important;
+  box-shadow:none!important;
+}
+
+.form-dot.draw{
+  background:linear-gradient(180deg,rgba(115,122,117,.85),rgba(56,61,58,.94))!important;
+}
+
+.table-wrap{
+  border-color:rgba(143,165,146,.14)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),rgba(7,11,8,.92)!important;
+}
+
+th{
+  background:linear-gradient(180deg,rgba(143,165,146,.12),rgba(18,24,20,.98))!important;
+  color:#dce9dc!important;
+}
+
+td{
+  color:#ecf2ee!important;
+  border-color:rgba(143,165,146,.08)!important;
+}
+
+tbody tr:nth-child(even){
+  background:rgba(232,238,233,.018)!important;
+}
+
+tbody tr:hover{
+  background:rgba(143,165,146,.06)!important;
+}
+
+tbody td:first-child{
+  color:#a8bba8!important;
+}
+
+#rankingList .ok,
+#weeklyRankingList .ok{
+  color:#72b58e!important;
+}
+
+#rankingList .bad,
+#weeklyRankingList .bad{
+  color:#d45d70!important;
+}
+
+/* Mobile ranking: show win/draw/loss/total/rate/score/rank/FC */
+@media(max-width:640px){
+  body{
+    background:
+      radial-gradient(circle at 20% 0%,rgba(143,165,146,.13),transparent 35%),
+      linear-gradient(180deg,#0b100d 0%,#070a08 48%,#040605 100%)!important;
+  }
+
+  .today-grid .stat:first-child,
+  .week-grid .stat:first-child{
+    background:
+      linear-gradient(135deg,rgba(143,165,146,.12),rgba(94,112,97,.05)),
+      linear-gradient(180deg,rgba(255,255,255,.04),transparent),
+      #111711!important;
+  }
+
+  #rankingList tr,
+  #weeklyRankingList tr{
+    display:grid!important;
+    grid-template-columns:42px 1fr auto!important;
+    grid-template-areas:
+      "rank name rate"
+      "rank tier tier"
+      "stats stats stats"
+      "meta meta meta"!important;
+    gap:5px 10px!important;
+    padding:12px!important;
+    border-radius:16px!important;
+    border:1px solid rgba(143,165,146,.13)!important;
+    background:
+      linear-gradient(135deg,rgba(143,165,146,.075),transparent 40%),
+      rgba(10,15,12,.96)!important;
+  }
+
+  #rankingList td,
+  #weeklyRankingList td{
+    display:block!important;
+    min-height:auto!important;
+    padding:0!important;
+    border:0!important;
+    text-align:left!important;
+  }
+
+  #rankingList td::before,
+  #weeklyRankingList td::before{
+    content:""!important;
+  }
+
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1){
+    grid-area:rank!important;
+    align-self:stretch!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:11px!important;
+    background:rgba(143,165,146,.11)!important;
+    color:#dce9dc!important;
+    font-size:16px!important;
+    font-weight:950!important;
+  }
+
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2){
+    grid-area:name!important;
+    color:#fff!important;
+    font-size:15px!important;
+    font-weight:950!important;
+  }
+
+  #rankingList td:nth-child(3),
+  #weeklyRankingList td:nth-child(3){
+    grid-area:tier!important;
+    color:#8f9b91!important;
+    font-size:11px!important;
+  }
+
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8){
+    grid-area:rate!important;
+    justify-self:end!important;
+    color:#a8bba8!important;
+    font-size:15px!important;
+    font-weight:950!important;
+  }
+
+  #rankingList td:nth-child(4),
+  #rankingList td:nth-child(5),
+  #rankingList td:nth-child(6),
+  #rankingList td:nth-child(7),
+  #weeklyRankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(5),
+  #weeklyRankingList td:nth-child(6),
+  #weeklyRankingList td:nth-child(7){
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:28px!important;
+    border-radius:9px!important;
+    background:rgba(232,238,233,.045)!important;
+    font-size:12px!important;
+    font-weight:900!important;
+  }
+
+  #rankingList td:nth-child(4)::before,
+  #weeklyRankingList td:nth-child(4)::before{content:"승 " !important;color:#8f9b91!important;margin-right:3px!important}
+  #rankingList td:nth-child(5)::before,
+  #weeklyRankingList td:nth-child(5)::before{content:"무 " !important;color:#8f9b91!important;margin-right:3px!important}
+  #rankingList td:nth-child(6)::before,
+  #weeklyRankingList td:nth-child(6)::before{content:"패 " !important;color:#8f9b91!important;margin-right:3px!important}
+  #rankingList td:nth-child(7)::before,
+  #weeklyRankingList td:nth-child(7)::before{content:"총 " !important;color:#8f9b91!important;margin-right:3px!important}
+
+  #rankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(4){grid-column:1 / span 1!important;color:#72b58e!important}
+  #rankingList td:nth-child(5),
+  #weeklyRankingList td:nth-child(5){grid-column:2 / span 1!important;color:#e8eee9!important}
+  #rankingList td:nth-child(6),
+  #weeklyRankingList td:nth-child(6){grid-column:3 / span 1!important;color:#d45d70!important}
+  #rankingList td:nth-child(7),
+  #weeklyRankingList td:nth-child(7){grid-column:1 / span 3!important;color:#e8eee9!important}
+
+  #rankingList td:nth-child(9),
+  #rankingList td:nth-child(10),
+  #rankingList td:nth-child(11),
+  #weeklyRankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(11){
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:28px!important;
+    border-radius:9px!important;
+    background:rgba(143,165,146,.07)!important;
+    color:#dce9dc!important;
+    font-size:12px!important;
+    font-weight:900!important;
+  }
+
+  #rankingList td:nth-child(9)::before,
+  #weeklyRankingList td:nth-child(9)::before{content:"점수 " !important;color:#8f9b91!important;margin-right:3px!important}
+  #rankingList td:nth-child(10)::before,
+  #weeklyRankingList td:nth-child(10)::before{content:"순위 " !important;color:#8f9b91!important;margin-right:3px!important}
+  #rankingList td:nth-child(11)::before,
+  #weeklyRankingList td:nth-child(11)::before{content:"FC " !important;color:#8f9b91!important;margin-right:3px!important}
+
+  #rankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(9){grid-column:1 / span 1!important}
+  #rankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(10){grid-column:2 / span 1!important}
+  #rankingList td:nth-child(11),
+  #weeklyRankingList td:nth-child(11){grid-column:3 / span 1!important}
+
+  #rankingList td[colspan],
+  #weeklyRankingList td[colspan]{
+    display:block!important;
+    grid-column:1 / -1!important;
+    text-align:center!important;
+    padding:12px!important;
+  }
+}
+</style>
+
 </head>
 <body>
   <main>
