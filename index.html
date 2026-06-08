@@ -4862,6 +4862,279 @@ tbody td:first-child{color:#CBD7CB !important;}
   }
 }
 
+
+
+/* =========================================================
+   FINAL REAL FIX: PC ranking cards exactly like mobile
+   - CSS ONLY
+   - HTML/JS untouched
+   - Mobile <=640px untouched
+   ========================================================= */
+:root{
+  --bg:#07070A !important;
+  --surface:#121319 !important;
+  --surface-strong:#121319 !important;
+  --line:rgba(143,165,146,.07) !important;
+  --text:#F1F3F0 !important;
+  --muted:#8FA592 !important;
+  --green:#78B48E !important;
+  --red:#C45B6D !important;
+  --purple:#6A5A82 !important;
+  --sage:#8FA592 !important;
+}
+
+html,body{background:#07070A !important;}
+body{
+  background:
+    radial-gradient(circle at 20% -10%,rgba(106,90,130,.08),transparent 30%),
+    linear-gradient(180deg,#07070A 0%,#050506 100%) !important;
+  color:#F1F3F0 !important;
+}
+
+header,.panel,#dashboard>.topbar,.stat,.table-wrap{
+  background:linear-gradient(180deg,rgba(255,255,255,.025),transparent),#121319 !important;
+  border-color:rgba(143,165,146,.075) !important;
+  box-shadow:0 18px 44px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+
+h2::before{
+  background:linear-gradient(180deg,#6A5A82,#8FA592) !important;
+  box-shadow:none !important;
+}
+
+.ok{color:#78B48E !important;}
+.bad{color:#C45B6D !important;}
+
+/* PC에서만 랭킹 테이블을 모바일 카드처럼 변환 */
+@media (min-width:641px){
+  .table-wrap:has(#rankingList),
+  .table-wrap:has(#weeklyRankingList){
+    overflow:visible !important;
+    border:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+  }
+
+  table:has(#rankingList),
+  table:has(#weeklyRankingList){
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    background:transparent !important;
+  }
+
+  table:has(#rankingList) thead,
+  table:has(#weeklyRankingList) thead{
+    display:none !important;
+  }
+
+  #rankingList,
+  #weeklyRankingList{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:12px !important;
+    width:100% !important;
+  }
+
+  #rankingList tr,
+  #weeklyRankingList tr{
+    display:grid !important;
+    grid-template-columns:50px minmax(0,1fr) auto !important;
+    grid-template-areas:
+      "rank name rate"
+      "rank tier wins"
+      "rank score live" !important;
+    column-gap:12px !important;
+    row-gap:4px !important;
+    align-items:center !important;
+    min-height:104px !important;
+    margin:0 !important;
+    padding:14px 16px !important;
+    border:1px solid rgba(143,165,146,.09) !important;
+    border-radius:18px !important;
+    background:
+      linear-gradient(135deg,rgba(106,90,130,.12),transparent 42%),
+      linear-gradient(180deg,rgba(255,255,255,.025),transparent),
+      #121319 !important;
+    box-shadow:0 14px 30px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.025) !important;
+  }
+
+  #rankingList tr:hover,
+  #weeklyRankingList tr:hover{
+    background:
+      linear-gradient(135deg,rgba(106,90,130,.16),transparent 42%),
+      linear-gradient(180deg,rgba(255,255,255,.03),transparent),
+      #121319 !important;
+  }
+
+  #rankingList td,
+  #weeklyRankingList td{
+    display:block !important;
+    width:auto !important;
+    min-width:0 !important;
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+    text-align:left !important;
+    white-space:normal !important;
+    word-break:keep-all !important;
+    overflow-wrap:anywhere !important;
+    color:#E9ECE8 !important;
+    line-height:1.2 !important;
+  }
+
+  /* 1: 순위 */
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1){
+    grid-area:rank !important;
+    align-self:stretch !important;
+    display:grid !important;
+    place-items:center !important;
+    border-radius:13px !important;
+    background:rgba(143,165,146,.08) !important;
+    color:#C9D6C9 !important;
+    font-size:15px !important;
+    font-weight:950 !important;
+  }
+
+  /* 1~3등 메달 원형 */
+  #rankingList tr:nth-child(-n+3) td:nth-child(1),
+  #weeklyRankingList tr:nth-child(-n+3) td:nth-child(1){
+    color:transparent !important;
+    font-size:0 !important;
+    background:transparent !important;
+  }
+
+  #rankingList tr:nth-child(-n+3) td:nth-child(1)::before,
+  #weeklyRankingList tr:nth-child(-n+3) td:nth-child(1)::before{
+    content:"" !important;
+    width:31px !important;
+    height:31px !important;
+    border-radius:11px !important;
+    display:block !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.34),0 8px 16px rgba(0,0,0,.30) !important;
+  }
+
+  #rankingList tr:nth-child(1) td:nth-child(1)::before,
+  #weeklyRankingList tr:nth-child(1) td:nth-child(1)::before{
+    background:linear-gradient(180deg,#E5C766,#B9953B) !important;
+  }
+  #rankingList tr:nth-child(2) td:nth-child(1)::before,
+  #weeklyRankingList tr:nth-child(2) td:nth-child(1)::before{
+    background:linear-gradient(180deg,#E4E9E6,#A6AEAA) !important;
+  }
+  #rankingList tr:nth-child(3) td:nth-child(1)::before,
+  #weeklyRankingList tr:nth-child(3) td:nth-child(1)::before{
+    background:linear-gradient(180deg,#C98A5C,#8F5B3B) !important;
+  }
+
+  /* 2 닉네임 */
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2){
+    grid-area:name !important;
+    color:#FFFFFF !important;
+    font-size:15px !important;
+    font-weight:950 !important;
+  }
+  #rankingList td:nth-child(2)::before,
+  #weeklyRankingList td:nth-child(2)::before{
+    content:"닉네임 " !important;
+    color:#8FA592 !important;
+    font-size:12px !important;
+    font-weight:900 !important;
+  }
+
+  /* 3 티어 */
+  #rankingList td:nth-child(3),
+  #weeklyRankingList td:nth-child(3){
+    grid-area:tier !important;
+    color:#AEB8AE !important;
+    font-size:12px !important;
+    font-weight:800 !important;
+  }
+  #rankingList td:nth-child(3)::before,
+  #weeklyRankingList td:nth-child(3)::before{
+    content:"티어 " !important;
+    color:#8FA592 !important;
+    font-weight:900 !important;
+  }
+
+  /* 4 승 */
+  #rankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(4){
+    grid-area:wins !important;
+    justify-self:end !important;
+    color:#78B48E !important;
+    font-size:15px !important;
+    font-weight:950 !important;
+  }
+  #rankingList td:nth-child(4)::before,
+  #weeklyRankingList td:nth-child(4)::before{content:"승 " !important;color:#AEB8AE !important;}
+  #rankingList td:nth-child(4)::after,
+  #weeklyRankingList td:nth-child(4)::after{content:" 승" !important;color:#78B48E !important;}
+
+  /* 8 승률 */
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8){
+    grid-area:rate !important;
+    justify-self:end !important;
+    color:#C9D6C9 !important;
+    font-size:15px !important;
+    font-weight:950 !important;
+  }
+  #rankingList td:nth-child(8)::before,
+  #weeklyRankingList td:nth-child(8)::before{content:"승률 " !important;color:#AEB8AE !important;}
+
+  /* 9 점수 */
+  #rankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(9){
+    grid-area:score !important;
+    color:#9FCFB1 !important;
+    font-size:12px !important;
+    font-weight:950 !important;
+  }
+  #rankingList td:nth-child(9)::before,
+  #weeklyRankingList td:nth-child(9)::before{content:"점수 " !important;color:#8FA592 !important;}
+
+  /* 10 실시간순위 */
+  #rankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(10){
+    grid-area:live !important;
+    justify-self:end !important;
+    color:#B6A8CC !important;
+    font-size:12px !important;
+    font-weight:950 !important;
+  }
+  #rankingList td:nth-child(10)::before,
+  #weeklyRankingList td:nth-child(10)::before{content:"실시간 " !important;color:#AEB8AE !important;}
+
+  /* 안 쓰는 칸: 무/패/총경기/FC 숨김 */
+  #rankingList td:nth-child(5),
+  #rankingList td:nth-child(6),
+  #rankingList td:nth-child(7),
+  #rankingList td:nth-child(n+11),
+  #weeklyRankingList td:nth-child(5),
+  #weeklyRankingList td:nth-child(6),
+  #weeklyRankingList td:nth-child(7),
+  #weeklyRankingList td:nth-child(n+11){
+    display:none !important;
+  }
+
+  #rankingList td[colspan],
+  #weeklyRankingList td[colspan]{
+    grid-column:1/-1 !important;
+    display:block !important;
+    text-align:center !important;
+    padding:18px !important;
+  }
+}
+
+@media (min-width:641px) and (max-width:900px){
+  #rankingList,
+  #weeklyRankingList{
+    grid-template-columns:1fr !important;
+  }
+}
 </style>
 
 </head>
