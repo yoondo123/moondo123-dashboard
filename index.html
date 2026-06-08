@@ -5781,6 +5781,224 @@ h2::before{
     display: none !important;
   }
 }
+
+
+/* === MOONDO FINAL PC RANKING TABLE v3: full width + medal ranks. Mobile keeps previous card UI. === */
+@media (min-width: 761px) {
+  #dashboard .table-wrap:has(#rankingList),
+  #dashboard .table-wrap:has(#weeklyRankingList) {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    overflow: hidden !important;
+    margin: 0 0 24px 0 !important;
+    padding: 16px 18px !important;
+    border: 1px solid rgba(168,232,224,.16) !important;
+    border-radius: 22px !important;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.035), transparent),
+      rgba(7,11,15,.92) !important;
+    box-shadow: 0 22px 52px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.035) !important;
+  }
+
+  #dashboard .table-wrap:has(#rankingList) table,
+  #dashboard .table-wrap:has(#weeklyRankingList) table {
+    display: table !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0 7px !important;
+    background: transparent !important;
+  }
+
+  #dashboard .table-wrap:has(#rankingList) thead,
+  #dashboard .table-wrap:has(#weeklyRankingList) thead { display: table-header-group !important; }
+  #dashboard .table-wrap:has(#rankingList) tbody,
+  #dashboard .table-wrap:has(#weeklyRankingList) tbody { display: table-row-group !important; width: auto !important; }
+  #dashboard .table-wrap:has(#rankingList) tr,
+  #dashboard .table-wrap:has(#weeklyRankingList) tr {
+    display: table-row !important;
+    width: auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  #dashboard .table-wrap:has(#rankingList) th,
+  #dashboard .table-wrap:has(#weeklyRankingList) th {
+    display: table-cell !important;
+    padding: 10px 8px 12px !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #bff8ee !important;
+    font-size: 12px !important;
+    font-weight: 950 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  #dashboard .table-wrap:has(#rankingList) td,
+  #dashboard .table-wrap:has(#weeklyRankingList) td,
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(n),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(n) {
+    display: table-cell !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    height: 48px !important;
+    min-height: 0 !important;
+    padding: 0 8px !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(168,232,224,.06) !important;
+    background: rgba(18, 23, 31, .88) !important;
+    color: #eef8f5 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+    font-weight: 850 !important;
+  }
+
+  #dashboard .table-wrap:has(#rankingList) tbody tr:nth-child(even) td,
+  #dashboard .table-wrap:has(#weeklyRankingList) tbody tr:nth-child(even) td { background: rgba(23, 29, 39, .92) !important; }
+
+  #dashboard .table-wrap:has(#rankingList) tbody tr:hover td,
+  #dashboard .table-wrap:has(#weeklyRankingList) tbody tr:hover td { background: rgba(0,224,194,.075) !important; }
+
+  #dashboard .table-wrap:has(#rankingList) tbody tr:nth-child(1) td,
+  #dashboard .table-wrap:has(#weeklyRankingList) tbody tr:nth-child(1) td {
+    border-top: 1px solid rgba(255,211,110,.56) !important;
+    border-bottom: 1px solid rgba(255,211,110,.56) !important;
+    background: linear-gradient(90deg, rgba(255,211,110,.12), rgba(18,23,31,.92)) !important;
+  }
+  #dashboard .table-wrap:has(#rankingList) tbody tr:nth-child(1) td:first-child,
+  #dashboard .table-wrap:has(#weeklyRankingList) tbody tr:nth-child(1) td:first-child { border-left: 1px solid rgba(255,211,110,.56) !important; }
+  #dashboard .table-wrap:has(#rankingList) tbody tr:nth-child(1) td:last-child,
+  #dashboard .table-wrap:has(#weeklyRankingList) tbody tr:nth-child(1) td:last-child { border-right: 1px solid rgba(255,211,110,.56) !important; }
+
+  #dashboard .table-wrap:has(#rankingList) tbody tr:nth-child(3) td,
+  #dashboard .table-wrap:has(#weeklyRankingList) tbody tr:nth-child(3) td {
+    background: linear-gradient(90deg, rgba(202,126,70,.10), rgba(18,23,31,.90)) !important;
+  }
+
+  #dashboard .table-wrap:has(#rankingList) td:first-child,
+  #dashboard .table-wrap:has(#weeklyRankingList) td:first-child,
+  #dashboard .table-wrap:has(#rankingList) th:first-child,
+  #dashboard .table-wrap:has(#weeklyRankingList) th:first-child { width: 70px !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(2),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(2),
+  #dashboard .table-wrap:has(#rankingList) th:nth-child(2),
+  #dashboard .table-wrap:has(#weeklyRankingList) th:nth-child(2) { width: 170px !important; text-align: left !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(3),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(3),
+  #dashboard .table-wrap:has(#rankingList) th:nth-child(3),
+  #dashboard .table-wrap:has(#weeklyRankingList) th:nth-child(3) { width: 132px !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(7),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(7) { width: 74px !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(10),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(10) { width: 96px !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(11),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(11) { width: 74px !important; }
+
+  #dashboard .table-wrap:has(#rankingList) td::before,
+  #dashboard .table-wrap:has(#rankingList) td::after,
+  #dashboard .table-wrap:has(#weeklyRankingList) td::before,
+  #dashboard .table-wrap:has(#weeklyRankingList) td::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  #rankingList .rank-cell,
+  #weeklyRankingList .rank-cell {
+    position: relative !important;
+    color: transparent !important;
+  }
+  #rankingList .rank-cell .rank-num,
+  #weeklyRankingList .rank-cell .rank-num {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 999px !important;
+    background: rgba(255,255,255,.075) !important;
+    color: #dffdf5 !important;
+    font-size: 13px !important;
+    font-weight: 950 !important;
+  }
+  #rankingList .rank-cell .rank-medal,
+  #weeklyRankingList .rank-cell .rank-medal { display: none !important; }
+
+  #rankingList tr:nth-child(1) .rank-cell .rank-medal,
+  #weeklyRankingList tr:nth-child(1) .rank-cell .rank-medal,
+  #rankingList tr:nth-child(2) .rank-cell .rank-medal,
+  #weeklyRankingList tr:nth-child(2) .rank-cell .rank-medal,
+  #rankingList tr:nth-child(3) .rank-cell .rank-medal,
+  #weeklyRankingList tr:nth-child(3) .rank-cell .rank-medal {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 30px !important;
+    height: 30px !important;
+    margin-right: 8px !important;
+    border-radius: 999px !important;
+    font-size: 18px !important;
+    vertical-align: middle !important;
+    box-shadow: 0 0 18px rgba(255,255,255,.16) !important;
+  }
+  #rankingList tr:nth-child(1) .rank-cell .rank-medal::before,
+  #weeklyRankingList tr:nth-child(1) .rank-cell .rank-medal::before { content: '🥇' !important; }
+  #rankingList tr:nth-child(2) .rank-cell .rank-medal::before,
+  #weeklyRankingList tr:nth-child(2) .rank-cell .rank-medal::before { content: '🥈' !important; }
+  #rankingList tr:nth-child(3) .rank-cell .rank-medal::before,
+  #weeklyRankingList tr:nth-child(3) .rank-cell .rank-medal::before { content: '🥉' !important; }
+
+  #rankingList tr:nth-child(1) .rank-cell .rank-num,
+  #weeklyRankingList tr:nth-child(1) .rank-cell .rank-num { background: linear-gradient(180deg,#ffe68a,#d7a832) !important; color: #251800 !important; }
+  #rankingList tr:nth-child(2) .rank-cell .rank-num,
+  #weeklyRankingList tr:nth-child(2) .rank-cell .rank-num { background: linear-gradient(180deg,#f2fbff,#aebdc0) !important; color: #1e2528 !important; }
+  #rankingList tr:nth-child(3) .rank-cell .rank-num,
+  #weeklyRankingList tr:nth-child(3) .rank-cell .rank-num { background: linear-gradient(180deg,#e7a470,#a96938) !important; color: #251407 !important; }
+
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(2),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(2) { color: #ffffff !important; font-weight: 950 !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(3),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(3) { color: #7bc5ff !important; font-size: 12px !important; font-weight: 950 !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(4),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(4) { color: #35ff84 !important; font-weight: 950 !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(5),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(5) { color: #ffd36e !important; font-weight: 950 !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(6),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(6) { color: #ff6673 !important; font-weight: 950 !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(8),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(8) { color: #35ffb0 !important; font-weight: 950 !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(9),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(9) { color: #ffd36e !important; font-weight: 950 !important; }
+  #dashboard .table-wrap:has(#rankingList) td:nth-child(11),
+  #dashboard .table-wrap:has(#weeklyRankingList) td:nth-child(11) { color: #8fffe4 !important; font-weight: 950 !important; }
+
+  #dashboard .today-grid,
+  #dashboard .week-grid,
+  #dashboard .grid {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  #rankingList .rank-medal,
+  #weeklyRankingList .rank-medal { display: none !important; }
+  #rankingList .rank-num,
+  #weeklyRankingList .rank-num { display: inline !important; }
+}
 </style>
 
 </head>
@@ -6776,7 +6994,7 @@ h2::before{
 
       tbody.innerHTML = displayRanking.map((row, i) => `
         <tr>
-          <td data-rank="${i + 1}">${i + 1}</td>
+          <td class="rank-cell rank-${i + 1}" data-rank="${i + 1}"><span class="rank-medal" aria-hidden="true"></span><span class="rank-num">${i + 1}</span></td>
           <td>${row.username}</td>
           <td>${row.tier}</td>
           <td class="ok">${row.wins}</td>
