@@ -7261,5 +7261,338 @@ h2::before{
 })();
 </script>
 
+
+
+<style id="moondo-pc-ranking-no-cut-mobile-restore-final">
+/* === FINAL PATCH: PC 랭킹만 전체 정보 표로 정리, 모바일은 기존 카드형 유지 === */
+@media (min-width: 641px) {
+  .table-wrap:has(#rankingList),
+  .table-wrap:has(#weeklyRankingList) {
+    overflow-x: hidden !important;
+    padding: 14px 16px !important;
+  }
+
+  table:has(#rankingList),
+  table:has(#weeklyRankingList) {
+    display: table !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0 6px !important;
+    font-size: 11px !important;
+  }
+
+  table:has(#rankingList) thead,
+  table:has(#weeklyRankingList) thead {
+    display: table-header-group !important;
+  }
+
+  table:has(#rankingList) thead tr,
+  table:has(#weeklyRankingList) thead tr,
+  #rankingList tr,
+  #weeklyRankingList tr {
+    display: table-row !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  table:has(#rankingList) th,
+  table:has(#weeklyRankingList) th {
+    display: table-cell !important;
+    padding: 8px 4px !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #a9bbb6 !important;
+    font-size: 10.5px !important;
+    font-weight: 950 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  #rankingList,
+  #weeklyRankingList {
+    display: table-row-group !important;
+    width: 100% !important;
+  }
+
+  #rankingList td,
+  #weeklyRankingList td {
+    display: table-cell !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 9px 4px !important;
+    border: 0 !important;
+    border-top: 1px solid rgba(168,232,224,.08) !important;
+    border-bottom: 1px solid rgba(0,0,0,.36) !important;
+    background: linear-gradient(180deg, rgba(26,32,43,.98), rgba(15,21,29,.98)) !important;
+    color: #e7eee9 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+    font-weight: 850 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  #rankingList td::before,
+  #weeklyRankingList td::before,
+  #rankingList td::after,
+  #weeklyRankingList td::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* 열 너비 */
+  table:has(#rankingList) th:nth-child(1),
+  table:has(#weeklyRankingList) th:nth-child(1),
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1) { width: 42px !important; }
+
+  table:has(#rankingList) th:nth-child(2),
+  table:has(#weeklyRankingList) th:nth-child(2),
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2) { width: 140px !important; text-align: left !important; padding-left: 8px !important; }
+
+  table:has(#rankingList) th:nth-child(3),
+  table:has(#weeklyRankingList) th:nth-child(3),
+  #rankingList td:nth-child(3),
+  #weeklyRankingList td:nth-child(3) { width: 112px !important; text-align: left !important; }
+
+  table:has(#rankingList) th:nth-child(4),
+  table:has(#rankingList) th:nth-child(5),
+  table:has(#rankingList) th:nth-child(6),
+  table:has(#weeklyRankingList) th:nth-child(4),
+  table:has(#weeklyRankingList) th:nth-child(5),
+  table:has(#weeklyRankingList) th:nth-child(6),
+  #rankingList td:nth-child(4),
+  #rankingList td:nth-child(5),
+  #rankingList td:nth-child(6),
+  #weeklyRankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(5),
+  #weeklyRankingList td:nth-child(6) { width: 42px !important; }
+
+  table:has(#rankingList) th:nth-child(7),
+  table:has(#weeklyRankingList) th:nth-child(7),
+  #rankingList td:nth-child(7),
+  #weeklyRankingList td:nth-child(7) { width: 52px !important; }
+
+  table:has(#rankingList) th:nth-child(8),
+  table:has(#weeklyRankingList) th:nth-child(8),
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8) { width: 56px !important; }
+
+  table:has(#rankingList) th:nth-child(9),
+  table:has(#weeklyRankingList) th:nth-child(9),
+  #rankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(9) { width: 58px !important; }
+
+  table:has(#rankingList) th:nth-child(10),
+  table:has(#weeklyRankingList) th:nth-child(10),
+  #rankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(10) { width: 66px !important; }
+
+  table:has(#rankingList) th:nth-child(11),
+  table:has(#weeklyRankingList) th:nth-child(11),
+  #rankingList td:nth-child(11),
+  #weeklyRankingList td:nth-child(11) { width: 46px !important; }
+
+  #rankingList td:first-child,
+  #weeklyRankingList td:first-child {
+    border-radius: 12px 0 0 12px !important;
+    color: #fff !important;
+    font-weight: 950 !important;
+  }
+
+  #rankingList td:last-child,
+  #weeklyRankingList td:last-child {
+    border-radius: 0 12px 12px 0 !important;
+  }
+
+  #rankingList tr:nth-child(1) td:first-child,
+  #weeklyRankingList tr:nth-child(1) td:first-child {
+    background: radial-gradient(circle, #fff3a7, #d9b96f 58%, #8d6d24) !important;
+    color: #14110a !important;
+  }
+  #rankingList tr:nth-child(2) td:first-child,
+  #weeklyRankingList tr:nth-child(2) td:first-child {
+    background: radial-gradient(circle, #f7ffff, #bfc8c9 58%, #667074) !important;
+    color: #121719 !important;
+  }
+  #rankingList tr:nth-child(3) td:first-child,
+  #weeklyRankingList tr:nth-child(3) td:first-child {
+    background: radial-gradient(circle, #ffc58a, #bd7b4b 58%, #6f3f24) !important;
+    color: #160d07 !important;
+  }
+  #rankingList tr:nth-child(n+4) td:first-child,
+  #weeklyRankingList tr:nth-child(n+4) td:first-child {
+    background: rgba(231,238,233,.06) !important;
+    color: #b8c4c0 !important;
+  }
+
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2) { color: #ffffff !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(3),
+  #weeklyRankingList td:nth-child(3) { color: #9fd6ff !important; }
+  #rankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(4) { color: #43f07b !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(5),
+  #weeklyRankingList td:nth-child(5) { color: #ffd86b !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(6),
+  #weeklyRankingList td:nth-child(6) { color: #ff5d64 !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8) { color: #52ffa3 !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(9) { color: #d9b96f !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(10) { color: #f2f0e8 !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(11),
+  #weeklyRankingList td:nth-child(11) { color: #a7d5bd !important; font-weight: 950 !important; }
+}
+
+@media (max-width: 640px) {
+  /* 모바일은 예전처럼 가벼운 카드형: 무/패/총경기/점수/실시간순위/FC 숨김 */
+  .table-wrap:has(#rankingList),
+  .table-wrap:has(#weeklyRankingList) {
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  table:has(#rankingList),
+  table:has(#weeklyRankingList),
+  #rankingList,
+  #weeklyRankingList {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  table:has(#rankingList) thead,
+  table:has(#weeklyRankingList) thead { display: none !important; }
+
+  #rankingList tr,
+  #weeklyRankingList tr {
+    display: grid !important;
+    grid-template-columns: 42px 1fr auto !important;
+    grid-template-areas:
+      "rank name rate"
+      "rank tier record" !important;
+    gap: 3px 9px !important;
+    margin-bottom: 8px !important;
+    padding: 11px 12px !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(168,232,224,.11) !important;
+    background: linear-gradient(135deg, rgba(0,224,194,.075), transparent 36%), rgba(12,18,24,.96) !important;
+  }
+
+  #rankingList td,
+  #weeklyRankingList td {
+    min-height: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    display: block !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+
+  #rankingList td::before,
+  #weeklyRankingList td::before { content: "" !important; display: none !important; }
+
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1) {
+    grid-area: rank !important;
+    align-self: stretch !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 10px !important;
+    background: rgba(112,242,210,.13) !important;
+    color: #dffff6 !important;
+    font-size: 16px !important;
+    font-weight: 950 !important;
+  }
+
+  #rankingList tr:nth-child(-n+3) td:nth-child(1),
+  #weeklyRankingList tr:nth-child(-n+3) td:nth-child(1) {
+    color: transparent !important;
+    font-size: 0 !important;
+  }
+  #rankingList tr:nth-child(1) td:nth-child(1),
+  #weeklyRankingList tr:nth-child(1) td:nth-child(1) { background: linear-gradient(180deg,#E5C766,#B9953B) !important; }
+  #rankingList tr:nth-child(2) td:nth-child(1),
+  #weeklyRankingList tr:nth-child(2) td:nth-child(1) { background: linear-gradient(180deg,#E4E9E6,#A6AEAA) !important; }
+  #rankingList tr:nth-child(3) td:nth-child(1),
+  #weeklyRankingList tr:nth-child(3) td:nth-child(1) { background: linear-gradient(180deg,#C98A5C,#8F5B3B) !important; }
+
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2) {
+    grid-area: name !important;
+    color: #ffffff !important;
+    font-size: 15px !important;
+    font-weight: 950 !important;
+  }
+
+  #rankingList td:nth-child(3),
+  #weeklyRankingList td:nth-child(3) {
+    grid-area: tier !important;
+    color: #aab7ca !important;
+    font-size: 11px !important;
+  }
+
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8) {
+    grid-area: rate !important;
+    justify-self: end !important;
+    color: #ffd36e !important;
+    font-size: 15px !important;
+    font-weight: 950 !important;
+  }
+
+  #rankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(4) {
+    grid-area: record !important;
+    justify-self: end !important;
+    color: #70f2d2 !important;
+    font-size: 13px !important;
+    font-weight: 950 !important;
+  }
+  #rankingList td:nth-child(4)::after,
+  #weeklyRankingList td:nth-child(4)::after {
+    content: "승" !important;
+    display: inline !important;
+    margin-left: 2px !important;
+    color: #70f2d2 !important;
+  }
+
+  #rankingList td:nth-child(5),
+  #rankingList td:nth-child(6),
+  #rankingList td:nth-child(7),
+  #rankingList td:nth-child(9),
+  #rankingList td:nth-child(10),
+  #rankingList td:nth-child(11),
+  #weeklyRankingList td:nth-child(5),
+  #weeklyRankingList td:nth-child(6),
+  #weeklyRankingList td:nth-child(7),
+  #weeklyRankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(11) {
+    display: none !important;
+  }
+}
+</style>
+
 </body>
 </html>
