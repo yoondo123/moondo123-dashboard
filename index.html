@@ -4554,6 +4554,71 @@ tbody td:first-child{
 }
 </style>
 
+
+<style id="moondo-pc-medal-final-fix">
+/* === PC Medal Final Fix === */
+/* PC 테이블에서 뒤쪽 td:first-child 규칙에 밀리지 않도록 더 강하게 고정 */
+
+@media (min-width:641px){
+  table tbody#rankingList > tr:nth-child(1) > td:first-child,
+  table tbody#weeklyRankingList > tr:nth-child(1) > td:first-child,
+  table tbody#rankingList > tr:nth-child(2) > td:first-child,
+  table tbody#weeklyRankingList > tr:nth-child(2) > td:first-child,
+  table tbody#rankingList > tr:nth-child(3) > td:first-child,
+  table tbody#weeklyRankingList > tr:nth-child(3) > td:first-child{
+    position:relative !important;
+    color:transparent !important;
+    font-size:0 !important;
+    line-height:0 !important;
+    text-align:center !important;
+    vertical-align:middle !important;
+  }
+
+  table tbody#rankingList > tr:nth-child(-n+3) > td:first-child::before,
+  table tbody#weeklyRankingList > tr:nth-child(-n+3) > td:first-child::before{
+    content:"" !important;
+    display:none !important;
+  }
+
+  table tbody#rankingList > tr:nth-child(-n+3) > td:first-child::after,
+  table tbody#weeklyRankingList > tr:nth-child(-n+3) > td:first-child::after{
+    content:"" !important;
+    display:inline-block !important;
+    width:28px !important;
+    height:28px !important;
+    min-width:28px !important;
+    border-radius:999px !important;
+    vertical-align:middle !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.45),
+      0 7px 16px rgba(0,0,0,.30) !important;
+  }
+
+  table tbody#rankingList > tr:nth-child(1) > td:first-child::after,
+  table tbody#weeklyRankingList > tr:nth-child(1) > td:first-child::after{
+    background:linear-gradient(180deg,#F4D46F,#C89B32) !important;
+  }
+
+  table tbody#rankingList > tr:nth-child(2) > td:first-child::after,
+  table tbody#weeklyRankingList > tr:nth-child(2) > td:first-child::after{
+    background:linear-gradient(180deg,#F0F4F2,#AEB8B4) !important;
+  }
+
+  table tbody#rankingList > tr:nth-child(3) > td:first-child::after,
+  table tbody#weeklyRankingList > tr:nth-child(3) > td:first-child::after{
+    background:linear-gradient(180deg,#D89A68,#9A5E3C) !important;
+  }
+
+  table tbody#rankingList > tr:nth-child(n+4) > td:first-child,
+  table tbody#weeklyRankingList > tr:nth-child(n+4) > td:first-child{
+    color:#A7B9A7 !important;
+    font-size:14px !important;
+    line-height:1.2 !important;
+    font-weight:950 !important;
+  }
+}
+</style>
+
 </head>
 <body>
   <main>
