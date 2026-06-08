@@ -4400,7 +4400,7 @@ footer {
 @media (min-width:1024px){
 
   body{
-    zoom:0.70;
+    zoom:0.67;
   }
 
 }
@@ -5495,6 +5495,115 @@ h2::before{
   #rankingList tr,
   #weeklyRankingList tr{
     width:100% !important;
+  }
+}
+</style>
+
+
+<style id="moondo-ranking-compact-final">
+/* === FINAL FIX: PC 랭킹 카드 높이 압축 === */
+/* 모바일은 그대로 유지, PC/태블릿 랭킹 카드만 낮게 조정 */
+@media (min-width: 641px){
+
+  #rankingList,
+  #weeklyRankingList{
+    gap:6px !important;
+  }
+
+  #rankingList tr,
+  #weeklyRankingList tr{
+    min-height:42px !important;
+    height:auto !important;
+    padding:6px 10px !important;
+    border-radius:11px !important;
+    align-items:center !important;
+    gap:2px 8px !important;
+  }
+
+  #rankingList td,
+  #weeklyRankingList td{
+    min-height:0 !important;
+    height:auto !important;
+    padding:0 !important;
+    line-height:1.12 !important;
+  }
+
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1){
+    width:30px !important;
+    min-width:30px !important;
+    height:30px !important;
+    align-self:center !important;
+    border-radius:9px !important;
+    font-size:11px !important;
+  }
+
+  #rankingList tr:nth-child(-n+3) td:nth-child(1)::before,
+  #weeklyRankingList tr:nth-child(-n+3) td:nth-child(1)::before{
+    width:18px !important;
+    height:18px !important;
+  }
+
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2){
+    font-size:12px !important;
+    line-height:1.12 !important;
+  }
+
+  #rankingList td:nth-child(3),
+  #weeklyRankingList td:nth-child(3){
+    font-size:10px !important;
+    line-height:1.1 !important;
+  }
+
+  #rankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(4),
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8),
+  #rankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(9),
+  #rankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(10){
+    font-size:11px !important;
+    line-height:1.12 !important;
+  }
+
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8){
+    font-size:12px !important;
+  }
+
+  .table-wrap{
+    border-radius:14px !important;
+  }
+}
+
+/* 1024px 이상 PC에서는 더 납작하게 */
+@media (min-width: 1024px){
+
+  #rankingList,
+  #weeklyRankingList{
+    gap:5px !important;
+  }
+
+  #rankingList tr,
+  #weeklyRankingList tr{
+    min-height:38px !important;
+    padding:5px 10px !important;
+    border-radius:10px !important;
+  }
+
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1){
+    width:28px !important;
+    min-width:28px !important;
+    height:28px !important;
+  }
+
+  #rankingList tr:nth-child(-n+3) td:nth-child(1)::before,
+  #weeklyRankingList tr:nth-child(-n+3) td:nth-child(1)::before{
+    width:17px !important;
+    height:17px !important;
   }
 }
 </style>
