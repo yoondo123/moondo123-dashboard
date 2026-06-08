@@ -4477,6 +4477,83 @@ tbody td:first-child{
 }
 </style>
 
+
+<style id="moondo-rank-medal-fix">
+/* === Ranking Medal Fix: CSS only === */
+
+#rankingList tr:nth-child(1) td:first-child,
+#weeklyRankingList tr:nth-child(1) td:first-child,
+#rankingList tr:nth-child(2) td:first-child,
+#weeklyRankingList tr:nth-child(2) td:first-child,
+#rankingList tr:nth-child(3) td:first-child,
+#weeklyRankingList tr:nth-child(3) td:first-child{
+  position:relative !important;
+  color:transparent !important;
+  font-size:0 !important;
+}
+
+#rankingList tr:nth-child(-n+3) td:first-child::after,
+#weeklyRankingList tr:nth-child(-n+3) td:first-child::after{
+  content:"" !important;
+  display:inline-block !important;
+  width:28px !important;
+  height:28px !important;
+  border-radius:999px !important;
+  vertical-align:middle !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.45),
+    0 8px 18px rgba(0,0,0,.28) !important;
+}
+
+#rankingList tr:nth-child(1) td:first-child::after,
+#weeklyRankingList tr:nth-child(1) td:first-child::after{
+  background:linear-gradient(180deg,#F4D46F,#C89B32) !important;
+}
+
+#rankingList tr:nth-child(2) td:first-child::after,
+#weeklyRankingList tr:nth-child(2) td:first-child::after{
+  background:linear-gradient(180deg,#F0F4F2,#AEB8B4) !important;
+}
+
+#rankingList tr:nth-child(3) td:first-child::after,
+#weeklyRankingList tr:nth-child(3) td:first-child::after{
+  background:linear-gradient(180deg,#D89A68,#9A5E3C) !important;
+}
+
+#rankingList tr:nth-child(n+4) td:first-child,
+#weeklyRankingList tr:nth-child(n+4) td:first-child{
+  color:#A7B9A7 !important;
+  font-size:14px !important;
+  font-weight:950 !important;
+}
+
+@media(max-width:640px){
+  #rankingList tr:nth-child(-n+3) td:first-child,
+  #weeklyRankingList tr:nth-child(-n+3) td:first-child{
+    color:transparent !important;
+    font-size:0 !important;
+  }
+
+  #rankingList tr:nth-child(-n+3) td:first-child::before,
+  #weeklyRankingList tr:nth-child(-n+3) td:first-child::before{
+    content:"" !important;
+  }
+
+  #rankingList tr:nth-child(-n+3) td:first-child::after,
+  #weeklyRankingList tr:nth-child(-n+3) td:first-child::after{
+    width:30px !important;
+    height:30px !important;
+  }
+
+  #rankingList tr:nth-child(n+4) td:first-child,
+  #weeklyRankingList tr:nth-child(n+4) td:first-child{
+    color:#A7B9A7 !important;
+    font-size:15px !important;
+    font-weight:950 !important;
+  }
+}
+</style>
+
 </head>
 <body>
   <main>
