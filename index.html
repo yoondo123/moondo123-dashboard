@@ -4059,7 +4059,346 @@ footer {
   }
 }
 
-</style>
+
+
+/* =====================================================
+   TRUE PC COMPACT FINAL
+   - 모바일은 그대로 유지
+   - PC에서만 전체 UI 실제 사이즈 축소
+   - 폭을 억지로 키우지 않음
+   ===================================================== */
+@media (min-width: 1024px){
+
+  html, body{
+    overflow-x:hidden !important;
+  }
+
+  body{
+    font-size:12px !important;
+  }
+
+  main{
+    width:min(1120px, calc(100% - 56px)) !important;
+    max-width:1120px !important;
+    padding:8px 0 18px !important;
+  }
+
+  header{
+    min-height:54px !important;
+    padding:10px 16px !important;
+    margin-bottom:8px !important;
+    border-radius:16px !important;
+  }
+
+  header::before{
+    inset:7px !important;
+    border-radius:12px !important;
+  }
+
+  header::after{
+    font-size:54px !important;
+    right:16px !important;
+    bottom:-12px !important;
+  }
+
+  header h1,
+  h1{
+    font-size:28px !important;
+    line-height:1 !important;
+    letter-spacing:-.055em !important;
+  }
+
+  header p{
+    margin-top:4px !important;
+    font-size:10px !important;
+    line-height:1.2 !important;
+  }
+
+  #dashboard > .topbar{
+    min-height:auto !important;
+    margin:8px 0 7px !important;
+    padding:8px 12px !important;
+    border-radius:14px !important;
+  }
+
+  #dashboard > .topbar h2{
+    font-size:15px !important;
+    line-height:1.15 !important;
+  }
+
+  #dashboard > .topbar h2::before{
+    width:5px !important;
+    height:17px !important;
+  }
+
+  #lastUpdated{
+    margin-top:2px !important;
+    font-size:10px !important;
+    line-height:1.2 !important;
+  }
+
+  .moondo-tabs{
+    gap:6px !important;
+    margin:0 0 9px !important;
+    padding:4px !important;
+    border-radius:999px !important;
+  }
+
+  .moondo-tab{
+    height:28px !important;
+    min-height:28px !important;
+    padding:0 10px !important;
+    font-size:11px !important;
+    border-radius:999px !important;
+  }
+
+  h2{
+    gap:7px !important;
+    margin:10px 0 7px !important;
+    font-size:16px !important;
+    line-height:1.15 !important;
+  }
+
+  h2::before{
+    width:5px !important;
+    height:16px !important;
+    box-shadow:none !important;
+  }
+
+  .panel{
+    padding:10px !important;
+    border-radius:14px !important;
+    box-shadow:0 12px 28px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.035) !important;
+  }
+
+  #liveState{
+    min-height:22px !important;
+    height:22px !important;
+    margin-bottom:7px !important;
+    padding:0 8px !important;
+    font-size:10px !important;
+    border-radius:999px !important;
+  }
+
+  .status-dot{
+    width:6px !important;
+    height:6px !important;
+    margin-right:5px !important;
+  }
+
+  .live-card{
+    grid-template-columns:minmax(120px,1fr) 56px 56px minmax(120px,1fr) 86px !important;
+    min-height:42px !important;
+    border-radius:12px !important;
+  }
+
+  .live-name{
+    padding:0 12px !important;
+    font-size:14px !important;
+    line-height:1.1 !important;
+  }
+
+  .live-score{
+    height:42px !important;
+    font-size:23px !important;
+    line-height:1 !important;
+  }
+
+  .live-time{
+    padding:0 10px !important;
+    font-size:15px !important;
+    line-height:1 !important;
+  }
+
+  .today-grid,
+  .week-grid,
+  .grid{
+    gap:7px !important;
+  }
+
+  .today-grid{
+    grid-template-columns:repeat(4, minmax(120px, 1fr)) !important;
+  }
+
+  .week-grid{
+    grid-template-columns:repeat(5, minmax(100px, 1fr)) !important;
+  }
+
+  .stat,
+  .stat.compact{
+    min-height:56px !important;
+    padding:8px 9px !important;
+    border-radius:12px !important;
+    box-shadow:0 8px 20px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.035) !important;
+  }
+
+  .stat::before{
+    width:3px !important;
+  }
+
+  .stat::after{
+    display:none !important;
+  }
+
+  .stat .muted{
+    font-size:9px !important;
+    line-height:1.1 !important;
+  }
+
+  .stat strong,
+  .stat.compact strong{
+    margin-top:3px !important;
+    font-size:18px !important;
+    line-height:1.02 !important;
+  }
+
+  .stat small,
+  .stat.compact small{
+    margin-top:3px !important;
+    min-height:0 !important;
+    font-size:9px !important;
+    line-height:1.12 !important;
+  }
+
+  .form-strip{
+    gap:6px !important;
+    margin:7px 0 5px !important;
+    padding:7px !important;
+    border-radius:12px !important;
+  }
+
+  .form-title{
+    font-size:11px !important;
+  }
+
+  .form-summary{
+    font-size:10px !important;
+  }
+
+  .form-dots{
+    gap:4px !important;
+  }
+
+  .form-dot{
+    min-height:20px !important;
+    border-radius:7px !important;
+    font-size:9px !important;
+  }
+
+  .table-wrap{
+    border-radius:14px !important;
+    box-shadow:0 10px 24px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.035) !important;
+  }
+
+  table{
+    min-width:0 !important;
+    font-size:11px !important;
+  }
+
+  th, td{
+    padding:7px 8px !important;
+    font-size:11px !important;
+  }
+
+  /* PC 랭킹 카드 1열 유지 + 실제 높이 축소 */
+  #rankingList,
+  #weeklyRankingList{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:6px !important;
+    width:100% !important;
+  }
+
+  #rankingList tr,
+  #weeklyRankingList tr{
+    width:100% !important;
+    min-height:44px !important;
+    margin-bottom:0 !important;
+    padding:7px 10px !important;
+    border-radius:12px !important;
+    display:grid !important;
+    grid-template-columns:38px 1fr auto !important;
+    grid-template-areas:
+      "rank name rate"
+      "rank tier record" !important;
+    gap:2px 8px !important;
+  }
+
+  #rankingList td,
+  #weeklyRankingList td{
+    min-height:0 !important;
+    padding:0 !important;
+    border:0 !important;
+    font-size:10px !important;
+    line-height:1.15 !important;
+  }
+
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1){
+    grid-area:rank !important;
+    display:grid !important;
+    place-items:center !important;
+    align-self:stretch !important;
+    width:30px !important;
+    min-width:30px !important;
+    border-radius:9px !important;
+    font-size:12px !important;
+  }
+
+  #rankingList td:nth-child(1)::before,
+  #weeklyRankingList td:nth-child(1)::before{
+    width:20px !important;
+    height:20px !important;
+  }
+
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2){
+    grid-area:name !important;
+    font-size:11px !important;
+    font-weight:950 !important;
+  }
+
+  #rankingList td:nth-child(3),
+  #weeklyRankingList td:nth-child(3){
+    grid-area:tier !important;
+    font-size:9px !important;
+  }
+
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8){
+    grid-area:rate !important;
+    justify-self:end !important;
+    font-size:11px !important;
+    font-weight:950 !important;
+  }
+
+  #rankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(4){
+    grid-area:record !important;
+    justify-self:end !important;
+    font-size:11px !important;
+  }
+
+  #rankingList td:nth-child(5),
+  #rankingList td:nth-child(6),
+  #rankingList td:nth-child(7),
+  #rankingList td:nth-child(9),
+  #rankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(5),
+  #weeklyRankingList td:nth-child(6),
+  #weeklyRankingList td:nth-child(7),
+  #weeklyRankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(10){
+    display:none !important;
+  }
+
+  footer{
+    margin-top:16px !important;
+    font-size:10px !important;
+  }
+}
+
+  </style>
 
 <style id="moondo-color-only-purple-sage">
 /* === MOONDO COLOR ONLY PATCH === */
@@ -5152,243 +5491,6 @@ h2::before{
     width:100% !important;
   }
 }
-
-
-/* ===========================
-   PC ULTRA COMPACT FINAL - 40% SCALE DOWN
-   CSS only / Mobile untouched
-   =========================== */
-@media (min-width:1024px){
-  main{
-    width:min(1600px, calc(100% - 30px)) !important;
-    padding:12px 0 20px !important;
-  }
-
-  header{
-    min-height:70px !important;
-    padding:14px 20px !important;
-    margin-bottom:10px !important;
-    border-radius:18px !important;
-  }
-
-  header::before{
-    inset:7px !important;
-    border-radius:14px !important;
-  }
-
-  header::after{
-    font-size:70px !important;
-    bottom:-12px !important;
-    right:18px !important;
-  }
-
-  h1,
-  header h1{
-    font-size:38px !important;
-    line-height:1 !important;
-  }
-
-  header p{
-    margin-top:5px !important;
-    font-size:12px !important;
-  }
-
-  h2{
-    font-size:18px !important;
-    margin:12px 0 8px !important;
-    gap:8px !important;
-  }
-
-  h2::before{
-    width:5px !important;
-    height:18px !important;
-  }
-
-  #dashboard>.topbar{
-    padding:10px 14px !important;
-    margin:10px 0 !important;
-    border-radius:16px !important;
-  }
-
-  #dashboard>.topbar h2{
-    font-size:18px !important;
-  }
-
-  #lastUpdated{
-    margin-top:3px !important;
-    font-size:11px !important;
-  }
-
-  .moondo-tabs{
-    margin-bottom:10px !important;
-    padding:4px !important;
-    gap:6px !important;
-    border-radius:999px !important;
-  }
-
-  .moondo-tab{
-    height:34px !important;
-    font-size:12px !important;
-  }
-
-  .panel{
-    padding:12px !important;
-    border-radius:16px !important;
-  }
-
-  #liveState{
-    min-height:24px !important;
-    padding:0 9px !important;
-    font-size:11px !important;
-    margin-bottom:8px !important;
-  }
-
-  .status-dot{
-    width:7px !important;
-    height:7px !important;
-    margin-right:6px !important;
-  }
-
-  .live-card{
-    grid-template-columns:minmax(160px,1fr) 78px 78px minmax(160px,1fr) 110px !important;
-    min-height:54px !important;
-    border-radius:14px !important;
-  }
-
-  .live-score{
-    height:54px !important;
-    font-size:28px !important;
-  }
-
-  .live-name{
-    padding:0 16px !important;
-    font-size:16px !important;
-  }
-
-  .live-time{
-    padding:0 12px !important;
-    font-size:18px !important;
-  }
-
-  .today-grid,
-  .week-grid,
-  .grid{
-    gap:8px !important;
-  }
-
-  .stat,
-  .stat.compact{
-    min-height:72px !important;
-    padding:10px !important;
-    border-radius:14px !important;
-  }
-
-  .stat::before{
-    width:3px !important;
-  }
-
-  .stat strong,
-  .stat.compact strong{
-    font-size:18px !important;
-    margin-top:2px !important;
-    line-height:1.08 !important;
-  }
-
-  .stat .muted{
-    font-size:10px !important;
-  }
-
-  .stat small,
-  .stat.compact small{
-    font-size:10px !important;
-    margin-top:2px !important;
-    line-height:1.15 !important;
-  }
-
-  .form-strip{
-    margin:8px 0 5px !important;
-    padding:8px !important;
-    border-radius:14px !important;
-    gap:6px !important;
-  }
-
-  .form-title{
-    font-size:12px !important;
-  }
-
-  .form-summary{
-    font-size:11px !important;
-  }
-
-  .form-dots{
-    gap:5px !important;
-  }
-
-  .form-dot{
-    min-height:22px !important;
-    font-size:10px !important;
-    border-radius:8px !important;
-  }
-
-  .table-wrap{
-    border-radius:16px !important;
-  }
-
-  #rankingList,
-  #weeklyRankingList{
-    display:flex !important;
-    flex-direction:column !important;
-    gap:7px !important;
-  }
-
-  #rankingList tr,
-  #weeklyRankingList tr{
-    padding:8px 12px !important;
-    min-height:auto !important;
-    border-radius:13px !important;
-  }
-
-  #rankingList td,
-  #weeklyRankingList td{
-    font-size:12px !important;
-  }
-
-  #rankingList td:nth-child(1),
-  #weeklyRankingList td:nth-child(1){
-    font-size:13px !important;
-  }
-
-  #rankingList td:nth-child(2),
-  #weeklyRankingList td:nth-child(2){
-    font-size:12px !important;
-  }
-
-  #rankingList td:nth-child(3),
-  #weeklyRankingList td:nth-child(3){
-    font-size:10px !important;
-  }
-
-  #rankingList td:nth-child(8),
-  #weeklyRankingList td:nth-child(8){
-    font-size:12px !important;
-  }
-
-  th{
-    font-size:11px !important;
-    padding:8px !important;
-  }
-
-  td{
-    font-size:12px !important;
-    padding:8px !important;
-  }
-
-  footer{
-    margin-top:18px !important;
-    font-size:10px !important;
-  }
-}
-
 </style>
 
 </head>
