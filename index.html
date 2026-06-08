@@ -4617,6 +4617,251 @@ tbody td:first-child{
     font-weight:950 !important;
   }
 }
+
+
+/* === FINAL PATCH: Calm Luxury Palette + PC Ranking Medals Only === */
+/* CSS only: HTML / JS / mobile ranking structure untouched */
+:root{
+  --bg:#07070A !important;
+  --surface:#121319 !important;
+  --surface-strong:#121319 !important;
+  --surface-soft:rgba(255,255,255,.025) !important;
+  --line:rgba(143,165,146,.075) !important;
+  --line-strong:rgba(106,90,130,.22) !important;
+  --text:#E7EAE7 !important;
+  --muted:#8C968F !important;
+  --green:#8FA592 !important;
+  --blue:#8FA592 !important;
+  --red:#C45B6D !important;
+  --gold:#6A5A82 !important;
+  --shadow:0 18px 44px rgba(0,0,0,.38) !important;
+
+  --mo-bg:#07070A !important;
+  --mo-card:#121319 !important;
+  --mo-card2:#15161D !important;
+  --mo-line:rgba(143,165,146,.075) !important;
+  --mo-line2:rgba(106,90,130,.20) !important;
+  --mo-text:#E7EAE7 !important;
+  --mo-strong:#F1F0F3 !important;
+  --mo-muted:#8C968F !important;
+  --mo-teal:#8FA592 !important;
+  --mo-teal2:#A5B6A8 !important;
+  --mo-gold:#8F7FA6 !important;
+  --mo-red:#C45B6D !important;
+  --mo-shadow:0 18px 44px rgba(0,0,0,.38) !important;
+
+  --ink:#E7EAE7 !important;
+  --soft:#8C968F !important;
+  --cyan:#8FA592 !important;
+  --lime:#A5B6A8 !important;
+  --amber:#8F7FA6 !important;
+  --rose:#C45B6D !important;
+  --violet:#6A5A82 !important;
+  --panel-deep:rgba(18,19,25,.92) !important;
+  --panel-card:#121319 !important;
+  --stroke:rgba(143,165,146,.075) !important;
+  --stroke-hot:rgba(106,90,130,.22) !important;
+  --card-shadow:0 18px 44px rgba(0,0,0,.38) !important;
+}
+
+html{background:#07070A !important;}
+body{
+  color:#E7EAE7 !important;
+  background:
+    radial-gradient(circle at 50% -18%, rgba(106,90,130,.055), transparent 34%),
+    radial-gradient(circle at 12% 0%, rgba(143,165,146,.035), transparent 26%),
+    linear-gradient(180deg,#07070A 0%,#050507 100%) !important;
+}
+body::before{
+  border-top:0 !important;
+  background:
+    linear-gradient(rgba(143,165,146,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143,165,146,.014) 1px, transparent 1px) !important;
+  background-size:58px 58px !important;
+  box-shadow:none !important;
+}
+body::after{
+  background:radial-gradient(circle at 50% 105%, rgba(106,90,130,.04), transparent 30%) !important;
+}
+
+header,
+.panel,
+#dashboard > .topbar,
+.table-wrap,
+.stat,
+.form-strip,
+.live-card{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.025),transparent),
+    #121319 !important;
+  border-color:rgba(143,165,146,.08) !important;
+  box-shadow:0 18px 44px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+
+header::before{border-color:rgba(143,165,146,.045) !important;}
+header::after{color:rgba(231,234,231,.026) !important;}
+h1,h2,.form-title{color:#F1F0F3 !important;text-shadow:none !important;}
+header p,.muted,.stat .muted,#lastUpdated{color:#8C968F !important;}
+
+a{color:#B9C2B8 !important;}
+a:hover{color:#A5B6A8 !important;}
+
+h2::before,
+#dashboard > .topbar h2::before{
+  background:linear-gradient(180deg,#6A5A82,#8FA592) !important;
+  box-shadow:none !important;
+}
+
+button{
+  background:linear-gradient(180deg,#8FA592,#5F7466) !important;
+  border-color:rgba(143,165,146,.22) !important;
+  color:#07070A !important;
+  box-shadow:0 12px 26px rgba(0,0,0,.24) !important;
+}
+button.secondary,
+.footer-actions a,
+.footer-actions button,
+header a,
+.moondo-tab{
+  background:rgba(255,255,255,.035) !important;
+  border-color:rgba(143,165,146,.08) !important;
+  color:#D7DDD7 !important;
+  box-shadow:none !important;
+}
+.moondo-tab.active{
+  background:linear-gradient(180deg,#8FA592,#6D8274) !important;
+  color:#07070A !important;
+  border-color:rgba(143,165,146,.22) !important;
+  box-shadow:none !important;
+}
+
+input{
+  background:rgba(7,7,10,.74) !important;
+  border-color:rgba(143,165,146,.10) !important;
+  color:#E7EAE7 !important;
+}
+input:focus{
+  border-color:rgba(143,165,146,.38) !important;
+  box-shadow:0 0 0 3px rgba(143,165,146,.08) !important;
+}
+
+.status-dot{
+  background:#8FA592 !important;
+  box-shadow:0 0 12px rgba(143,165,146,.45) !important;
+}
+#liveState{
+  background:rgba(143,165,146,.055) !important;
+  border-color:rgba(143,165,146,.10) !important;
+  color:#DCE4DD !important;
+}
+.live-score{
+  background:linear-gradient(180deg,#E2E6E1,#AAB4AA) !important;
+  color:#07070A !important;
+}
+.live-score + .live-score{
+  background:linear-gradient(180deg,#DED8E7,#A99BBD) !important;
+}
+.live-time,
+.stat small,
+.form-summary{
+  color:#9F92B5 !important;
+  text-shadow:none !important;
+}
+
+.stat::before{
+  background:linear-gradient(180deg,#6A5A82,#8FA592,transparent) !important;
+  box-shadow:none !important;
+}
+.stat::after{background:rgba(255,255,255,.018) !important;}
+
+.form-dot.win{background:linear-gradient(180deg,#78B48E,#4F7E61) !important;color:#F0F6F1 !important;}
+.form-dot.loss{background:linear-gradient(180deg,#C45B6D,#743640) !important;color:#F8E8EA !important;}
+.form-dot.draw{background:linear-gradient(180deg,#9BA39F,#5E6662) !important;color:#F1F1F1 !important;}
+
+th{
+  background:linear-gradient(180deg,rgba(106,90,130,.16),#121319) !important;
+  color:#ECEAF2 !important;
+}
+td{
+  color:#E7EAE7 !important;
+  border-color:rgba(143,165,146,.07) !important;
+}
+tbody tr:nth-child(even){background:rgba(255,255,255,.018) !important;}
+tbody tr:hover{background:rgba(106,90,130,.045) !important;}
+tbody td:first-child{color:#CBD7CB !important;}
+.ok{color:#78B48E !important;font-weight:950 !important;}
+.bad{color:#C45B6D !important;font-weight:950 !important;}
+
+#rankingList td:nth-child(10),
+#weeklyRankingList td:nth-child(10),
+#rankingList td:nth-child(9),
+#weeklyRankingList td:nth-child(9){
+  color:#A7B9A7 !important;
+}
+
+/* PC ranking medal fix: mobile is intentionally untouched */
+@media (min-width:641px){
+  #rankingList tr:nth-child(-n+3) > td:first-child,
+  #weeklyRankingList tr:nth-child(-n+3) > td:first-child,
+  tbody#rankingList > tr:nth-child(-n+3) > td:first-child,
+  tbody#weeklyRankingList > tr:nth-child(-n+3) > td:first-child{
+    position:relative !important;
+    color:transparent !important;
+    font-size:0 !important;
+    line-height:1 !important;
+    text-align:center !important;
+    vertical-align:middle !important;
+  }
+
+  #rankingList tr:nth-child(-n+3) > td:first-child::before,
+  #weeklyRankingList tr:nth-child(-n+3) > td:first-child::before,
+  tbody#rankingList > tr:nth-child(-n+3) > td:first-child::before,
+  tbody#weeklyRankingList > tr:nth-child(-n+3) > td:first-child::before{
+    content:"" !important;
+    display:inline-block !important;
+    width:26px !important;
+    height:26px !important;
+    min-width:26px !important;
+    border-radius:999px !important;
+    vertical-align:middle !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.34),
+      inset 0 -7px 10px rgba(0,0,0,.16),
+      0 6px 14px rgba(0,0,0,.30) !important;
+  }
+
+  #rankingList tr:nth-child(1) > td:first-child::before,
+  #weeklyRankingList tr:nth-child(1) > td:first-child::before,
+  tbody#rankingList > tr:nth-child(1) > td:first-child::before,
+  tbody#weeklyRankingList > tr:nth-child(1) > td:first-child::before{
+    background:linear-gradient(180deg,#E5C15C,#B48834) !important;
+  }
+
+  #rankingList tr:nth-child(2) > td:first-child::before,
+  #weeklyRankingList tr:nth-child(2) > td:first-child::before,
+  tbody#rankingList > tr:nth-child(2) > td:first-child::before,
+  tbody#weeklyRankingList > tr:nth-child(2) > td:first-child::before{
+    background:linear-gradient(180deg,#E2E7E4,#9BA49F) !important;
+  }
+
+  #rankingList tr:nth-child(3) > td:first-child::before,
+  #weeklyRankingList tr:nth-child(3) > td:first-child::before,
+  tbody#rankingList > tr:nth-child(3) > td:first-child::before,
+  tbody#weeklyRankingList > tr:nth-child(3) > td:first-child::before{
+    background:linear-gradient(180deg,#C78959,#835034) !important;
+  }
+
+  #rankingList tr:nth-child(n+4) > td:first-child,
+  #weeklyRankingList tr:nth-child(n+4) > td:first-child,
+  tbody#rankingList > tr:nth-child(n+4) > td:first-child,
+  tbody#weeklyRankingList > tr:nth-child(n+4) > td:first-child{
+    color:#C9D6C9 !important;
+    font-size:14px !important;
+    font-weight:950 !important;
+    text-align:center !important;
+  }
+}
+
 </style>
 
 </head>
