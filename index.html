@@ -4400,7 +4400,7 @@ footer {
 @media (min-width:1024px){
 
   body{
-    zoom:0.67;
+    zoom:0.78;
   }
 
 }
@@ -5608,6 +5608,331 @@ h2::before{
 }
 </style>
 
+
+
+<style id="moondo-ranking-full-info-final">
+/* === FINAL: 오늘/주간 승률 랭킹 전체 정보 표시 === */
+/* 이전 CSS에서 무/패/총경기/점수/순위/FC를 숨기던 규칙을 마지막에서 전부 덮어씀 */
+
+@media (min-width: 641px) {
+  .table-wrap:has(#rankingList),
+  .table-wrap:has(#weeklyRankingList) {
+    overflow-x: auto !important;
+    padding: 16px !important;
+    border-radius: 22px !important;
+    border: 1px solid rgba(168,232,224,.13) !important;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.035), transparent),
+      rgba(7, 11, 15, .92) !important;
+    box-shadow: 0 22px 52px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.035) !important;
+  }
+
+  table:has(#rankingList),
+  table:has(#weeklyRankingList) {
+    display: table !important;
+    width: 100% !important;
+    min-width: 1080px !important;
+    border-collapse: separate !important;
+    border-spacing: 0 8px !important;
+    font-size: 13px !important;
+  }
+
+  table:has(#rankingList) thead,
+  table:has(#weeklyRankingList) thead {
+    display: table-header-group !important;
+  }
+
+  table:has(#rankingList) thead tr,
+  table:has(#weeklyRankingList) thead tr {
+    display: table-row !important;
+  }
+
+  table:has(#rankingList) th,
+  table:has(#weeklyRankingList) th {
+    display: table-cell !important;
+    padding: 10px 9px !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #9faeaa !important;
+    font-size: 12px !important;
+    font-weight: 950 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  #rankingList,
+  #weeklyRankingList {
+    display: table-row-group !important;
+    width: 100% !important;
+  }
+
+  #rankingList tr,
+  #weeklyRankingList tr {
+    display: table-row !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  #rankingList td,
+  #weeklyRankingList td {
+    display: table-cell !important;
+    min-height: 0 !important;
+    padding: 12px 10px !important;
+    border-top: 1px solid rgba(168,232,224,.09) !important;
+    border-bottom: 1px solid rgba(0,0,0,.38) !important;
+    border-right: 0 !important;
+    background: linear-gradient(180deg, rgba(26, 32, 43, .98), rgba(15, 21, 29, .98)) !important;
+    color: #e7eee9 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    font-weight: 850 !important;
+  }
+
+  #rankingList td::before,
+  #weeklyRankingList td::before,
+  #rankingList td::after,
+  #weeklyRankingList td::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  #rankingList td:first-child,
+  #weeklyRankingList td:first-child {
+    width: 58px !important;
+    border-radius: 12px 0 0 12px !important;
+    color: #fff !important;
+    font-weight: 950 !important;
+  }
+
+  #rankingList td:last-child,
+  #weeklyRankingList td:last-child {
+    border-radius: 0 12px 12px 0 !important;
+  }
+
+  #rankingList tr:nth-child(1) td,
+  #weeklyRankingList tr:nth-child(1) td {
+    border-top-color: rgba(217,185,111,.42) !important;
+    border-bottom-color: rgba(217,185,111,.28) !important;
+    box-shadow: inset 0 1px 0 rgba(217,185,111,.12), inset 0 -1px 0 rgba(217,185,111,.12) !important;
+  }
+
+  #rankingList tr:nth-child(1) td:first-child,
+  #weeklyRankingList tr:nth-child(1) td:first-child {
+    background: radial-gradient(circle, #fff3a7, #d9b96f 58%, #8d6d24) !important;
+    color: #14110a !important;
+  }
+
+  #rankingList tr:nth-child(2) td:first-child,
+  #weeklyRankingList tr:nth-child(2) td:first-child {
+    background: radial-gradient(circle, #f7ffff, #bfc8c9 58%, #667074) !important;
+    color: #121719 !important;
+  }
+
+  #rankingList tr:nth-child(3) td:first-child,
+  #weeklyRankingList tr:nth-child(3) td:first-child {
+    background: radial-gradient(circle, #ffc58a, #bd7b4b 58%, #6f3f24) !important;
+    color: #160d07 !important;
+  }
+
+  #rankingList tr:nth-child(n+4) td:first-child,
+  #weeklyRankingList tr:nth-child(n+4) td:first-child {
+    background: rgba(231,238,233,.06) !important;
+    color: #b8c4c0 !important;
+  }
+
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2) {
+    text-align: left !important;
+    color: #ffffff !important;
+    font-weight: 950 !important;
+    min-width: 150px !important;
+  }
+
+  #rankingList td:nth-child(3),
+  #weeklyRankingList td:nth-child(3) {
+    text-align: left !important;
+    color: #9fd6ff !important;
+    min-width: 130px !important;
+  }
+
+  #rankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(4) { color: #43f07b !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(5),
+  #weeklyRankingList td:nth-child(5) { color: #ffd86b !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(6),
+  #weeklyRankingList td:nth-child(6) { color: #ff5d64 !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8) { color: #52ffa3 !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(9) { color: #d9b96f !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(10) { color: #f2f0e8 !important; font-weight: 950 !important; }
+  #rankingList td:nth-child(11),
+  #weeklyRankingList td:nth-child(11) { color: #a7d5bd !important; font-weight: 950 !important; }
+}
+
+@media (max-width: 640px) {
+  .table-wrap:has(#rankingList),
+  .table-wrap:has(#weeklyRankingList) {
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  table:has(#rankingList),
+  table:has(#weeklyRankingList),
+  table:has(#rankingList) tbody,
+  table:has(#weeklyRankingList) tbody {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  table:has(#rankingList) thead,
+  table:has(#weeklyRankingList) thead {
+    display: none !important;
+  }
+
+  #rankingList,
+  #weeklyRankingList {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  #rankingList tr,
+  #weeklyRankingList tr {
+    display: grid !important;
+    grid-template-columns: 42px 1fr auto auto !important;
+    grid-template-areas:
+      "rank name name rate"
+      "rank tier tier live"
+      "rank win draw loss"
+      "rank matches score fc" !important;
+    gap: 5px 9px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 11px 12px !important;
+    border: 1px solid rgba(168,232,224,.11) !important;
+    border-radius: 15px !important;
+    background:
+      linear-gradient(135deg, rgba(0,224,194,.08), transparent 36%),
+      rgba(12,18,24,.96) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important;
+  }
+
+  #rankingList td,
+  #weeklyRankingList td {
+    display: block !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    text-align: left !important;
+    white-space: normal !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+  }
+
+  #rankingList td::before,
+  #weeklyRankingList td::before,
+  #rankingList td::after,
+  #weeklyRankingList td::after {
+    display: inline !important;
+    color: #7f8d8a !important;
+    font-size: 10px !important;
+    font-weight: 950 !important;
+  }
+
+  #rankingList td:nth-child(1),
+  #weeklyRankingList td:nth-child(1) {
+    grid-area: rank !important;
+    align-self: stretch !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 11px !important;
+    background: rgba(231,238,233,.07) !important;
+    color: #f5faf7 !important;
+    font-size: 15px !important;
+    font-weight: 950 !important;
+  }
+  #rankingList td:nth-child(1)::before,
+  #weeklyRankingList td:nth-child(1)::before { content: none !important; }
+
+  #rankingList tr:nth-child(1) td:nth-child(1),
+  #weeklyRankingList tr:nth-child(1) td:nth-child(1) { background: radial-gradient(circle, #fff3a7, #d9b96f 58%, #8d6d24) !important; color:#14110a !important; }
+  #rankingList tr:nth-child(2) td:nth-child(1),
+  #weeklyRankingList tr:nth-child(2) td:nth-child(1) { background: radial-gradient(circle, #f7ffff, #bfc8c9 58%, #667074) !important; color:#121719 !important; }
+  #rankingList tr:nth-child(3) td:nth-child(1),
+  #weeklyRankingList tr:nth-child(3) td:nth-child(1) { background: radial-gradient(circle, #ffc58a, #bd7b4b 58%, #6f3f24) !important; color:#160d07 !important; }
+
+  #rankingList td:nth-child(2),
+  #weeklyRankingList td:nth-child(2) { grid-area: name !important; color:#fff !important; font-size:14px !important; font-weight:950 !important; }
+  #rankingList td:nth-child(2)::before,
+  #weeklyRankingList td:nth-child(2)::before { content: none !important; }
+
+  #rankingList td:nth-child(3),
+  #weeklyRankingList td:nth-child(3) { grid-area: tier !important; color:#9fd6ff !important; font-weight:850 !important; }
+  #rankingList td:nth-child(3)::before,
+  #weeklyRankingList td:nth-child(3)::before { content: "티어 " !important; }
+
+  #rankingList td:nth-child(4),
+  #weeklyRankingList td:nth-child(4) { grid-area: win !important; color:#43f07b !important; font-weight:950 !important; }
+  #rankingList td:nth-child(4)::before,
+  #weeklyRankingList td:nth-child(4)::before { content: "승 " !important; }
+
+  #rankingList td:nth-child(5),
+  #weeklyRankingList td:nth-child(5) { grid-area: draw !important; color:#ffd86b !important; font-weight:950 !important; }
+  #rankingList td:nth-child(5)::before,
+  #weeklyRankingList td:nth-child(5)::before { content: "무 " !important; }
+
+  #rankingList td:nth-child(6),
+  #weeklyRankingList td:nth-child(6) { grid-area: loss !important; color:#ff5d64 !important; font-weight:950 !important; }
+  #rankingList td:nth-child(6)::before,
+  #weeklyRankingList td:nth-child(6)::before { content: "패 " !important; }
+
+  #rankingList td:nth-child(7),
+  #weeklyRankingList td:nth-child(7) { grid-area: matches !important; color:#cfd8d4 !important; }
+  #rankingList td:nth-child(7)::before,
+  #weeklyRankingList td:nth-child(7)::before { content: "경기 " !important; }
+
+  #rankingList td:nth-child(8),
+  #weeklyRankingList td:nth-child(8) { grid-area: rate !important; justify-self:end !important; color:#52ffa3 !important; font-size:13px !important; font-weight:950 !important; }
+  #rankingList td:nth-child(8)::before,
+  #weeklyRankingList td:nth-child(8)::before { content: "승률 " !important; }
+
+  #rankingList td:nth-child(9),
+  #weeklyRankingList td:nth-child(9) { grid-area: score !important; color:#d9b96f !important; font-weight:950 !important; }
+  #rankingList td:nth-child(9)::before,
+  #weeklyRankingList td:nth-child(9)::before { content: "점수 " !important; }
+
+  #rankingList td:nth-child(10),
+  #weeklyRankingList td:nth-child(10) { grid-area: live !important; justify-self:end !important; color:#f2f0e8 !important; font-weight:950 !important; }
+  #rankingList td:nth-child(10)::before,
+  #weeklyRankingList td:nth-child(10)::before { content: "순위 " !important; }
+
+  #rankingList td:nth-child(11),
+  #weeklyRankingList td:nth-child(11) { grid-area: fc !important; justify-self:end !important; color:#a7d5bd !important; font-weight:950 !important; }
+  #rankingList td:nth-child(11)::before,
+  #weeklyRankingList td:nth-child(11)::before { content: "FC " !important; }
+
+  #rankingList td[colspan],
+  #weeklyRankingList td[colspan] {
+    display: block !important;
+    grid-column: 1 / -1 !important;
+    text-align: center !important;
+    padding: 14px !important;
+  }
+}
+</style>
+
 </head>
 <body>
   <main>
@@ -5783,6 +6108,7 @@ h2::before{
               <th>총 경기</th>
               <th>승률</th>
               <th>점수</th>
+              <th>실시간 순위</th>
               <th>FC</th>
             </tr>
           </thead>
@@ -6632,6 +6958,7 @@ h2::before{
           sessionFromDate: weeklyResetDate(),
           sessionExactDate: null,
           emptyMessage: '이번 주 랭킹 데이터가 없습니다.',
+          showLiveRank: true,
         }),
       ]);
       if (currentUser) {
