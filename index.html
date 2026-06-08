@@ -4931,8 +4931,8 @@ h2::before{
   #rankingList,
   #weeklyRankingList{
     display:grid !important;
-    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-    gap:12px !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
     width:100% !important;
   }
 
@@ -5133,6 +5133,23 @@ h2::before{
   #rankingList,
   #weeklyRankingList{
     grid-template-columns:1fr !important;
+  }
+}
+
+
+/* === PC Ranking Single Column Final Override === */
+@media (min-width:641px){
+  #rankingList,
+  #weeklyRankingList{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+    width:100% !important;
+  }
+
+  #rankingList tr,
+  #weeklyRankingList tr{
+    width:100% !important;
   }
 }
 </style>
