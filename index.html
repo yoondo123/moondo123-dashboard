@@ -6333,8 +6333,8 @@ h2::before{
 
     function currentMeta(profile, live) {
       const tier = live?.tier || profile.tier || '-';
-      const score = live?.current_score ?? live?.score ?? profile.current_score ?? profile.score ?? 0;
-      const rank = live?.current_rank ?? live?.rank ?? profile.current_rank ?? profile.rank ?? '-';
+      const score = live?.score ?? profile.score ?? 0;
+      const rank = live?.rank ?? profile.rank ?? '-';
       const rankText = rank && Number(rank) > 0 ? rank : '-';
       return { tier, score, rank: rankText };
     }
@@ -6521,13 +6521,10 @@ h2::before{
 
     async function loadLiveStatus() {
       if (!currentUser) return;
-
-      // 프로그램이 업로드하는 실제 테이블(player_stats)을 기준으로 실시간 화면을 갱신합니다.
       const { data, error } = await supabaseClient
-        .from('player_stats')
+        .from('live_status')
         .select('*')
         .eq('username', currentUser.username)
-        .order('updated_at', { ascending: false })
         .limit(1);
 
       const state = document.getElementById('liveState');
@@ -6541,18 +6538,14 @@ h2::before{
       }
 
       const live = data[0];
-      const leftScore = live.ingame_left_score ?? live.match_my_score ?? '-';
-      const rightScore = live.ingame_right_score ?? live.match_opponent_score ?? '-';
-      const opponent = live.opponent_nickname ?? live.ingame_opponent_nickname ?? live.match_opponent_name ?? '상대 OCR 대기';
-      const matchTime = live.ingame_match_time ?? live.match_time ?? '시간 OCR 대기';
+      const hasMatchData = live.match_my_name || live.match_my_score !== null ||
+        live.match_opponent_score !== null || live.match_opponent_name || live.match_time;
 
-      const hasMatchData = leftScore !== '-' || rightScore !== '-' || opponent !== '상대 OCR 대기' || matchTime !== '시간 OCR 대기';
-
-      document.getElementById('liveUsername').innerText = live.match_my_name || live.username || currentUser.username;
-      document.getElementById('liveScore').innerText = leftScore;
-      document.getElementById('liveOppScore').innerText = rightScore;
-      document.getElementById('liveOpponent').innerText = opponent;
-      document.getElementById('liveTime').innerText = matchTime;
+      document.getElementById('liveUsername').innerText = live.match_my_name || currentUser.username;
+      document.getElementById('liveScore').innerText = live.match_my_score ?? '-';
+      document.getElementById('liveOppScore').innerText = live.match_opponent_score ?? '-';
+      document.getElementById('liveOpponent').innerText = live.match_opponent_name || '상대 OCR 대기';
+      document.getElementById('liveTime').innerText = live.match_time || '시간 OCR 대기';
       state.innerHTML = hasMatchData
         ? '<span class="status-dot"></span>LIVE'
         : '<span class="status-dot"></span>LIVE - 경기 OCR 대기 중';
@@ -6569,10 +6562,9 @@ h2::before{
         loadUserHistory(currentUser.username, weeklyResetIso()),
         loadUserSessions(currentUser.username, weekStart),
         supabaseClient
-          .from('player_stats')
+          .from('live_status')
           .select('*')
           .eq('username', currentUser.username)
-          .order('updated_at', { ascending: false })
           .limit(1),
       ]);
       const live = liveRes.data?.[0];
@@ -6711,7 +6703,7 @@ h2::before{
           .gte('created_at', sinceIso),
         sessionQuery,
         showLiveRank
-          ? supabaseClient.from('player_stats').select('username, rank, current_rank')
+          ? supabaseClient.from('live_status').select('username, rank')
           : Promise.resolve({ data: [], error: null }),
       ]);
 
@@ -6725,7 +6717,7 @@ h2::before{
       const liveRankMap = {};
       (liveRankRes.data || []).forEach(row => {
         if (!row.username) return;
-        const value = row.current_rank ?? row.rank ?? '-';
+        const value = row.rank ?? '-';
         liveRankMap[row.username] = value && Number(value) > 0 ? value : '-';
       });
 
