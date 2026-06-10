@@ -6305,7 +6305,8 @@ h2::before{
       const wins = Number(profile.wins || 0);
       const draws = Number(profile.draws || 0);
       const losses = Number(profile.losses || 0);
-      return { wins, draws, losses, matches: wins + draws + losses };
+      const matches = Number(profile.matches_played ?? profile.matches ?? (wins + draws + losses));
+      return { wins, draws, losses, matches };
     }
 
     function liveStatusStats(live) {
@@ -6331,12 +6332,25 @@ h2::before{
       return bestStats(normalizeStats(historyStats), normalizeStats(sessionStats));
     }
 
+    function firstValidNumber(...values) {
+      for (const value of values) {
+        if (value === null || value === undefined || value === '' || value === '--') continue;
+        const number = Number(value);
+        if (Number.isFinite(number) && number > 0) return number;
+      }
+      return null;
+    }
+
+    function firstValidRank(...values) {
+      const rank = firstValidNumber(...values);
+      return rank && rank < 99999 ? rank : null;
+    }
+
     function currentMeta(profile, live) {
-      const tier = live?.tier || profile.tier || '-';
-      const score = live?.current_score ?? live?.score ?? profile.current_score ?? profile.score ?? 0;
-      const rank = live?.current_rank ?? live?.rank ?? profile.current_rank ?? profile.rank ?? '-';
-      const rankText = rank && Number(rank) > 0 ? rank : '-';
-      return { tier, score, rank: rankText };
+      const tier = live?.current_tier || live?.tier || profile.current_tier || profile.tier || '-';
+      const score = firstValidNumber(live?.current_score, live?.score, profile.current_score, profile.score) ?? 0;
+      const rank = firstValidRank(live?.current_rank, live?.rank, profile.current_rank, profile.rank);
+      return { tier, score, rank: rank ?? '-' };
     }
 
     function isUpdatedSince(row, sinceIso) {
@@ -6541,14 +6555,14 @@ h2::before{
       }
 
       const live = data[0];
-      const leftScore = live.ingame_left_score ?? live.match_my_score ?? '-';
-      const rightScore = live.ingame_right_score ?? live.match_opponent_score ?? '-';
-      const opponent = live.opponent_nickname ?? live.ingame_opponent_nickname ?? live.match_opponent_name ?? '상대 OCR 대기';
-      const matchTime = live.ingame_match_time ?? live.match_time ?? '시간 OCR 대기';
+      const leftScore = live.ingame_left_score ?? '-';
+      const rightScore = live.ingame_right_score ?? '-';
+      const opponent = live.ingame_opponent_nickname || live.opponent_nickname || '상대 OCR 대기';
+      const matchTime = live.ingame_match_time || '시간 OCR 대기';
 
       const hasMatchData = leftScore !== '-' || rightScore !== '-' || opponent !== '상대 OCR 대기' || matchTime !== '시간 OCR 대기';
 
-      document.getElementById('liveUsername').innerText = live.match_my_name || live.username || currentUser.username;
+      document.getElementById('liveUsername').innerText = live.username || currentUser.username;
       document.getElementById('liveScore').innerText = leftScore;
       document.getElementById('liveOppScore').innerText = rightScore;
       document.getElementById('liveOpponent').innerText = opponent;
@@ -6711,7 +6725,7 @@ h2::before{
           .gte('created_at', sinceIso),
         sessionQuery,
         showLiveRank
-          ? supabaseClient.from('player_stats').select('username, rank, current_rank')
+          ? supabaseClient.from('player_stats').select('username, rank, current_rank, score, current_score, tier, current_tier')
           : Promise.resolve({ data: [], error: null }),
       ]);
 
@@ -6725,8 +6739,8 @@ h2::before{
       const liveRankMap = {};
       (liveRankRes.data || []).forEach(row => {
         if (!row.username) return;
-        const value = row.current_rank ?? row.rank ?? '-';
-        liveRankMap[row.username] = value && Number(value) > 0 ? value : '-';
+        const value = firstValidRank(row.current_rank, row.rank);
+        liveRankMap[row.username] = value ?? '-';
       });
 
       const historyGrouped = {};
@@ -6761,9 +6775,9 @@ h2::before{
           return {
             username,
             ...stats,
-            tier: profile.tier || '-',
-            score: profile.score ?? 0,
-            liveRank: showLiveRank ? (liveRankMap[username] ?? profile.rank ?? '-') : undefined,
+            tier: profile.current_tier || profile.tier || '-',
+            score: firstValidNumber(profile.current_score, profile.score) ?? 0,
+            liveRank: showLiveRank ? (liveRankMap[username] ?? firstValidRank(profile.current_rank, profile.rank) ?? '-') : undefined,
             fc: fcFromWins(stats.wins),
             rate: stats.matches ? stats.wins / stats.matches : 0,
           };
