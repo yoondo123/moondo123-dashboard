@@ -173,7 +173,7 @@
     }
     .form-dots {
       display: grid;
-      grid-template-columns: repeat(10, minmax(0, 1fr));
+      grid-template-columns: repeat(20, minmax(0, 1fr));
       gap: 7px;
     }
     .form-dot {
@@ -1711,7 +1711,7 @@ footer{color:#6f7d7a!important}
 
   .form-dots {
     display: grid !important;
-    grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(20, minmax(0, 1fr)) !important;
     gap: 4px !important;
   }
 
@@ -2442,7 +2442,7 @@ button.secondary:hover,
 
 .form-dots {
   display: grid !important;
-  grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
+  grid-template-columns: repeat(20, minmax(0, 1fr)) !important;
   gap: 12px !important;
 }
 
@@ -4773,7 +4773,7 @@ tbody td:first-child{
   color:#9EAD9E !important;
 }
 
-/* 9) 최근 10판 버튼도 채도 낮추기 */
+/* 9) 최근 20판 버튼도 채도 낮추기 */
 .form-dot.win{
   background:linear-gradient(180deg,rgba(103,145,116,.82),rgba(52,84,61,.90)) !important;
   box-shadow:none !important;
@@ -5876,10 +5876,20 @@ h2::before{
 
       <div class="form-strip">
         <div class="form-head">
-          <span class="form-title">최근 10판 흐름</span>
+          <span class="form-title">최근 20판 흐름</span>
           <span class="form-summary" id="formSummary">기록 대기</span>
         </div>
         <div class="form-dots" id="formDots">
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
+          <span class="form-dot">-</span>
           <span class="form-dot">-</span>
           <span class="form-dot">-</span>
           <span class="form-dot">-</span>
@@ -6386,7 +6396,7 @@ h2::before{
       const wins = results.filter(r => normalizeResult(r) === 'win').length;
       const draws = results.filter(r => normalizeResult(r) === 'draw').length;
       const losses = results.filter(r => normalizeResult(r) === 'loss').length;
-      return `${streak}${label} · 최근10판 ${wins}승 ${draws}무 ${losses}패`;
+      return `${streak}${label} · 최근20판 ${wins}승 ${draws}무 ${losses}패`;
     }
 
     function expandStatsToResults(stats) {
@@ -6397,20 +6407,20 @@ h2::before{
         ...Array(wins).fill('win'),
         ...Array(draws).fill('draw'),
         ...Array(losses).fill('loss'),
-      ].slice(0, 10);
+      ].slice(0, 20);
     }
 
     function renderRecentForm(results, sourceText = '') {
       const dots = document.getElementById('formDots');
       const summary = document.getElementById('formSummary');
       if (!dots || !summary) return;
-      const cleanResults = (results || []).map(normalizeResult).filter(Boolean).slice(0, 10);
+      const cleanResults = (results || []).map(normalizeResult).filter(Boolean).slice(0, 20);
       summary.innerText = cleanResults.length
         ? `${streakSummary(cleanResults)}${sourceText ? ` · ${sourceText}` : ''}`
         : '오늘 기록 대기';
       const displayResults = [...cleanResults].reverse();
-      const padded = [...Array(Math.max(0, 10 - displayResults.length)).fill(''), ...displayResults];
-      dots.innerHTML = padded.slice(0, 10).map(result => {
+      const padded = [...Array(Math.max(0, 20 - displayResults.length)).fill(''), ...displayResults];
+      dots.innerHTML = padded.slice(0, 20).map(result => {
         const normalized = normalizeResult(result);
         const cls = normalized === 'win' ? 'win' : normalized === 'loss' ? 'loss' : normalized === 'draw' ? 'draw' : '';
         return `<span class="form-dot ${cls}">${resultShort(result)}</span>`;
@@ -6683,7 +6693,7 @@ h2::before{
       query = applyCurrentAccountFilter(query, currentUser.username);
       const { data, error } = await query
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (error) {
         renderRecentForm([], '전적 조회 오류');
@@ -7083,7 +7093,7 @@ h2::before{
       if (
         title.includes('실시간경기') ||
         title.includes('오늘전적') ||
-        title.includes('최근10판흐름') ||
+        title.includes('최근20판흐름') ||
         title.includes('오늘승률랭킹')
       ) {
         setGroup(h2, 'home');
