@@ -6016,6 +6016,54 @@ h2::before{
           <small id="lifetimeScore">점수 0</small>
         </div>
       </div>
+
+      <h2 data-search-section>전적 검색</h2>
+      <div class="panel search-record-panel" data-search-section>
+        <div class="search-record-row">
+          <input id="playerSearchInput" placeholder="닉네임 입력" onkeydown="if(event.key === 'Enter') searchPlayerRecord();">
+          <button type="button" onclick="searchPlayerRecord()">검색</button>
+        </div>
+        <p id="playerSearchMessage" class="muted search-record-message">닉네임을 검색하면 오늘 전적과 최근 20판 흐름만 보여줍니다.</p>
+
+        <div id="playerSearchResult" class="hidden">
+          <div class="search-record-title">
+            <strong id="searchedPlayerName">-</strong>
+            <span id="searchedPlayerMeta" class="muted">검색 결과</span>
+          </div>
+
+          <div class="today-grid search-today-grid">
+            <div class="stat compact">
+              <span class="muted">오늘 경기 총 수</span>
+              <strong id="searchTodayMatches">0</strong>
+              <small id="searchTodayWinRate">승률 0.0%</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">승</span>
+              <strong id="searchTodayWins">0</strong>
+              <small>오늘 승리</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">무</span>
+              <strong id="searchTodayDraws">0</strong>
+              <small>오늘 무승부</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">패</span>
+              <strong id="searchTodayLosses">0</strong>
+              <small>오늘 패배</small>
+            </div>
+          </div>
+
+          <div class="form-strip search-form-strip">
+            <div class="form-head">
+              <span class="form-title">최근 20판 흐름</span>
+              <span class="form-summary" id="searchFormSummary">기록 대기</span>
+            </div>
+            <div class="form-dots" id="searchFormDots"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="footer-actions">
         <a href="./admin.html">관리자 페이지</a>
         <button class="secondary" onclick="logout()">로그아웃</button>
@@ -7556,6 +7604,219 @@ h2::before{
   }
 }
 </style>
+
+
+
+<style id="moondo-search-record-patch">
+.search-record-panel { margin-bottom: 18px !important; }
+.search-record-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
+.search-record-row input { width: min(320px, 100%) !important; }
+.search-record-message { margin: 8px 0 0 !important; font-size: 13px !important; font-weight: 800 !important; }
+.search-record-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin: 18px 0 12px; }
+.search-record-title strong { color: #ffffff; font-size: 22px; font-weight: 950; letter-spacing: -.04em; }
+.search-record-title span { font-size: 12px; font-weight: 850; }
+.search-today-grid { margin-top: 8px; grid-template-columns: repeat(4, minmax(150px, 1fr)) !important; }
+.search-form-strip { margin-top: 12px !important; }
+#searchFormDots { grid-template-columns: repeat(20, minmax(0, 1fr)); }
+@media (max-width: 760px) {
+  .search-record-row { display: grid; grid-template-columns: 1fr; }
+  .search-record-row input, .search-record-row button { width: 100% !important; }
+  .search-today-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  #searchFormDots { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .search-today-grid { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .search-today-grid .stat { grid-column: span 2 !important; }
+  .search-today-grid .stat:first-child { grid-column: 1 / -1 !important; }
+}
+</style>
+
+
+<script id="moondo-search-record-script">
+(function () {
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = value;
+  }
+
+  function safeNormalizeResult(result) {
+    if (typeof normalizeResult === 'function') return normalizeResult(result);
+    if (result === 'win' || result === '승') return 'win';
+    if (result === 'loss' || result === '패') return 'loss';
+    if (result === 'draw' || result === '무') return 'draw';
+    return result || '';
+  }
+
+  function safeResultShort(result) {
+    const r = safeNormalizeResult(result);
+    if (r === 'win') return '승';
+    if (r === 'loss') return '패';
+    if (r === 'draw') return '무';
+    return '-';
+  }
+
+  function safeWinRate(stats) {
+    return stats.matches ? ((stats.wins / stats.matches) * 100).toFixed(1) : '0.0';
+  }
+
+  function safeStreakSummary(results) {
+    const clean = (results || []).map(safeNormalizeResult).filter(Boolean).slice(0, 20);
+    if (!clean.length) return '기록 대기';
+    const latest = clean[0];
+    let streak = 0;
+    for (const result of clean) {
+      if (safeNormalizeResult(result) !== latest) break;
+      streak += 1;
+    }
+    const label = latest === 'win' ? '연승' : latest === 'loss' ? '연패' : '연속 무';
+    const wins = clean.filter(r => r === 'win').length;
+    const draws = clean.filter(r => r === 'draw').length;
+    const losses = clean.filter(r => r === 'loss').length;
+    return `${streak}${label} · 최근20판 ${wins}승 ${draws}무 ${losses}패`;
+  }
+
+  function summarizeRows(rows) {
+    return (rows || []).reduce((acc, row) => {
+      const result = safeNormalizeResult(row.result);
+      if (result === 'win') acc.wins += 1;
+      if (result === 'draw') acc.draws += 1;
+      if (result === 'loss') acc.losses += 1;
+      if (result) acc.matches += 1;
+      return acc;
+    }, { wins: 0, draws: 0, losses: 0, matches: 0 });
+  }
+
+  function renderSearchForm(results) {
+    const dots = document.getElementById('searchFormDots');
+    const summary = document.getElementById('searchFormSummary');
+    if (!dots || !summary) return;
+
+    const clean = (results || []).map(safeNormalizeResult).filter(Boolean).slice(0, 20);
+    summary.innerText = clean.length ? safeStreakSummary(clean) : '최근 20판 기록 없음';
+
+    const displayResults = [...clean].reverse();
+    const padded = [...Array(Math.max(0, 20 - displayResults.length)).fill(''), ...displayResults].slice(0, 20);
+    dots.innerHTML = padded.map(result => {
+      const normalized = safeNormalizeResult(result);
+      const cls = normalized === 'win' ? 'win' : normalized === 'loss' ? 'loss' : normalized === 'draw' ? 'draw' : '';
+      return `<span class="form-dot ${cls}">${safeResultShort(result)}</span>`;
+    }).join('');
+  }
+
+  window.searchPlayerRecord = async function searchPlayerRecord() {
+    const input = document.getElementById('playerSearchInput');
+    const message = document.getElementById('playerSearchMessage');
+    const resultBox = document.getElementById('playerSearchResult');
+    const rawName = input ? input.value : '';
+    const nickname = typeof normalizeUsername === 'function' ? normalizeUsername(rawName) : (rawName || '').trim();
+
+    if (!nickname) {
+      if (message) {
+        message.className = 'bad search-record-message';
+        message.innerText = '검색할 닉네임을 입력해주세요.';
+      }
+      if (resultBox) resultBox.classList.add('hidden');
+      return;
+    }
+
+    if (message) {
+      message.className = 'muted search-record-message';
+      message.innerText = '검색 중...';
+    }
+
+    try {
+      const todayStart = typeof startOfTodayIso === 'function' ? startOfTodayIso() : new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+
+      const [todayRes, recentRes] = await Promise.all([
+        supabaseClient
+          .from('game_history')
+          .select('result, created_at')
+          .eq('username', nickname)
+          .gte('created_at', todayStart)
+          .order('created_at', { ascending: false }),
+        supabaseClient
+          .from('game_history')
+          .select('result, created_at')
+          .eq('username', nickname)
+          .order('created_at', { ascending: false })
+          .limit(20)
+      ]);
+
+      if (todayRes.error) throw todayRes.error;
+      if (recentRes.error) throw recentRes.error;
+
+      const todayRows = todayRes.data || [];
+      const recentRows = recentRes.data || [];
+      const todayStats = summarizeRows(todayRows);
+      const recentResults = recentRows.map(row => safeNormalizeResult(row.result)).filter(Boolean);
+
+      setText('searchedPlayerName', nickname);
+      setText('searchedPlayerMeta', `오늘 ${todayStats.matches}경기 · 최근 ${recentResults.length}경기 조회`);
+      setText('searchTodayMatches', todayStats.matches);
+      setText('searchTodayWins', todayStats.wins);
+      setText('searchTodayDraws', todayStats.draws);
+      setText('searchTodayLosses', todayStats.losses);
+      setText('searchTodayWinRate', `승률 ${safeWinRate(todayStats)}%`);
+      renderSearchForm(recentResults);
+
+      if (resultBox) resultBox.classList.remove('hidden');
+      if (message) {
+        message.className = 'ok search-record-message';
+        message.innerText = recentResults.length ? '검색 완료' : '해당 닉네임의 최근 경기 기록이 없습니다.';
+      }
+    } catch (error) {
+      if (resultBox) resultBox.classList.add('hidden');
+      if (message) {
+        message.className = 'bad search-record-message';
+        message.innerText = '검색 오류: ' + (error?.message || error);
+      }
+    }
+  };
+
+  function ready(fn) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+    else fn();
+  }
+
+  ready(function () {
+    renderSearchForm([]);
+
+    const dashboard = document.getElementById('dashboard');
+    const tabs = document.getElementById('moondoTabs');
+    if (!dashboard || !tabs) return;
+
+    if (!tabs.querySelector('[data-tab="search"]')) {
+      tabs.insertAdjacentHTML('beforeend', '<button type="button" class="moondo-tab" data-tab="search">전적 검색</button>');
+    }
+
+    dashboard.querySelectorAll('[data-search-section]').forEach(el => {
+      el.dataset.tabGroup = 'search';
+    });
+
+    const buttons = Array.from(tabs.querySelectorAll('.moondo-tab'));
+
+    function applyTab(tabName) {
+      dashboard.querySelectorAll('[data-tab-group]').forEach(el => {
+        const group = el.dataset.tabGroup;
+        const show = group === 'always' || group === tabName;
+        el.classList.toggle('moondo-section-hidden', !show);
+      });
+      buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
+      try { localStorage.setItem('moondoActiveTab', tabName); } catch (e) {}
+    }
+
+    tabs.onclick = function (event) {
+      const btn = event.target.closest('.moondo-tab');
+      if (!btn) return;
+      event.preventDefault();
+      applyTab(btn.dataset.tab || 'home');
+    };
+
+    const saved = localStorage.getItem('moondoActiveTab');
+    applyTab(['home', 'stats', 'search'].includes(saved) ? saved : 'home');
+  });
+})();
+</script>
 
 </body>
 </html>
