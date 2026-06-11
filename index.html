@@ -6052,6 +6052,26 @@ h2::before{
               <strong id="searchTodayLosses">0</strong>
               <small>오늘 패배</small>
             </div>
+            <div class="stat compact">
+              <span class="muted">FC 채굴량</span>
+              <strong id="searchTodayFc">0</strong>
+              <small id="searchTodayFcMeta">승리 1회당 15 FC</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">현재 티어</span>
+              <strong id="searchCurrentTier">-</strong>
+              <small>실시간 기준</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">현재 점수</span>
+              <strong id="searchCurrentScore">0</strong>
+              <small>실시간 기준</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">현재 등수</span>
+              <strong id="searchCurrentRank">-</strong>
+              <small>실시간 기준</small>
+            </div>
           </div>
 
           <div class="form-strip search-form-strip">
@@ -7727,7 +7747,7 @@ h2::before{
     try {
       const todayStart = typeof startOfTodayIso === 'function' ? startOfTodayIso() : new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
 
-      const [todayRes, recentRes] = await Promise.all([
+      const [todayRes, recentRes, profileRes] = await Promise.all([
         supabaseClient
           .from('game_history')
           .select('result, created_at')
@@ -7736,19 +7756,31 @@ h2::before{
           .order('created_at', { ascending: false }),
         supabaseClient
           .from('game_history')
-          .select('result, created_at')
+          .select('result, created_at, score_after, rank_after, tier')
           .eq('username', nickname)
           .order('created_at', { ascending: false })
-          .limit(20)
+          .limit(20),
+        supabaseClient
+          .from('player_stats')
+          .select('*')
+          .eq('username', nickname)
+          .maybeSingle()
       ]);
 
       if (todayRes.error) throw todayRes.error;
       if (recentRes.error) throw recentRes.error;
+      if (profileRes.error) throw profileRes.error;
 
       const todayRows = todayRes.data || [];
       const recentRows = recentRes.data || [];
+      const profile = profileRes.data || {};
+      const latestGame = recentRows[0] || {};
       const todayStats = summarizeRows(todayRows);
       const recentResults = recentRows.map(row => safeNormalizeResult(row.result)).filter(Boolean);
+      const todayFc = todayStats.wins * 15;
+      const currentTier = profile.tier || profile.current_tier || latestGame.tier || '-';
+      const currentScore = profile.score ?? profile.current_score ?? latestGame.score_after ?? 0;
+      const currentRank = profile.rank ?? profile.current_rank ?? latestGame.rank_after ?? '-';
 
       setText('searchedPlayerName', nickname);
       setText('searchedPlayerMeta', `오늘 ${todayStats.matches}경기 · 최근 ${recentResults.length}경기 조회`);
@@ -7757,6 +7789,11 @@ h2::before{
       setText('searchTodayDraws', todayStats.draws);
       setText('searchTodayLosses', todayStats.losses);
       setText('searchTodayWinRate', `승률 ${safeWinRate(todayStats)}%`);
+      setText('searchTodayFc', todayFc);
+      setText('searchTodayFcMeta', `오늘 채굴 ${todayFc} FC`);
+      setText('searchCurrentTier', currentTier || '-');
+      setText('searchCurrentScore', currentScore ?? 0);
+      setText('searchCurrentRank', currentRank === null || currentRank === undefined ? '-' : currentRank);
       renderSearchForm(recentResults);
 
       if (resultBox) resultBox.classList.remove('hidden');
@@ -7817,6 +7854,49 @@ h2::before{
   });
 })();
 </script>
+
+
+
+<style id="moondo-search-final-user-request">
+/* 전적검색까지 한 줄 탭으로 고정 */
+.moondo-tabs,
+#moondoTabs {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  border-radius: 999px !important;
+}
+.moondo-tab { width: 100% !important; min-width: 0 !important; white-space: nowrap !important; }
+.search-today-grid { grid-template-columns: repeat(4, minmax(150px, 1fr)) !important; }
+@media (max-width: 760px) {
+  .moondo-tabs,
+  #moondoTabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+    padding: 5px !important;
+    border-radius: 16px !important;
+  }
+  .moondo-tab {
+    height: 36px !important;
+    padding: 0 4px !important;
+    font-size: 11px !important;
+    letter-spacing: -0.06em !important;
+  }
+  .search-today-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .search-today-grid .stat,
+  .search-today-grid .stat:first-child {
+    grid-column: span 1 !important;
+    min-height: 72px !important;
+  }
+  #searchCurrentTier { font-size: 18px !important; }
+}
+@media (max-width: 380px) {
+  .moondo-tab { font-size: 10px !important; }
+}
+</style>
 
 </body>
 </html>
