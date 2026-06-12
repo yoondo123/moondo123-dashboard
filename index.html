@@ -4404,6 +4404,16 @@ footer {
   }
 
 }
+  
+
+/* === Today Peak Tier Patch === */
+#rankingList td:nth-child(12)::before { content: "오늘 최고티어" !important; }
+@media (max-width: 640px) {
+  .moondo-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .moondo-tab { font-size: 12px !important; padding: 0 6px !important; }
+  #rankingList td:nth-child(12) { display: none !important; }
+}
+
   </style>
 
 <style id="moondo-color-only-purple-sage">
@@ -5860,7 +5870,7 @@ h2::before{
         <div class="stat compact">
           <span class="muted">현재 티어</span>
           <strong id="todayTier">-</strong>
-          <small>실시간 기준</small>
+          <small id="todayPeakTier">최고티어: -</small>
         </div>
         <div class="stat compact">
           <span class="muted">현재 점수</span>
@@ -5919,6 +5929,7 @@ h2::before{
               <th>점수</th>
               <th>실시간 순위</th>
               <th>FC</th>
+              <th>오늘 최고티어</th>
             </tr>
           </thead>
           <tbody id="rankingList"></tbody>
@@ -6439,6 +6450,33 @@ h2::before{
       return { tier, score, rank: rank ?? '-' };
     }
 
+    function normalizeTierName(tier) {
+      return String(tier || '').replace(/\s+/g, '').trim();
+    }
+
+    function tierPower(tier) {
+      const name = normalizeTierName(tier);
+      if (!name || name === '-') return 0;
+      if (name.includes('슈퍼챔피언')) return 900;
+      if (name.includes('챔피언')) return 800;
+      if (name.includes('슈퍼챌린저')) return 700;
+      if (name.includes('챌린저')) return 600;
+      if (name.includes('월드클래스')) return 500;
+      if (name.includes('프로')) return 400;
+      if (name.includes('세미프로')) return 300;
+      if (name.includes('아마추어')) return 200;
+      return 100;
+    }
+
+    function bestTierFromRows(rows, fallbackTier = '-') {
+      const tiers = (rows || [])
+        .map(row => row?.tier || row?.current_tier)
+        .filter(tier => tier && String(tier).trim() && String(tier).trim() !== '-');
+      if (fallbackTier && fallbackTier !== '-') tiers.push(fallbackTier);
+      if (!tiers.length) return '-';
+      return tiers.sort((a, b) => tierPower(b) - tierPower(a))[0] || '-';
+    }
+
     function isUpdatedSince(row, sinceIso) {
       if (!row?.updated_at) return true;
       return new Date(row.updated_at) >= new Date(sinceIso);
@@ -6718,6 +6756,7 @@ h2::before{
       document.getElementById('todayLosses').innerText = today.losses;
       document.getElementById('todayFc').innerText = fcFromWins(today.wins);
       document.getElementById('todayTier').innerText = meta.tier;
+      document.getElementById('todayPeakTier').innerText = `최고티어: ${bestTierFromRows(todayHistoryRes.data || [], meta.tier)}`;
       document.getElementById('todayScore').innerText = meta.score;
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
@@ -6799,6 +6838,7 @@ h2::before{
         sessionExactDate = todayDate(),
         emptyMessage = '오늘 랭킹 데이터가 없습니다.',
         showLiveRank = false,
+        showPeakTier = false,
       } = options;
       const tbody = document.getElementById(tbodyId);
 
@@ -6822,7 +6862,7 @@ h2::before{
           : Promise.resolve({ data: [], error: null }),
       ]);
 
-      const colCount = showLiveRank ? 11 : 10;
+      const colCount = 10 + (showLiveRank ? 1 : 0) + (showPeakTier ? 1 : 0);
 
       if (historyRes.error && sessionRes.error) {
         tbody.innerHTML = `<tr><td colspan="${colCount}">오류: ${historyRes.error.message}</td></tr>`;
@@ -6846,6 +6886,17 @@ h2::before{
         if (result === 'draw') historyGrouped[username].draws += 1;
         if (result === 'loss') historyGrouped[username].losses += 1;
         historyGrouped[username].matches += 1;
+      });
+
+      const peakTierMap = {};
+      (historyRes.data || []).forEach(row => {
+        const username = row.username || '-';
+        if (!username || username === '-') return;
+        const tier = row.tier || row.current_tier;
+        if (!tier) return;
+        if (!peakTierMap[username] || tierPower(tier) > tierPower(peakTierMap[username])) {
+          peakTierMap[username] = tier;
+        }
       });
 
       const sessionGrouped = {};
@@ -6872,6 +6923,7 @@ h2::before{
             tier: profile.current_tier || profile.tier || '-',
             score: firstValidNumber(profile.current_score, profile.score) ?? 0,
             liveRank: showLiveRank ? (liveRankMap[username] ?? firstValidRank(profile.current_rank, profile.rank) ?? '-') : undefined,
+            peakTier: showPeakTier ? (peakTierMap[username] || profile.current_tier || profile.tier || '-') : undefined,
             fc: fcFromWins(stats.wins),
             rate: stats.matches ? stats.wins / stats.matches : 0,
           };
@@ -6903,6 +6955,7 @@ h2::before{
           <td>${row.score}</td>
           ${showLiveRank ? `<td>${row.liveRank ?? '-'}</td>` : ''}
           <td>${row.fc}</td>
+          ${showPeakTier ? `<td>${row.peakTier || '-'}</td>` : ''}
         </tr>
       `).join('');
     }
@@ -6917,6 +6970,7 @@ h2::before{
           sessionExactDate: todayDate(),
           emptyMessage: '오늘 랭킹 데이터가 없습니다.',
           showLiveRank: true,
+          showPeakTier: true,
         }),
         loadRanking(statsMap, {
           tbodyId: 'weeklyRankingList',
@@ -7923,6 +7977,52 @@ h2::before{
 }
 @media (max-width: 380px) {
   .moondo-tab { font-size: 10px !important; }
+}
+</style>
+
+
+<style id="moondo-peak-tier-final-override">
+@media (min-width: 761px) {
+  .table-wrap table:has(#rankingList) thead tr,
+  #rankingList tr {
+    grid-template-columns:
+      62px
+      minmax(150px, 1.45fr)
+      minmax(110px, 1.05fr)
+      52px
+      52px
+      52px
+      74px
+      74px
+      78px
+      96px
+      64px
+      minmax(96px, .9fr) !important;
+  }
+  .table-wrap table:has(#weeklyRankingList) thead tr,
+  #weeklyRankingList tr {
+    grid-template-columns:
+      70px
+      minmax(180px, 1.55fr)
+      minmax(130px, 1.15fr)
+      68px
+      68px
+      68px
+      88px
+      90px
+      94px
+      120px
+      86px !important;
+  }
+  #rankingList td:nth-child(12) {
+    display: grid !important;
+    place-items: center !important;
+    color: #fff1ad !important;
+  }
+}
+@media (max-width: 760px) {
+  #todayPeakTier { color: #fff1ad !important; }
+  #rankingList td:nth-child(12) { display: none !important; }
 }
 </style>
 
