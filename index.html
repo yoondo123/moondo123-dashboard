@@ -6216,7 +6216,9 @@ h2::before{
         acc.wins += wins;
         acc.draws += draws;
         acc.losses += losses;
-        acc.matches += Number(row.matches ?? (wins + draws + losses));
+        // matches 컬럼에 null/미판정 경기까지 섞여 있으면 승률이 틀어질 수 있어서
+        // 화면용 경기수는 항상 승+무+패 합계로 맞춥니다.
+        acc.matches += wins + draws + losses;
         return acc;
       }, emptyStats());
     }
@@ -6247,7 +6249,8 @@ h2::before{
         grouped[key].wins += wins;
         grouped[key].draws += draws;
         grouped[key].losses += losses;
-        grouped[key].matches += Number(row.matches ?? (wins + draws + losses));
+        // 최근 7일 표의 경기수도 승+무+패 합계로 고정합니다.
+        grouped[key].matches += wins + draws + losses;
       });
       return grouped;
     }
@@ -6359,7 +6362,8 @@ h2::before{
     async function loadUserHistory(username, sinceIso) {
       let query = supabaseClient
         .from('game_history')
-        .select('*');
+        .select('*')
+        .in('result', ['win', 'draw', 'loss']);
       query = applyCurrentAccountFilter(query, username);
       if (sinceIso) query = query.gte('created_at', sinceIso);
       return query.order('created_at', { ascending: false });
@@ -6403,7 +6407,8 @@ h2::before{
       const wins = Number(stats?.wins || 0);
       const draws = Number(stats?.draws || 0);
       const losses = Number(stats?.losses || 0);
-      const matches = Number(stats?.matches ?? (wins + draws + losses));
+      // 화면용 경기수는 null/미판정 경기를 제외한 승+무+패 합계로 통일합니다.
+      const matches = wins + draws + losses;
       return { wins, draws, losses, matches };
     }
 
@@ -6748,9 +6753,8 @@ h2::before{
         dateKey,
         ...dailyStatsFromMaps(dateKey, historyMap, sessionMap),
       }));
-      rows = restoreRecentRowsFromCache(currentUser.username, rows);
-      cacheRecentRowsIfUseful(currentUser.username, rows);
-      // 최근 7일도 DB 기준으로만 표시합니다. 날짜가 바뀌면 자동으로 밀려납니다.
+      // 최근 7일은 캐시를 쓰지 않고 DB의 정상 판정 경기만 기준으로 표시합니다.
+      // result가 null인 미판정 경기는 loadUserHistory 단계에서 제외됩니다.
 
       tbody.innerHTML = rows.map(row => `
         <tr>
@@ -6767,7 +6771,8 @@ h2::before{
       if (!currentUser) return;
       let query = supabaseClient
         .from('game_history')
-        .select('result, created_at');
+        .select('result, created_at')
+        .in('result', ['win', 'draw', 'loss']);
       query = applyCurrentAccountFilter(query, currentUser.username);
       const { data, error } = await query
         .order('created_at', { ascending: false })
