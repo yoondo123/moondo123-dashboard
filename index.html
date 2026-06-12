@@ -6961,7 +6961,7 @@ h2::before{
             tier: profile.current_tier || profile.tier || '-',
             score: firstValidNumber(profile.current_score, profile.score) ?? 0,
             liveRank: showLiveRank ? (liveRankMap[username] ?? firstValidRank(profile.current_rank, profile.rank) ?? '-') : undefined,
-            peakTier: showPeakTier ? (profile.today_peak_tier || peakTierMap[username] || profile.current_tier || profile.tier || '-') : undefined,
+            peakTier: showPeakTier ? bestTierFromRows([{ tier: profile.today_peak_tier }, { tier: peakTierMap[username] }, { tier: profile.current_tier || profile.tier }], profile.current_tier || profile.tier || '-') : undefined,
             fc: fcFromWins(stats.wins),
             rate: stats.matches ? stats.wins / stats.matches : 0,
           };
