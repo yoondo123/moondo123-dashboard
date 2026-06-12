@@ -6472,30 +6472,39 @@ h2::before{
     async function ensureTodayPeakTier(profile = {}, meta = {}) {
       if (!currentUser?.username) return profile.today_peak_tier || meta.tier || '-';
       const currentTier = meta.tier || profile.current_tier || profile.tier || '-';
-      if (!currentTier || currentTier === '-') return profile.today_peak_tier || '-';
-
       const todayKey = todayDate();
       const storedPeak = profile.today_peak_tier || '';
       const storedDate = profile.today_peak_updated || '';
-      let nextPeak = storedPeak;
+      const isToday = peakDateIsToday(storedDate, todayKey);
 
-      // 날짜가 바뀌면 오늘 최고티어는 현재 티어에서 다시 시작합니다.
-      if (storedDate !== todayKey || !nextPeak) {
-        nextPeak = currentTier;
+      let historyPeak = '';
+      try {
+        const { data } = await supabaseClient
+          .from('game_history')
+          .select('tier, created_at')
+          .eq('username', currentUser.username)
+          .gte('created_at', startOfTodayIso())
+          .order('created_at', { ascending: false });
+        historyPeak = bestTierFromRows(data || [], '');
+      } catch (_) {}
+
+      let nextPeak = '';
+      if (isToday) {
+        // 같은 날에는 저장된 최고티어를 낮추지 않고, 더 높은 값만 반영합니다.
+        nextPeak = bestTierName(storedPeak, historyPeak, currentTier);
+      } else {
+        // 날짜가 바뀐 경우에만 현재/오늘 기록 기준으로 새로 시작합니다.
+        nextPeak = bestTierName(historyPeak, currentTier);
       }
 
-      // 같은 날에는 현재 티어가 더 높을 때만 최고티어를 갱신합니다.
-      if (tierPower(currentTier) > tierPower(nextPeak)) {
-        nextPeak = currentTier;
-      }
+      if (!nextPeak || nextPeak === '-') return storedPeak || currentTier || '-';
 
-      if (nextPeak !== storedPeak || storedDate !== todayKey) {
+      if (nextPeak !== storedPeak || !isToday) {
         const { error } = await supabaseClient
           .from('player_stats')
           .update({ today_peak_tier: nextPeak, today_peak_updated: todayKey })
           .eq('username', currentUser.username);
 
-        // RLS나 권한 문제로 실패해도 화면은 계산된 값으로 먼저 보여줍니다.
         if (!error) {
           profile.today_peak_tier = nextPeak;
           profile.today_peak_updated = todayKey;
@@ -6687,10 +6696,58 @@ h2::before{
       setLoginState();
     }
 
+    function peakDateIsToday(value, todayKey = todayDate()) {
+      return String(value || '').slice(0, 10) === todayKey;
+    }
+
+    function bestTierName(...tiers) {
+      const clean = tiers
+        .flat()
+        .filter(tier => tier && String(tier).trim() && String(tier).trim() !== '-');
+      if (!clean.length) return '-';
+      return clean.sort((a, b) => tierPower(b) - tierPower(a))[0] || '-';
+    }
+
+    async function syncTodayPeakTierRow(row, observedTier = '') {
+      if (!row || !row.username) return row;
+      const todayKey = todayDate();
+      const currentTier = row.current_tier || row.tier || '';
+      const storedPeak = row.today_peak_tier || '';
+      const storedDate = row.today_peak_updated || '';
+      const isToday = peakDateIsToday(storedDate, todayKey);
+
+      let nextPeak = '';
+
+      // 오늘 날짜가 맞으면 저장된 최고티어는 절대 낮추지 않습니다.
+      // 현재 티어가 강등되어도 storedPeak가 더 높으면 그대로 유지됩니다.
+      if (isToday) {
+        nextPeak = bestTierName(storedPeak, observedTier, currentTier);
+      } else {
+        // 날짜가 바뀐 경우에만 오늘 최고티어를 새로 시작합니다.
+        nextPeak = bestTierName(observedTier, currentTier);
+      }
+
+      if (!nextPeak || nextPeak === '-') return row;
+
+      row.today_peak_tier = nextPeak;
+      row.today_peak_updated = todayKey;
+
+      if (nextPeak !== storedPeak || !isToday) {
+        await supabaseClient
+          .from('player_stats')
+          .update({ today_peak_tier: nextPeak, today_peak_updated: todayKey })
+          .eq('username', row.username);
+      }
+
+      return row;
+    }
+
     async function loadPlayerStatsMap() {
       const { data } = await supabaseClient.from('player_stats').select('*');
+      const rows = data || [];
+      await Promise.all(rows.map(row => syncTodayPeakTierRow(row)));
       const map = {};
-      (data || []).forEach(row => { map[row.username] = row; });
+      rows.forEach(row => { map[row.username] = row; });
       return map;
     }
 
@@ -6961,7 +7018,7 @@ h2::before{
             tier: profile.current_tier || profile.tier || '-',
             score: firstValidNumber(profile.current_score, profile.score) ?? 0,
             liveRank: showLiveRank ? (liveRankMap[username] ?? firstValidRank(profile.current_rank, profile.rank) ?? '-') : undefined,
-            peakTier: showPeakTier ? bestTierFromRows([{ tier: profile.today_peak_tier }, { tier: peakTierMap[username] }, { tier: profile.current_tier || profile.tier }], profile.current_tier || profile.tier || '-') : undefined,
+            peakTier: showPeakTier ? bestTierName(profile.today_peak_tier, peakTierMap[username], profile.current_tier || profile.tier) : undefined,
             fc: fcFromWins(stats.wins),
             rate: stats.matches ? stats.wins / stats.matches : 0,
           };
@@ -6969,6 +7026,20 @@ h2::before{
         .filter(row => row.username && row.username !== '-' && row.matches > 0)
         .sort((a, b) => b.rate - a.rate || b.wins - a.wins || b.matches - a.matches || b.score - a.score)
         .slice(0, 10);
+
+      if (showPeakTier) {
+        ranking.forEach(row => {
+          const profile = statsMap[row.username] || {};
+          if (row.peakTier && row.peakTier !== '-' && row.peakTier !== profile.today_peak_tier) {
+            supabaseClient
+              .from('player_stats')
+              .update({ today_peak_tier: row.peakTier, today_peak_updated: todayDate() })
+              .eq('username', row.username);
+            profile.today_peak_tier = row.peakTier;
+            profile.today_peak_updated = todayDate();
+          }
+        });
+      }
 
       const rankingScope = `ranking:${tbodyId}:${sessionExactDate || sessionFromDate || sinceIso}`;
       const cachedRanking = loadStatsCache('__ranking__', rankingScope) || [];
@@ -6984,7 +7055,7 @@ h2::before{
         <tr>
           <td data-rank="${i + 1}">${i + 1}</td>
           <td>${row.username}</td>
-          <td>${row.tier}</td>
+          <td>${row.tier}${showPeakTier ? `<span class="mobile-peak-tier"> · 최고 ${row.peakTier || '-'}</span>` : ''}</td>
           <td class="ok">${row.wins}</td>
           <td>${row.draws}</td>
           <td class="bad">${row.losses}</td>
@@ -8064,5 +8135,26 @@ h2::before{
 }
 </style>
 
+
+<style id="moondo-mobile-peak-tier-inline">
+.mobile-peak-tier { display: none; }
+@media (max-width: 760px) {
+  #rankingList td:nth-child(3) {
+    display: block !important;
+    color: #aebbb7 !important;
+    font-size: 9px !important;
+    line-height: 1.35 !important;
+  }
+  #rankingList .mobile-peak-tier {
+    display: inline !important;
+    margin-left: 4px !important;
+    color: #fff1ad !important;
+    font-weight: 950 !important;
+  }
+  #rankingList td:nth-child(12) {
+    display: none !important;
+  }
+}
+</style>
 </body>
 </html>
