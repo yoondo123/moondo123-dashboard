@@ -5840,17 +5840,17 @@ h2::before{
         <div class="stat compact">
           <span class="muted">승</span>
           <strong id="todayWins">0</strong>
-          <small>오늘 승리</small>
+          <small>누적 승리</small>
         </div>
         <div class="stat compact">
           <span class="muted">무</span>
           <strong id="todayDraws">0</strong>
-          <small>오늘 무승부</small>
+          <small>누적 무승부</small>
         </div>
         <div class="stat compact">
           <span class="muted">패</span>
           <strong id="todayLosses">0</strong>
-          <small>오늘 패배</small>
+          <small>누적 패배</small>
         </div>
         <div class="stat compact">
           <span class="muted">FC 채굴량</span>
@@ -6023,7 +6023,7 @@ h2::before{
           <input id="playerSearchInput" placeholder="닉네임 입력" onkeydown="if(event.key === 'Enter') searchPlayerRecord();">
           <button type="button" onclick="searchPlayerRecord()">검색</button>
         </div>
-        <p id="playerSearchMessage" class="muted search-record-message">닉네임을 검색하면 오늘 전적과 최근 20판 흐름만 보여줍니다.</p>
+        <p id="playerSearchMessage" class="muted search-record-message">닉네임을 검색하면 누적 전적과 최근 20판 흐름을 보여줍니다.</p>
 
         <div id="playerSearchResult" class="hidden">
           <div class="search-record-title">
@@ -6033,24 +6033,24 @@ h2::before{
 
           <div class="today-grid search-today-grid">
             <div class="stat compact">
-              <span class="muted">오늘 경기 총 수</span>
+              <span class="muted">총 경기수</span>
               <strong id="searchTodayMatches">0</strong>
               <small id="searchTodayWinRate">승률 0.0%</small>
             </div>
             <div class="stat compact">
               <span class="muted">승</span>
               <strong id="searchTodayWins">0</strong>
-              <small>오늘 승리</small>
+              <small>누적 승리</small>
             </div>
             <div class="stat compact">
               <span class="muted">무</span>
               <strong id="searchTodayDraws">0</strong>
-              <small>오늘 무승부</small>
+              <small>누적 무승부</small>
             </div>
             <div class="stat compact">
               <span class="muted">패</span>
               <strong id="searchTodayLosses">0</strong>
-              <small>오늘 패배</small>
+              <small>누적 패배</small>
             </div>
             <div class="stat compact">
               <span class="muted">FC 채굴량</span>
@@ -6192,8 +6192,10 @@ h2::before{
     }
 
     function summarizeMatches(rows) {
+      // result가 null/빈값인 미판정 경기는 전적 계산에서 제외합니다.
       return (rows || []).reduce((acc, row) => {
         const result = normalizeResult(row.result);
+        if (!['win', 'draw', 'loss'].includes(result)) return acc;
         if (result === 'win') acc.wins += 1;
         if (result === 'draw') acc.draws += 1;
         if (result === 'loss') acc.losses += 1;
@@ -6225,6 +6227,7 @@ h2::before{
         const key = row.created_at ? formatLocalDate(new Date(row.created_at)) : todayDate();
         if (!grouped[key]) grouped[key] = emptyStats();
         const result = normalizeResult(row.result);
+        if (!['win', 'draw', 'loss'].includes(result)) return;
         if (result === 'win') grouped[key].wins += 1;
         if (result === 'draw') grouped[key].draws += 1;
         if (result === 'loss') grouped[key].losses += 1;
@@ -6655,11 +6658,18 @@ h2::before{
       const weekStart = weeklyResetDate();
       const profile = statsMap[currentUser.username] || {};
 
-      const [todayHistoryRes, todaySessionRes, weekHistoryRes, weekSessionRes, liveRes] = await Promise.all([
+      const [todayHistoryRes, todaySessionRes, weekHistoryRes, weekSessionRes, lifetimeHistoryRes, liveRes] = await Promise.all([
         loadUserHistory(currentUser.username, startOfTodayIso()),
         loadUserSessions(currentUser.username, todayDate()),
         loadUserHistory(currentUser.username, weeklyResetIso()),
         loadUserSessions(currentUser.username, weekStart),
+        supabaseClient
+          .from('game_history')
+          .select('result, created_at')
+          .eq('username', currentUser.username)
+          .in('result', ['win', 'draw', 'loss'])
+          .order('created_at', { ascending: false })
+          .range(0, 9999),
         supabaseClient
           .from('player_stats')
           .select('*')
@@ -6670,9 +6680,9 @@ h2::before{
       const live = liveRes.data?.[0];
       const meta = currentMeta(profile, live);
 
-      // 누적 전적은 player_stats 기준입니다.
-      // 날짜 필터나 브라우저 캐시에 영향받지 않아서 관리자 초기화 전까지 유지됩니다.
-      const lifetime = restoreStatsFromCache(currentUser.username, 'lifetime', profileStats(profile));
+      // 누적 전적은 player_stats가 아니라 game_history 기준으로 계산합니다.
+      // result가 null/빈값인 미판정 경기는 제외하고, 관리자 초기화 전까지 쌓인 정상 경기만 표시합니다.
+      const lifetime = summarizeMatches(lifetimeHistoryRes.data || []);
       cacheStatsIfUseful(currentUser.username, 'lifetime', lifetime);
 
       // 오늘 전적은 한국 브라우저 기준 자정 00:00 이후 기록만 봅니다.
@@ -6826,6 +6836,7 @@ h2::before{
         const username = row.username || '-';
         if (!historyGrouped[username]) historyGrouped[username] = emptyStats();
         const result = normalizeResult(row.result);
+        if (!['win', 'draw', 'loss'].includes(result)) return;
         if (result === 'win') historyGrouped[username].wins += 1;
         if (result === 'draw') historyGrouped[username].draws += 1;
         if (result === 'loss') historyGrouped[username].losses += 1;
@@ -7747,17 +7758,26 @@ h2::before{
     try {
       const todayStart = typeof startOfTodayIso === 'function' ? startOfTodayIso() : new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
 
-      const [todayRes, recentRes, profileRes] = await Promise.all([
+      const [todayRes, allHistoryRes, recentRes, profileRes] = await Promise.all([
         supabaseClient
           .from('game_history')
           .select('result, created_at')
           .eq('username', nickname)
           .gte('created_at', todayStart)
+          .in('result', ['win', 'draw', 'loss'])
           .order('created_at', { ascending: false }),
+        supabaseClient
+          .from('game_history')
+          .select('result, created_at')
+          .eq('username', nickname)
+          .in('result', ['win', 'draw', 'loss'])
+          .order('created_at', { ascending: false })
+          .range(0, 9999),
         supabaseClient
           .from('game_history')
           .select('result, created_at, score_after, rank_after, tier')
           .eq('username', nickname)
+          .in('result', ['win', 'draw', 'loss'])
           .order('created_at', { ascending: false })
           .limit(20),
         supabaseClient
@@ -7768,29 +7788,32 @@ h2::before{
       ]);
 
       if (todayRes.error) throw todayRes.error;
+      if (allHistoryRes.error) throw allHistoryRes.error;
       if (recentRes.error) throw recentRes.error;
       if (profileRes.error) throw profileRes.error;
 
       const todayRows = todayRes.data || [];
+      const allRows = allHistoryRes.data || [];
       const recentRows = recentRes.data || [];
       const profile = profileRes.data || {};
       const latestGame = recentRows[0] || {};
       const todayStats = summarizeRows(todayRows);
+      const allStats = summarizeRows(allRows);
       const recentResults = recentRows.map(row => safeNormalizeResult(row.result)).filter(Boolean);
-      const todayFc = todayStats.wins * 15;
+      const totalFc = allStats.wins * 15;
       const currentTier = profile.tier || profile.current_tier || latestGame.tier || '-';
       const currentScore = profile.score ?? profile.current_score ?? latestGame.score_after ?? 0;
       const currentRank = profile.rank ?? profile.current_rank ?? latestGame.rank_after ?? '-';
 
       setText('searchedPlayerName', nickname);
-      setText('searchedPlayerMeta', `오늘 ${todayStats.matches}경기 · 최근 ${recentResults.length}경기 조회`);
-      setText('searchTodayMatches', todayStats.matches);
-      setText('searchTodayWins', todayStats.wins);
-      setText('searchTodayDraws', todayStats.draws);
-      setText('searchTodayLosses', todayStats.losses);
-      setText('searchTodayWinRate', `승률 ${safeWinRate(todayStats)}%`);
-      setText('searchTodayFc', todayFc);
-      setText('searchTodayFcMeta', `오늘 채굴 ${todayFc} FC`);
+      setText('searchedPlayerMeta', `누적 ${allStats.matches}경기 · 오늘 ${todayStats.matches}경기 · 최근 ${recentResults.length}경기 조회`);
+      setText('searchTodayMatches', allStats.matches);
+      setText('searchTodayWins', allStats.wins);
+      setText('searchTodayDraws', allStats.draws);
+      setText('searchTodayLosses', allStats.losses);
+      setText('searchTodayWinRate', `승률 ${safeWinRate(allStats)}%`);
+      setText('searchTodayFc', totalFc);
+      setText('searchTodayFcMeta', `누적 채굴 ${totalFc} FC`);
       setText('searchCurrentTier', currentTier || '-');
       setText('searchCurrentScore', currentScore ?? 0);
       setText('searchCurrentRank', currentRank === null || currentRank === undefined ? '-' : currentRank);
