@@ -4460,11 +4460,38 @@ footer {
       font-weight: 800;
     }
     @media (max-width: 760px) {
-      .remote-control-head { align-items: flex-start; flex-direction: column; }
-      .remote-control-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .remote-control-panel {
+        margin-top: 16px;
+        padding: 14px !important;
+      }
+      .remote-control-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+      .remote-control-head h2 {
+        font-size: 16px !important;
+      }
+      .remote-control-head p {
+        font-size: 12px !important;
+        line-height: 1.35;
+      }
+      .remote-control-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .remote-control-actions button {
+        min-height: 38px !important;
+        height: 38px !important;
+        padding: 0 8px !important;
+        border-radius: 13px !important;
+        font-size: 12px !important;
+        line-height: 1.1 !important;
+      }
     }
     @media (max-width: 420px) {
-      .remote-control-actions { grid-template-columns: 1fr; }
+      .remote-control-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
   </style>
@@ -5881,10 +5908,7 @@ h2::before{
         </div>
       </div>
 
-      <div class="panel remote-control-panel" id="remoteControlPanel" data-tab-group="home">
-        <div class="remote-control-head">
-          <div>
-            <h2>원격 제어</h2>
+      <h2>원격 제어</h2>
             <p class="muted">실행 중인 WAGGU 프로그램으로 명령을 보냅니다.</p>
           </div>
           <span class="muted" id="remoteCommandUser">-</span>
@@ -6007,6 +6031,11 @@ h2::before{
           <tbody id="rankingList"></tbody>
         </table>
       </div>
+
+      <div class="panel remote-control-panel" id="remoteControlPanel" data-tab-group="home">
+        <div class="remote-control-head">
+          <div>
+
 
       <h2>주간 전적</h2>
       <div class="week-grid">
@@ -8349,6 +8378,33 @@ h2::before{
   }
   #rankingList td:nth-child(12) {
     display: none !important;
+  }
+}
+</style>
+
+<style id="waggu-remote-mobile-final-fix">
+@media (max-width: 760px) {
+  #remoteControlPanel {
+    margin-top: 16px !important;
+    padding: 14px !important;
+  }
+  #remoteControlPanel .remote-control-head {
+    gap: 6px !important;
+    margin-bottom: 10px !important;
+  }
+  #remoteControlPanel .remote-control-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  #remoteControlPanel .remote-control-actions button {
+    width: 100% !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 8px !important;
+    border-radius: 13px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
   }
 }
 </style>
