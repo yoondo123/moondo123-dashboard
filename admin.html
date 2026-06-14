@@ -2,54 +2,350 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>MOONDO123 관리자 로그인</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WAGGU 관리자 페이지</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #07080c;
+      --card: #121319;
+      --card2: #171922;
+      --line: rgba(143, 165, 146, .16);
+      --text: #f1f3f0;
+      --muted: #97a299;
+      --accent: #8fa592;
+      --danger: #c95b65;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #090b10, #050607);
+      color: var(--text);
+      font-family: "Pretendard", "Malgun Gothic", Arial, sans-serif;
+    }
+    main {
+      width: min(980px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 24px 0 42px;
+    }
+    header, .panel {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent), var(--card);
+      box-shadow: 0 18px 44px rgba(0,0,0,.38);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 24px; }
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+    h2::before {
+      content: "";
+      width: 5px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #8fa592, #6a5a82);
+    }
+    .muted { color: var(--muted); font-size: 13px; }
+    .panel { padding: 16px; margin-top: 14px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    label { color: var(--muted); font-size: 13px; font-weight: 800; }
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #0c0e13;
+      color: var(--text);
+      padding: 11px 12px;
+      font: inherit;
+      outline: none;
+    }
+    textarea { min-height: 76px; resize: vertical; }
+    .actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    button, a.button {
+      display: inline-grid;
+      place-items: center;
+      min-height: 38px;
+      padding: 0 16px;
+      border: 1px solid rgba(143,165,146,.24);
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(143,165,146,.95), rgba(111,136,116,.95));
+      color: #070a08;
+      font-weight: 950;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    button.secondary, a.secondary {
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+    }
+    button.danger {
+      background: rgba(201, 91, 101, .16);
+      color: #ffd3d7;
+      border-color: rgba(201, 91, 101, .35);
+    }
+    .update-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .update-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--card2);
+    }
+    .update-row strong { display: block; margin-bottom: 3px; }
+    .badge {
+      display: inline-grid;
+      place-items: center;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(143,165,146,.16);
+      color: #dce8de;
+      font-size: 11px;
+      font-weight: 900;
+      margin-left: 6px;
+    }
+    #message { min-height: 20px; margin-top: 10px; font-weight: 800; }
+    .ok { color: #9cd6aa; }
+    .bad { color: #ff9ca5; }
+    @media (max-width: 640px) {
+      main { width: 100%; padding: 10px; }
+      header { align-items: flex-start; flex-direction: column; border-radius: 15px; }
+      .panel { padding: 13px; border-radius: 15px; }
+      .form-grid { grid-template-columns: 1fr; gap: 6px; }
+      .update-row { grid-template-columns: 1fr; }
+      .actions { justify-content: stretch; }
+      button, a.button { width: 100%; }
+    }
+  </style>
 </head>
-<body style="background:#081225;color:white;font-family:Arial;padding:30px;">
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>WAGGU 관리자 페이지</h1>
+        <p class="muted" id="adminUser">로그인 정보를 확인 중입니다.</p>
+      </div>
+      <a class="button secondary" href="./index_with_remote.html">대시보드</a>
+    </header>
 
-  <h1>MOONDO123 관리자</h1>
+    <section class="panel">
+      <h2>업데이트 링크 등록</h2>
+      <div class="form-grid">
+        <label for="version">버전</label>
+        <input id="version" placeholder="예: v1.7.23">
 
-  <input id="adminId" placeholder="아이디" value="admin">
-  <input id="adminPw" type="password" placeholder="비밀번호">
-  <button onclick="login()">로그인</button>
+        <label for="title">제목</label>
+        <input id="title" placeholder="예: WAGGU 최신 업데이트">
 
-  <p id="result" style="color:#ffb4b4;"></p>
+        <label for="downloadUrl">다운로드 링크</label>
+        <input id="downloadUrl" placeholder="Google Drive, OneDrive, Dropbox 링크">
+
+        <label for="description">설명</label>
+        <textarea id="description" placeholder="수정 내용이나 안내 문구"></textarea>
+      </div>
+      <div class="actions">
+        <button type="button" onclick="saveUpdateLink()">등록</button>
+        <button type="button" class="secondary" onclick="loadUpdates()">새로고침</button>
+      </div>
+      <p id="message"></p>
+    </section>
+
+    <section class="panel">
+      <h2>등록된 업데이트</h2>
+      <div id="updateList" class="update-list">
+        <p class="muted">불러오는 중입니다.</p>
+      </div>
+    </section>
+  </main>
 
   <script>
-    async function sha256(text) {
-      const bytes = new TextEncoder().encode(text);
-      const hash = await crypto.subtle.digest('SHA-256', bytes);
-      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    let supabaseClient = window.supabaseClient || null;
+    const currentUser = JSON.parse(localStorage.getItem('moondo_user') || 'null');
+
+    function resolveSupabaseClient() {
+      if (supabaseClient) return supabaseClient;
+      if (window.supabaseClient) {
+        supabaseClient = window.supabaseClient;
+        return supabaseClient;
+      }
+
+      const cfg = window.SUPABASE_CONFIG || window.CONFIG || window.APP_CONFIG || {};
+      const url = window.SUPABASE_URL || window.supabaseUrl || cfg.SUPABASE_URL || cfg.url;
+      const key = window.SUPABASE_ANON_KEY || window.SUPABASE_KEY || window.supabaseKey || cfg.SUPABASE_ANON_KEY || cfg.SUPABASE_KEY || cfg.key;
+
+      if (!url || !key || !window.supabase) return null;
+      supabaseClient = window.supabase.createClient(url, key);
+      window.supabaseClient = supabaseClient;
+      return supabaseClient;
     }
 
-    async function login() {
-      const id = document.getElementById('adminId').value.trim();
-      const pw = document.getElementById('adminPw').value.trim();
-      const result = document.getElementById('result');
-      const passwordHash = await sha256(pw);
+    function setMessage(text, ok = true) {
+      const el = document.getElementById('message');
+      el.className = ok ? 'ok' : 'bad';
+      el.innerText = text || '';
+    }
 
-      const { data, error } = await supabaseClient
-        .from('admin_users')
-        .select('*')
-        .eq('username', id)
-        .eq('password_hash', passwordHash)
-        .eq('status', 'approved')
-        .limit(1);
+    function requireClient() {
+      const client = resolveSupabaseClient();
+      if (!client) {
+        setMessage('config.js에서 Supabase 설정을 찾지 못했습니다.', false);
+        return null;
+      }
+      return client;
+    }
+
+    async function saveUpdateLink() {
+      const client = requireClient();
+      if (!client) return;
+
+      const version = document.getElementById('version').value.trim();
+      const title = document.getElementById('title').value.trim();
+      const download_url = document.getElementById('downloadUrl').value.trim();
+      const description = document.getElementById('description').value.trim();
+
+      if (!version || !title || !download_url) {
+        setMessage('버전, 제목, 다운로드 링크를 입력해 주세요.', false);
+        return;
+      }
+
+      const { error } = await client.from('app_updates').insert({
+        version,
+        title,
+        description,
+        download_url,
+        is_active: true,
+        created_by: currentUser?.username || null
+      });
 
       if (error) {
-        result.innerText = '오류 : ' + error.message;
+        setMessage(`등록 실패: ${error.message}`, false);
         return;
       }
 
-      if (!data || data.length === 0) {
-        result.innerText = '아이디 또는 비밀번호가 틀렸습니다.';
-        return;
-      }
-
-      localStorage.setItem('admin_login', 'true');
-      location.href = './admin-dashboard.html';
+      document.getElementById('version').value = '';
+      document.getElementById('title').value = '';
+      document.getElementById('downloadUrl').value = '';
+      document.getElementById('description').value = '';
+      setMessage('업데이트 링크를 등록했습니다.');
+      await loadUpdates();
     }
-  </script>
 
+    async function toggleUpdate(id, isActive) {
+      const client = requireClient();
+      if (!client) return;
+      const { error } = await client.from('app_updates').update({ is_active: !isActive }).eq('id', id);
+      if (error) {
+        setMessage(`변경 실패: ${error.message}`, false);
+        return;
+      }
+      await loadUpdates();
+    }
+
+    async function deleteUpdate(id) {
+      const client = requireClient();
+      if (!client) return;
+      const { error } = await client.from('app_updates').delete().eq('id', id);
+      if (error) {
+        setMessage(`삭제 실패: ${error.message}`, false);
+        return;
+      }
+      await loadUpdates();
+    }
+
+    async function loadUpdates() {
+      const client = requireClient();
+      const list = document.getElementById('updateList');
+      if (!client) {
+        list.innerHTML = '<p class="bad">Supabase 연결 설정이 필요합니다.</p>';
+        return;
+      }
+
+      const { data, error } = await client
+        .from('app_updates')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        list.innerHTML = `<p class="bad">불러오기 실패: ${error.message}</p>`;
+        return;
+      }
+
+      if (!data || !data.length) {
+        list.innerHTML = '<p class="muted">등록된 업데이트가 없습니다.</p>';
+        return;
+      }
+
+      list.innerHTML = data.map(row => `
+        <div class="update-row">
+          <div>
+            <strong>${escapeHtml(row.title || '-')} <span class="badge">${escapeHtml(row.version || '-')}</span>${row.is_active ? '<span class="badge">활성</span>' : ''}</strong>
+            <p class="muted">${escapeHtml(row.description || '')}</p>
+            <p class="muted">${escapeHtml(row.download_url || '')}</p>
+          </div>
+          <div class="actions">
+            <a class="button secondary" href="${escapeAttr(row.download_url || '#')}" target="_blank" rel="noopener">열기</a>
+            <button type="button" class="secondary" onclick="toggleUpdate('${row.id}', ${row.is_active ? 'true' : 'false'})">${row.is_active ? '숨김' : '활성'}</button>
+            <button type="button" class="danger" onclick="deleteUpdate('${row.id}')">삭제</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, '&#96;');
+    }
+
+    document.getElementById('adminUser').innerText = currentUser?.username
+      ? `${currentUser.username} 관리자 도구`
+      : '로그인 정보가 없습니다. 대시보드에서 로그인 후 사용해 주세요.';
+
+    loadUpdates();
+  </script>
 </body>
+</html>
