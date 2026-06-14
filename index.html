@@ -5881,6 +5881,25 @@ h2::before{
         </div>
       </div>
 
+      <div class="panel remote-control-panel" id="remoteControlPanel" data-tab-group="home">
+        <div class="remote-control-head">
+          <div>
+            <h2>원격 제어</h2>
+            <p class="muted">실행 중인 WAGGU 프로그램으로 명령을 보냅니다.</p>
+          </div>
+          <span class="muted" id="remoteCommandUser">-</span>
+        </div>
+        <div class="remote-control-actions">
+          <button type="button" onclick="sendRemoteCommand('start')">시작</button>
+          <button type="button" class="danger" onclick="sendRemoteCommand('stop')">중지</button>
+          <button type="button" class="warn" onclick="sendRemoteCommand('restart')">재시작</button>
+          <button type="button" onclick="sendRemoteCommand('stop_after')">경기 후 중지</button>
+          <button type="button" onclick="sendRemoteCommand('club')">클럽 실행</button>
+        </div>
+        <p id="remoteCommandStatus" class="muted"></p>
+      </div>
+
+
       <h2>실시간 경기</h2>
       <div class="panel">
         <p id="liveState" class="muted" style="margin-bottom:12px;"></p>
@@ -6056,24 +6075,6 @@ h2::before{
         </table>
       </div>
 
-
-      <div class="panel remote-control-panel" id="remoteControlPanel" data-tab-group="home">
-        <div class="remote-control-head">
-          <div>
-            <h2>원격 제어</h2>
-            <p class="muted">실행 중인 WAGGU 프로그램으로 명령을 보냅니다.</p>
-          </div>
-          <span class="muted" id="remoteCommandUser">-</span>
-        </div>
-        <div class="remote-control-actions">
-          <button type="button" onclick="sendRemoteCommand('start')">시작</button>
-          <button type="button" class="danger" onclick="sendRemoteCommand('stop')">중지</button>
-          <button type="button" class="warn" onclick="sendRemoteCommand('restart')">재시작</button>
-          <button type="button" class="secondary" onclick="sendRemoteCommand('stop_after')">경기 후 중지</button>
-          <button type="button" onclick="sendRemoteCommand('club')">클럽 실행</button>
-        </div>
-        <p id="remoteCommandStatus" class="muted"></p>
-      </div>
 
       <p class="mobile-note">모바일에서는 표를 좌우로 밀어서 볼 수 있습니다.</p>
 
@@ -6758,6 +6759,7 @@ h2::before{
           button_command: command,
           client_request_id: `${dedupKey}:${now}`
         };
+        const clientRequestId = payload.client_request_id;
 
         const { error } = await supabaseClient
           .from('remote_commands')
@@ -6765,7 +6767,8 @@ h2::before{
             username: currentUser.username,
             command: actualCommand,
             status: 'pending',
-            payload
+            payload,
+            client_request_id: clientRequestId
           });
 
         if (error) throw error;
@@ -7531,6 +7534,7 @@ h2::before{
     groupByAnchor('#todayMatches', 'home');
     groupByAnchor('#formDots', 'home');
     groupByAnchor('#rankingList', 'home');
+    setGroup(document.getElementById('remoteControlPanel'), 'home');
 
     groupByAnchor('#weekMatches', 'stats');
     groupByAnchor('#weeklyRankingList', 'stats');
