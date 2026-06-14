@@ -6178,6 +6178,16 @@ h2::before{
         </div>
       </div>
 
+      <div class="panel update-download-panel" id="updateDownloadPanel" data-tab-group="always">
+        <div class="update-download-head">
+          <div>
+            <h2>업데이트 다운로드</h2>
+            <p class="muted" id="latestUpdateText">등록된 업데이트를 확인 중입니다.</p>
+          </div>
+          <a class="button secondary hidden" id="latestUpdateButton" href="#" target="_blank" rel="noopener">다운로드</a>
+        </div>
+      </div>
+
       <div class="panel remote-control-panel" id="remoteControlPanel" data-tab-group="always">
         <div class="remote-control-head">
           <h2>원격 제어</h2>
@@ -6814,6 +6824,37 @@ h2::before{
       }
     }
 
+    async function loadLatestUpdateLink() {
+      const textEl = document.getElementById('latestUpdateText');
+      const buttonEl = document.getElementById('latestUpdateButton');
+      if (!textEl || !buttonEl || !window.supabaseClient && typeof supabaseClient === 'undefined') return;
+
+      try {
+        const client = window.supabaseClient || supabaseClient;
+        const { data, error } = await client
+          .from('app_updates')
+          .select('version, title, description, download_url, created_at')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) throw error;
+        const latest = data && data[0];
+        if (!latest) {
+          textEl.innerText = '등록된 업데이트가 없습니다.';
+          buttonEl.classList.add('hidden');
+          return;
+        }
+
+        textEl.innerText = `${latest.version || ''} ${latest.title || '업데이트'}${latest.description ? ' - ' + latest.description : ''}`;
+        buttonEl.href = latest.download_url;
+        buttonEl.classList.remove('hidden');
+      } catch (error) {
+        textEl.innerText = '업데이트 정보를 불러오지 못했습니다.';
+        buttonEl.classList.add('hidden');
+      }
+    }
+
     function setLoginState() {
       const loggedIn = !!currentUser;
       document.getElementById('loginPanel').classList.toggle('hidden', loggedIn);
@@ -6821,6 +6862,7 @@ h2::before{
       if (loggedIn) document.getElementById('helloName').innerText = currentUser.username;
       const remoteUser = document.getElementById('remoteCommandUser');
       if (remoteUser) remoteUser.innerText = loggedIn ? currentUser.username : '-';
+      if (loggedIn) loadLatestUpdateLink();
     }
 
     async function login() {
@@ -8378,6 +8420,39 @@ h2::before{
 </style>
 
 <style id="waggu-remote-mobile-final-fix">
+.update-download-panel {
+  margin: 18px 0 10px !important;
+  padding: 10px 12px !important;
+  border-radius: 16px !important;
+}
+.update-download-head {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: 10px !important;
+  align-items: center !important;
+}
+.update-download-head h2 {
+  margin: 0 0 3px !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+}
+.update-download-head h2::before {
+  width: 5px !important;
+  height: 17px !important;
+}
+.update-download-head p {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+}
+.update-download-head a {
+  min-height: 32px !important;
+  height: 32px !important;
+  min-width: 96px !important;
+  padding: 0 12px !important;
+  border-radius: 10px !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+}
 #remoteControlPanel {
   margin: 18px 0 12px !important;
   padding: 10px 12px !important;
@@ -8426,6 +8501,27 @@ h2::before{
   font-size: 11px !important;
 }
 @media (max-width: 760px) {
+  .update-download-panel {
+    margin: 14px 0 8px !important;
+    padding: 9px 10px !important;
+  }
+  .update-download-head {
+    grid-template-columns: 1fr auto !important;
+    gap: 8px !important;
+  }
+  .update-download-head h2 {
+    font-size: 13px !important;
+  }
+  .update-download-head p {
+    font-size: 10px !important;
+  }
+  .update-download-head a {
+    min-width: 72px !important;
+    height: 29px !important;
+    min-height: 29px !important;
+    padding: 0 8px !important;
+    font-size: 10px !important;
+  }
   #remoteControlPanel {
     margin: 14px 0 10px !important;
     padding: 9px 10px !important;
