@@ -6679,12 +6679,24 @@ h2::before{
 
 
     const REMOTE_COMMAND_LABELS = {
-      start: '시작',
-      stop: '중지',
-      restart: '재시작',
-      stop_after: '경기 후 중지',
-      club: '클럽 실행'
+      start: '\uC2DC\uC791',
+      stop: '\uC911\uC9C0',
+      restart: '\uC7AC\uC2DC\uC791',
+      stop_after: '\uACBD\uAE30 \uD6C4 \uC911\uC9C0',
+      club: '\uD074\uB7FD \uC2E4\uD589'
     };
+    const REMOTE_COMMAND_DEDUP_MS = 8000;
+    let remoteCommandSending = false;
+    let remoteCommandLastKey = '';
+    let remoteCommandLastAt = 0;
+
+    function setRemoteCommandButtonsDisabled(disabled) {
+      document.querySelectorAll('#remoteControlPanel button').forEach(button => {
+        button.disabled = disabled;
+        button.style.opacity = disabled ? '.58' : '';
+        button.style.pointerEvents = disabled ? 'none' : '';
+      });
+    }
 
     async function sendRemoteCommand(command) {
       const status = document.getElementById('remoteCommandStatus');
@@ -6695,41 +6707,83 @@ h2::before{
       if (!currentUser?.username) {
         if (status) {
           status.className = 'bad';
-          status.innerText = '로그인 후 원격 명령을 보낼 수 있습니다.';
+          status.innerText = '\uB85C\uADF8\uC778 \uD6C4 \uC6D0\uACA9 \uBA85\uB839\uC744 \uC804\uC1A1\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.';
         }
         return;
       }
 
       const label = REMOTE_COMMAND_LABELS[command] || command;
       const actualCommand = command === 'restart' ? 'set_mode:restart:on' : command;
-      if (status) status.innerText = `${label} 명령 전송 중...`;
+      const now = Date.now();
+      const dedupKey = `${currentUser.username}:${actualCommand}`;
 
-      const payload = {
-        source: 'dashboard',
-        requested_at: new Date().toISOString(),
-        button_command: command
-      };
-
-      const { error } = await supabaseClient
-        .from('remote_commands')
-        .insert({
-          username: currentUser.username,
-          command: actualCommand,
-          status: 'pending',
-          payload
-        });
-
-      if (error) {
+      if (remoteCommandSending || (remoteCommandLastKey === dedupKey && now - remoteCommandLastAt < REMOTE_COMMAND_DEDUP_MS)) {
         if (status) {
-          status.className = 'bad';
-          status.innerText = `명령 전송 실패: ${error.message}`;
+          status.className = 'muted';
+          status.innerText = `${label} \uBA85\uB839\uC740 \uC774\uBBF8 \uC804\uC1A1 \uC911\uC785\uB2C8\uB2E4.`;
         }
         return;
       }
 
-      if (status) {
-        status.className = 'ok';
-        status.innerText = `${label} 명령을 보냈습니다.`;
+      remoteCommandSending = true;
+      remoteCommandLastKey = dedupKey;
+      remoteCommandLastAt = now;
+      setRemoteCommandButtonsDisabled(true);
+      if (status) status.innerText = `${label} \uBA85\uB839 \uC804\uC1A1 \uC911...`;
+
+      try {
+        const recentIso = new Date(Date.now() - REMOTE_COMMAND_DEDUP_MS).toISOString();
+        const { data: existing, error: findError } = await supabaseClient
+          .from('remote_commands')
+          .select('id, created_at')
+          .eq('username', currentUser.username)
+          .eq('command', actualCommand)
+          .eq('status', 'pending')
+          .gte('created_at', recentIso)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (findError) throw findError;
+        if (existing && existing.length) {
+          if (status) {
+            status.className = 'ok';
+            status.innerText = `${label} \uBA85\uB839\uC774 \uC774\uBBF8 \uB300\uAE30 \uC911\uC774\uB77C \uC911\uBCF5 \uC694\uCCAD\uC744 \uB9C9\uC558\uC2B5\uB2C8\uB2E4.`;
+          }
+          return;
+        }
+
+        const payload = {
+          source: 'dashboard',
+          requested_at: new Date().toISOString(),
+          button_command: command,
+          client_request_id: `${dedupKey}:${now}`
+        };
+
+        const { error } = await supabaseClient
+          .from('remote_commands')
+          .insert({
+            username: currentUser.username,
+            command: actualCommand,
+            status: 'pending',
+            payload
+          });
+
+        if (error) throw error;
+
+        if (status) {
+          status.className = 'ok';
+          status.innerText = `${label} \uBA85\uB839\uC744 \uC804\uC1A1\uD588\uC2B5\uB2C8\uB2E4.`;
+        }
+      } catch (error) {
+        remoteCommandLastKey = '';
+        remoteCommandLastAt = 0;
+        if (status) {
+          status.className = 'bad';
+          status.innerText = `\uBA85\uB839 \uC804\uC1A1 \uC2E4\uD328: ${error.message}`;
+        }
+      } finally {
+        remoteCommandSending = false;
+        setTimeout(() => setRemoteCommandButtonsDisabled(false), 900);
       }
     }
 
