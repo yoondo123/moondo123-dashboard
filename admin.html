@@ -2,350 +2,563 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WAGGU 관리자 페이지</title>
+  <title>MOONDO123 관리자 대시보드</title>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+
   <style>
-    * { box-sizing: border-box; }
-    :root {
-      --bg: #07080c;
-      --card: #121319;
-      --card2: #171922;
-      --line: rgba(143, 165, 146, .16);
-      --text: #f1f3f0;
-      --muted: #97a299;
-      --accent: #8fa592;
-      --danger: #c95b65;
-    }
     body {
-      margin: 0;
-      min-height: 100vh;
-      background: linear-gradient(180deg, #090b10, #050607);
-      color: var(--text);
-      font-family: "Pretendard", "Malgun Gothic", Arial, sans-serif;
+      background:#081225;
+      color:white;
+      font-family:Arial, sans-serif;
+      padding:30px;
     }
-    main {
-      width: min(980px, calc(100% - 24px));
-      margin: 0 auto;
-      padding: 24px 0 42px;
+    input, select, button {
+      padding:10px;
+      margin:4px;
+      border-radius:6px;
     }
-    header, .panel {
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent), var(--card);
-      box-shadow: 0 18px 44px rgba(0,0,0,.38);
+    table {
+      width:100%;
+      border-collapse:collapse;
+      margin-top:20px;
+      background:#111c2f;
     }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 18px;
-      margin-bottom: 16px;
+    th, td {
+      border:1px solid #334155;
+      padding:10px;
+      text-align:center;
     }
-    h1, h2, p { margin: 0; }
-    h1 { font-size: 24px; }
-    h2 {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 12px;
-      font-size: 18px;
+    th { background:#1e293b; }
+    .box {
+      background:#111c2f;
+      padding:20px;
+      margin-top:20px;
+      border-radius:10px;
     }
-    h2::before {
-      content: "";
-      width: 5px;
-      height: 18px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, #8fa592, #6a5a82);
-    }
-    .muted { color: var(--muted); font-size: 13px; }
-    .panel { padding: 16px; margin-top: 14px; }
-    .form-grid {
-      display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 10px;
-      align-items: center;
-    }
-    label { color: var(--muted); font-size: 13px; font-weight: 800; }
-    input, textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #0c0e13;
-      color: var(--text);
-      padding: 11px 12px;
-      font: inherit;
-      outline: none;
-    }
-    textarea { min-height: 76px; resize: vertical; }
-    .actions {
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-    button, a.button {
-      display: inline-grid;
-      place-items: center;
-      min-height: 38px;
-      padding: 0 16px;
-      border: 1px solid rgba(143,165,146,.24);
-      border-radius: 999px;
-      background: linear-gradient(180deg, rgba(143,165,146,.95), rgba(111,136,116,.95));
-      color: #070a08;
-      font-weight: 950;
-      text-decoration: none;
-      cursor: pointer;
-    }
-    button.secondary, a.secondary {
-      background: rgba(255,255,255,.04);
-      color: var(--text);
-    }
-    button.danger {
-      background: rgba(201, 91, 101, .16);
-      color: #ffd3d7;
-      border-color: rgba(201, 91, 101, .35);
-    }
-    .update-list {
-      display: grid;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .update-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: center;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: var(--card2);
-    }
-    .update-row strong { display: block; margin-bottom: 3px; }
-    .badge {
-      display: inline-grid;
-      place-items: center;
-      height: 22px;
-      padding: 0 8px;
-      border-radius: 999px;
-      background: rgba(143,165,146,.16);
-      color: #dce8de;
-      font-size: 11px;
-      font-weight: 900;
-      margin-left: 6px;
-    }
-    #message { min-height: 20px; margin-top: 10px; font-weight: 800; }
-    .ok { color: #9cd6aa; }
-    .bad { color: #ff9ca5; }
-    @media (max-width: 640px) {
-      main { width: 100%; padding: 10px; }
-      header { align-items: flex-start; flex-direction: column; border-radius: 15px; }
-      .panel { padding: 13px; border-radius: 15px; }
-      .form-grid { grid-template-columns: 1fr; gap: 6px; }
-      .update-row { grid-template-columns: 1fr; }
-      .actions { justify-content: stretch; }
-      button, a.button { width: 100%; }
-    }
+    .approve { background:#2563eb; color:white; border:0; cursor:pointer; }
+    .reject { background:#dc2626; color:white; border:0; cursor:pointer; }
+    .reset { background:#b45309; color:white; border:0; cursor:pointer; }
+    .reset-today { background:#0f766e; color:white; border:0; cursor:pointer; }
+    .reset-week { background:#7c3aed; color:white; border:0; cursor:pointer; }
+    .reset-all { background:#991b1b; color:white; border:0; cursor:pointer; font-weight:bold; }
+    .delete { background:#7f1d1d; color:white; border:0; cursor:pointer; }
+    .logout { float:right; background:#475569; color:white; border:0; cursor:pointer; }
+    .small { font-size:12px; color:#cbd5e1; line-height:1.5; }
+    .status { margin-top:10px; color:#fde68a; font-size:13px; }
+    a { color:#93c5fd; }
   </style>
 </head>
+
 <body>
-  <main>
-    <header>
-      <div>
-        <h1>WAGGU 관리자 페이지</h1>
-        <p class="muted" id="adminUser">로그인 정보를 확인 중입니다.</p>
-      </div>
-      <a class="button secondary" href="./index_with_remote.html">대시보드</a>
-    </header>
+  <button class="logout" id="logoutBtn">로그아웃</button>
+  <h1>MOONDO123 관리자 대시보드</h1>
+  <p><a href="./index.html">일반 대시보드로 이동</a></p>
 
-    <section class="panel">
-      <h2>업데이트 링크 등록</h2>
-      <div class="form-grid">
-        <label for="version">버전</label>
-        <input id="version" placeholder="예: v1.7.23">
+  <div class="box">
+    <h2>회원 관리</h2>
+    <p class="small">
+      오늘 초기화: 오늘 00시 이후 기록 삭제<br>
+      주간 초기화: 이번 주 목요일 00시 이후 기록 삭제<br>
+      누적 초기화: player_stats 누적 승/무/패/FC만 0<br>
+      전체 초기화: game_history, daily_sessions 삭제 + live_status/player_stats 초기화
+    </p>
+    <p id="statusText" class="status"></p>
+    <table>
+      <thead>
+        <tr>
+          <th>아이디</th>
+          <th>닉네임</th>
+          <th>상태</th>
+          <th>가입일</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody id="userList">
+        <tr><td colspan="5">불러오는 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-        <label for="title">제목</label>
-        <input id="title" placeholder="예: WAGGU 최신 업데이트">
+  <div class="box">
+    <h2>전적 등록</h2>
 
-        <label for="downloadUrl">다운로드 링크</label>
-        <input id="downloadUrl" placeholder="Google Drive, OneDrive, Dropbox 링크">
+    <input id="matchNick" placeholder="닉네임">
 
-        <label for="description">설명</label>
-        <textarea id="description" placeholder="수정 내용이나 안내 문구"></textarea>
-      </div>
-      <div class="actions">
-        <button type="button" onclick="saveUpdateLink()">등록</button>
-        <button type="button" class="secondary" onclick="loadUpdates()">새로고침</button>
-      </div>
-      <p id="message"></p>
-    </section>
+    <select id="matchResult">
+      <option value="승">승</option>
+      <option value="무">무</option>
+      <option value="패">패</option>
+    </select>
 
-    <section class="panel">
-      <h2>등록된 업데이트</h2>
-      <div id="updateList" class="update-list">
-        <p class="muted">불러오는 중입니다.</p>
-      </div>
-    </section>
-  </main>
+    <input id="scoreFor" type="number" placeholder="득점">
+    <input id="scoreAgainst" type="number" placeholder="실점">
+    <input id="fcPoint" type="number" placeholder="FC 포인트">
+
+    <button id="addMatchBtn">등록</button>
+  </div>
+
+  <div class="box">
+    <h2>전적 목록</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>닉네임</th>
+          <th>결과</th>
+          <th>스코어</th>
+          <th>FC</th>
+          <th>날짜</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody id="matchList">
+        <tr><td colspan="6">불러오는 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
   <script>
-    let supabaseClient = window.supabaseClient || null;
-    const currentUser = JSON.parse(localStorage.getItem('moondo_user') || 'null');
+    // config.js 호환 처리
+    // config.js에 supabaseClient가 없고 SUPABASE_URL / SUPABASE_KEY만 있어도 여기서 자동 생성합니다.
+    const SB_URL =
+      window.SUPABASE_URL ||
+      (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '');
 
-    function resolveSupabaseClient() {
-      if (supabaseClient) return supabaseClient;
-      if (window.supabaseClient) {
-        supabaseClient = window.supabaseClient;
-        return supabaseClient;
-      }
+    const SB_KEY =
+      window.SUPABASE_KEY ||
+      window.SUPABASE_ANON_KEY ||
+      (typeof SUPABASE_KEY !== 'undefined' ? SUPABASE_KEY : '') ||
+      (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '');
 
-      const cfg = window.SUPABASE_CONFIG || window.CONFIG || window.APP_CONFIG || {};
-      const url = window.SUPABASE_URL || window.supabaseUrl || cfg.SUPABASE_URL || cfg.url;
-      const key = window.SUPABASE_ANON_KEY || window.SUPABASE_KEY || window.supabaseKey || cfg.SUPABASE_ANON_KEY || cfg.SUPABASE_KEY || cfg.key;
+    const db =
+      window.supabaseClient ||
+      (window.supabase && SB_URL && SB_KEY ? window.supabase.createClient(SB_URL, SB_KEY) : null);
 
-      if (!url || !key || !window.supabase) return null;
-      supabaseClient = window.supabase.createClient(url, key);
-      window.supabaseClient = supabaseClient;
-      return supabaseClient;
+    if (!db) {
+      alert('Supabase 연결 실패: config.js의 SUPABASE_URL / SUPABASE_KEY를 확인해주세요.');
+      throw new Error('Supabase client not initialized');
     }
 
-    function setMessage(text, ok = true) {
-      const el = document.getElementById('message');
-      el.className = ok ? 'ok' : 'bad';
-      el.innerText = text || '';
+    window.supabaseClient = db;
+
+    if (localStorage.getItem('admin_login') !== 'true') {
+      location.href = './admin.html';
     }
 
-    function requireClient() {
-      const client = resolveSupabaseClient();
-      if (!client) {
-        setMessage('config.js에서 Supabase 설정을 찾지 못했습니다.', false);
-        return null;
-      }
-      return client;
-    }
+    const $ = (id) => document.getElementById(id);
 
-    async function saveUpdateLink() {
-      const client = requireClient();
-      if (!client) return;
-
-      const version = document.getElementById('version').value.trim();
-      const title = document.getElementById('title').value.trim();
-      const download_url = document.getElementById('downloadUrl').value.trim();
-      const description = document.getElementById('description').value.trim();
-
-      if (!version || !title || !download_url) {
-        setMessage('버전, 제목, 다운로드 링크를 입력해 주세요.', false);
-        return;
-      }
-
-      const { error } = await client.from('app_updates').insert({
-        version,
-        title,
-        description,
-        download_url,
-        is_active: true,
-        created_by: currentUser?.username || null
-      });
-
-      if (error) {
-        setMessage(`등록 실패: ${error.message}`, false);
-        return;
-      }
-
-      document.getElementById('version').value = '';
-      document.getElementById('title').value = '';
-      document.getElementById('downloadUrl').value = '';
-      document.getElementById('description').value = '';
-      setMessage('업데이트 링크를 등록했습니다.');
-      await loadUpdates();
-    }
-
-    async function toggleUpdate(id, isActive) {
-      const client = requireClient();
-      if (!client) return;
-      const { error } = await client.from('app_updates').update({ is_active: !isActive }).eq('id', id);
-      if (error) {
-        setMessage(`변경 실패: ${error.message}`, false);
-        return;
-      }
-      await loadUpdates();
-    }
-
-    async function deleteUpdate(id) {
-      const client = requireClient();
-      if (!client) return;
-      const { error } = await client.from('app_updates').delete().eq('id', id);
-      if (error) {
-        setMessage(`삭제 실패: ${error.message}`, false);
-        return;
-      }
-      await loadUpdates();
-    }
-
-    async function loadUpdates() {
-      const client = requireClient();
-      const list = document.getElementById('updateList');
-      if (!client) {
-        list.innerHTML = '<p class="bad">Supabase 연결 설정이 필요합니다.</p>';
-        return;
-      }
-
-      const { data, error } = await client
-        .from('app_updates')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        list.innerHTML = `<p class="bad">불러오기 실패: ${error.message}</p>`;
-        return;
-      }
-
-      if (!data || !data.length) {
-        list.innerHTML = '<p class="muted">등록된 업데이트가 없습니다.</p>';
-        return;
-      }
-
-      list.innerHTML = data.map(row => `
-        <div class="update-row">
-          <div>
-            <strong>${escapeHtml(row.title || '-')} <span class="badge">${escapeHtml(row.version || '-')}</span>${row.is_active ? '<span class="badge">활성</span>' : ''}</strong>
-            <p class="muted">${escapeHtml(row.description || '')}</p>
-            <p class="muted">${escapeHtml(row.download_url || '')}</p>
-          </div>
-          <div class="actions">
-            <a class="button secondary" href="${escapeAttr(row.download_url || '#')}" target="_blank" rel="noopener">열기</a>
-            <button type="button" class="secondary" onclick="toggleUpdate('${row.id}', ${row.is_active ? 'true' : 'false'})">${row.is_active ? '숨김' : '활성'}</button>
-            <button type="button" class="danger" onclick="deleteUpdate('${row.id}')">삭제</button>
-          </div>
-        </div>
-      `).join('');
+    function setStatus(text) {
+      $('statusText').innerText = text || '';
+      console.log('[ADMIN]', text);
     }
 
     function escapeHtml(value) {
-      return String(value ?? '').replace(/[&<>"']/g, ch => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[ch]));
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
-    function escapeAttr(value) {
-      return escapeHtml(value).replace(/`/g, '&#96;');
+    function logout() {
+      localStorage.removeItem('admin_login');
+      location.href = './admin.html';
     }
 
-    document.getElementById('adminUser').innerText = currentUser?.username
-      ? `${currentUser.username} 관리자 도구`
-      : '로그인 정보가 없습니다. 대시보드에서 로그인 후 사용해 주세요.';
+    function startOfTodayIso() {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString();
+    }
 
-    loadUpdates();
+    function todayDateKey() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function weeklyResetDateKey() {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      const daysSinceThursday = (d.getDay() - 4 + 7) % 7;
+      d.setDate(d.getDate() - daysSinceThursday);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function weeklyResetIso() {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      const daysSinceThursday = (d.getDay() - 4 + 7) % 7;
+      d.setDate(d.getDate() - daysSinceThursday);
+      return d.toISOString();
+    }
+
+    async function deleteWhere(tableName, username, extraBuilder) {
+      let q = supabaseClient.from(tableName).delete().eq('username', username);
+      if (extraBuilder) q = extraBuilder(q);
+      const { error } = await q;
+      if (error) {
+        console.warn(`${tableName} 삭제 실패:`, error.message);
+        return `${tableName}: ${error.message}`;
+      }
+      return null;
+    }
+
+    async function updateWhere(tableName, username, payload) {
+      const { error } = await supabaseClient.from(tableName).update(payload).eq('username', username);
+      if (error) {
+        console.warn(`${tableName} 업데이트 실패:`, error.message);
+        return `${tableName}: ${error.message}`;
+      }
+      return null;
+    }
+
+    async function loadUsers() {
+      const tbody = $('userList');
+      setStatus('회원 목록 불러오는 중...');
+
+      const { data, error } = await supabaseClient
+        .from('app_users')
+        .select('*')
+        .order('created_at', { ascending:false });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="5">오류 : ${escapeHtml(error.message)}</td></tr>`;
+        setStatus('회원 목록 오류: ' + error.message);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5">회원이 없습니다.</td></tr>`;
+        setStatus('');
+        return;
+      }
+
+      tbody.innerHTML = data.map(user => `
+        <tr>
+          <td>${escapeHtml(user.username)}</td>
+          <td>${escapeHtml(user.nickname)}</td>
+          <td>${escapeHtml(user.status)}</td>
+          <td>${user.created_at ? new Date(user.created_at).toLocaleString() : ''}</td>
+          <td>
+            <button class="approve" data-action="approve" data-id="${escapeHtml(user.id)}">승인</button>
+            <button class="reject" data-action="reject" data-id="${escapeHtml(user.id)}">거절</button>
+            <button class="reset-today" data-action="resetToday" data-id="${escapeHtml(user.id)}" data-username="${escapeHtml(user.username)}">오늘 초기화</button>
+            <button class="reset-week" data-action="resetWeek" data-id="${escapeHtml(user.id)}" data-username="${escapeHtml(user.username)}">주간 초기화</button>
+            <button class="reset" data-action="resetPlayer" data-id="${escapeHtml(user.id)}" data-username="${escapeHtml(user.username)}">누적 초기화</button>
+            <button class="reset-all" data-action="resetAll" data-id="${escapeHtml(user.id)}" data-username="${escapeHtml(user.username)}">전체 초기화</button>
+          </td>
+        </tr>
+      `).join('');
+
+      setStatus('회원 목록 로드 완료');
+    }
+
+    async function updateUserStatus(id, status) {
+      setStatus('회원 상태 변경 중...');
+      const { error } = await supabaseClient
+        .from('app_users')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) {
+        alert('오류 : ' + error.message);
+        setStatus('회원 상태 변경 실패');
+        return;
+      }
+
+      alert(status === 'approved' ? '승인 완료' : '거절 완료');
+      loadUsers();
+    }
+
+    async function resetPlayerStats(userId, username) {
+      if (!username) return alert('username이 비어 있습니다.');
+      if (!confirm(`${username} 님의 누적 전적을 초기화할까요?\n승/무/패, 누적 FC, 승률만 0으로 바꾸고 티어/점수/등수는 유지됩니다.`)) return;
+
+      setStatus(`${username} 누적 전적 초기화 중...`);
+
+      const { data } = await supabaseClient
+        .from('player_stats')
+        .select('*')
+        .eq('username', username)
+        .limit(1);
+
+      const current = data && data.length ? data[0] : {};
+
+      const payload = {
+        user_id: userId,
+        username,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        fc_mined: 0,
+        win_rate: 0,
+        tier: current.tier || 'Unranked',
+        score: Number(current.score || 0),
+        rank: Number(current.rank || 0),
+        updated_at: new Date().toISOString()
+      };
+
+      let result = await supabaseClient
+        .from('player_stats')
+        .upsert(payload, { onConflict: 'username' });
+
+      if (result.error) {
+        result = await supabaseClient
+          .from('player_stats')
+          .upsert(payload, { onConflict: 'user_id' });
+      }
+
+      if (result.error) {
+        alert('오류 : ' + result.error.message);
+        setStatus('누적 초기화 실패');
+        return;
+      }
+
+      alert('누적 전적 초기화 완료');
+      setStatus('누적 초기화 완료');
+    }
+
+    async function resetTodayStats(userId, username) {
+      if (!username) return alert('username이 비어 있습니다.');
+      if (!confirm(`${username} 님의 오늘 전적을 초기화할까요?\n오늘 00시 이후 game_history와 daily_sessions 기록이 삭제됩니다.`)) return;
+
+      setStatus(`${username} 오늘 전적 초기화 중...`);
+
+      const todayIso = startOfTodayIso();
+      const todayKey = todayDateKey();
+      const errors = [];
+
+      errors.push(await deleteWhere('game_history', username, q => q.gte('created_at', todayIso)));
+      errors.push(await deleteWhere('daily_sessions', username, q => q.eq('session_date', todayKey)));
+
+      // live_status는 테이블마다 컬럼 구성이 달라서 update 대신 해당 유저 행 삭제로 안전하게 초기화합니다.
+      errors.push(await deleteWhere('live_status', username));
+
+      const failed = errors.filter(Boolean);
+      if (failed.length) {
+        alert(`오늘 초기화 일부 실패:\n${failed.join('\n')}`);
+        setStatus('오늘 초기화 일부 실패');
+      } else {
+        alert('오늘 전적 초기화 완료');
+        setStatus('오늘 초기화 완료');
+      }
+    }
+
+    async function resetWeekStats(userId, username) {
+      if (!username) return alert('username이 비어 있습니다.');
+      if (!confirm(`${username} 님의 주간 전적을 초기화할까요?\n이번 주 목요일 00시 이후 game_history와 daily_sessions 기록이 삭제됩니다.`)) return;
+
+      setStatus(`${username} 주간 전적 초기화 중...`);
+
+      const weekIso = weeklyResetIso();
+      const weekKey = weeklyResetDateKey();
+      const errors = [];
+
+      errors.push(await deleteWhere('game_history', username, q => q.gte('created_at', weekIso)));
+      errors.push(await deleteWhere('daily_sessions', username, q => q.gte('session_date', weekKey)));
+
+      // live_status는 테이블마다 컬럼 구성이 달라서 update 대신 해당 유저 행 삭제로 안전하게 초기화합니다.
+      errors.push(await deleteWhere('live_status', username));
+
+      const failed = errors.filter(Boolean);
+      if (failed.length) {
+        alert(`주간 초기화 일부 실패:\n${failed.join('\n')}`);
+        setStatus('주간 초기화 일부 실패');
+      } else {
+        alert('주간 전적 초기화 완료');
+        setStatus('주간 초기화 완료');
+      }
+    }
+
+    async function resetAllStats(userId, username) {
+      if (!username) return alert('username이 비어 있습니다.');
+
+      const typed = prompt(`${username} 님의 모든 전적을 완전 초기화합니다.\n진행하려면 아이디를 그대로 입력하세요.`);
+      if (typed !== username) {
+        alert('아이디가 일치하지 않아 취소되었습니다.');
+        return;
+      }
+
+      setStatus(`${username} 전체 전적 초기화 중...`);
+
+      const errors = [];
+
+      errors.push(await deleteWhere('game_history', username));
+      errors.push(await deleteWhere('daily_sessions', username));
+
+      // live_status는 테이블마다 컬럼 구성이 달라서 update 대신 해당 유저 행 삭제로 안전하게 초기화합니다.
+      errors.push(await deleteWhere('live_status', username));
+
+      let result = await supabaseClient
+        .from('player_stats')
+        .upsert({
+          user_id: userId,
+          username,
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          fc_mined: 0,
+          win_rate: 0,
+          tier: 'Unranked',
+          score: 0,
+          rank: 0,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'username' });
+
+      if (result.error) {
+        result = await supabaseClient
+          .from('player_stats')
+          .upsert({
+            user_id: userId,
+            username,
+            wins: 0,
+            draws: 0,
+            losses: 0,
+            fc_mined: 0,
+            win_rate: 0,
+            tier: 'Unranked',
+            score: 0,
+            rank: 0,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+      }
+
+      if (result.error) errors.push('player_stats: ' + result.error.message);
+
+      const failed = errors.filter(Boolean);
+      if (failed.length) {
+        alert(`전체 초기화 일부 실패:\n${failed.join('\n')}`);
+        setStatus('전체 초기화 일부 실패');
+      } else {
+        alert('전체 전적 초기화 완료');
+        setStatus('전체 초기화 완료');
+      }
+
+      loadUsers();
+      loadMatches();
+    }
+
+    async function addMatch() {
+      const nickname = $('matchNick').value.trim();
+      const result = $('matchResult').value;
+      const scoreFor = Number($('scoreFor').value || 0);
+      const scoreAgainst = Number($('scoreAgainst').value || 0);
+      const fcPoint = Number($('fcPoint').value || 0);
+
+      if (!nickname) {
+        alert('닉네임을 입력해주세요.');
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from('match_history')
+        .insert({
+          nickname,
+          result,
+          score_for: scoreFor,
+          score_against: scoreAgainst,
+          fc_point: fcPoint
+        });
+
+      if (error) {
+        alert('오류 : ' + error.message);
+        return;
+      }
+
+      alert('전적 등록 완료');
+
+      $('matchNick').value = '';
+      $('scoreFor').value = '';
+      $('scoreAgainst').value = '';
+      $('fcPoint').value = '';
+
+      loadMatches();
+    }
+
+    async function loadMatches() {
+      const tbody = $('matchList');
+
+      const { data, error } = await supabaseClient
+        .from('match_history')
+        .select('*')
+        .order('created_at', { ascending:false });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="6">오류 : ${escapeHtml(error.message)}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6">전적이 없습니다.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(match => `
+        <tr>
+          <td>${escapeHtml(match.nickname)}</td>
+          <td>${escapeHtml(match.result)}</td>
+          <td>${match.score_for ?? 0} : ${match.score_against ?? 0}</td>
+          <td>${match.fc_point || 0}</td>
+          <td>${match.created_at ? new Date(match.created_at).toLocaleString() : ''}</td>
+          <td>
+            <button class="delete" data-action="deleteMatch" data-id="${escapeHtml(match.id)}">삭제</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function deleteMatch(id) {
+      if (!confirm('이 전적을 삭제할까요?')) return;
+
+      const { error } = await supabaseClient
+        .from('match_history')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        alert('오류 : ' + error.message);
+        return;
+      }
+
+      alert('삭제 완료');
+      loadMatches();
+    }
+
+    document.addEventListener('click', async function (e) {
+      const button = e.target.closest('button[data-action]');
+      if (!button) return;
+
+      const action = button.dataset.action;
+      const id = button.dataset.id;
+      const username = button.dataset.username;
+
+      try {
+        if (action === 'approve') return updateUserStatus(id, 'approved');
+        if (action === 'reject') return updateUserStatus(id, 'rejected');
+        if (action === 'resetToday') return resetTodayStats(id, username);
+        if (action === 'resetWeek') return resetWeekStats(id, username);
+        if (action === 'resetPlayer') return resetPlayerStats(id, username);
+        if (action === 'resetAll') return resetAllStats(id, username);
+        if (action === 'deleteMatch') return deleteMatch(id);
+      } catch (err) {
+        console.error(err);
+        alert('버튼 실행 중 오류: ' + err.message);
+      }
+    });
+
+    $('logoutBtn').addEventListener('click', logout);
+    $('addMatchBtn').addEventListener('click', addMatch);
+
+    loadUsers();
+    loadMatches();
   </script>
 </body>
 </html>
