@@ -4414,6 +4414,59 @@ footer {
   #rankingList td:nth-child(12) { display: none !important; }
 }
 
+  
+
+    .remote-control-panel {
+      margin-top: 22px;
+      border-color: rgba(90, 214, 174, .22);
+      background:
+        linear-gradient(135deg, rgba(90, 214, 174, .09), transparent 42%),
+        rgba(10, 15, 23, .92);
+    }
+    .remote-control-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .remote-control-head h2 {
+      margin: 0;
+    }
+    .remote-control-actions {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .remote-control-actions button {
+      width: 100%;
+      min-width: 0;
+      padding: 0 10px;
+    }
+    .remote-control-actions button.danger {
+      background: linear-gradient(135deg, #8b1e2d, #51202a);
+      border-color: rgba(255, 102, 115, .38);
+      box-shadow: 0 12px 28px rgba(180, 38, 54, .2);
+    }
+    .remote-control-actions button.warn {
+      background: linear-gradient(135deg, #8a631d, #47532a);
+      border-color: rgba(255, 209, 102, .34);
+      box-shadow: 0 12px 28px rgba(255, 209, 102, .12);
+    }
+    #remoteCommandStatus {
+      min-height: 20px;
+      margin-top: 12px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    @media (max-width: 760px) {
+      .remote-control-head { align-items: flex-start; flex-direction: column; }
+      .remote-control-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 420px) {
+      .remote-control-actions { grid-template-columns: 1fr; }
+    }
+
   </style>
 
 <style id="moondo-color-only-purple-sage">
@@ -6002,6 +6055,26 @@ h2::before{
           <tbody id="recentList"></tbody>
         </table>
       </div>
+
+
+      <div class="panel remote-control-panel" id="remoteControlPanel" data-tab-group="home">
+        <div class="remote-control-head">
+          <div>
+            <h2>원격 제어</h2>
+            <p class="muted">실행 중인 WAGGU 프로그램으로 명령을 보냅니다.</p>
+          </div>
+          <span class="muted" id="remoteCommandUser">-</span>
+        </div>
+        <div class="remote-control-actions">
+          <button type="button" onclick="sendRemoteCommand('start')">시작</button>
+          <button type="button" class="danger" onclick="sendRemoteCommand('stop')">중지</button>
+          <button type="button" class="warn" onclick="sendRemoteCommand('restart')">재시작</button>
+          <button type="button" class="secondary" onclick="sendRemoteCommand('stop_after')">경기 후 중지</button>
+          <button type="button" onclick="sendRemoteCommand('club')">클럽 실행</button>
+        </div>
+        <p id="remoteCommandStatus" class="muted"></p>
+      </div>
+
       <p class="mobile-note">모바일에서는 표를 좌우로 밀어서 볼 수 있습니다.</p>
 
       <h2>누적 전적</h2>
@@ -6587,11 +6660,70 @@ h2::before{
       }).join('');
     }
 
+
+
+    const REMOTE_COMMAND_LABELS = {
+      start: '시작',
+      stop: '중지',
+      restart: '재시작',
+      stop_after: '경기 후 중지',
+      club: '클럽 실행'
+    };
+
+    async function sendRemoteCommand(command) {
+      const status = document.getElementById('remoteCommandStatus');
+      if (status) {
+        status.className = 'muted';
+        status.innerText = '';
+      }
+      if (!currentUser?.username) {
+        if (status) {
+          status.className = 'bad';
+          status.innerText = '로그인 후 원격 명령을 보낼 수 있습니다.';
+        }
+        return;
+      }
+
+      const label = REMOTE_COMMAND_LABELS[command] || command;
+      const actualCommand = command === 'restart' ? 'set_mode:restart:on' : command;
+      if (status) status.innerText = `${label} 명령 전송 중...`;
+
+      const payload = {
+        source: 'dashboard',
+        requested_at: new Date().toISOString(),
+        button_command: command
+      };
+
+      const { error } = await supabaseClient
+        .from('remote_commands')
+        .insert({
+          username: currentUser.username,
+          command: actualCommand,
+          status: 'pending',
+          payload
+        });
+
+      if (error) {
+        if (status) {
+          status.className = 'bad';
+          status.innerText = `명령 전송 실패: ${error.message}`;
+        }
+        return;
+      }
+
+      if (status) {
+        status.className = 'ok';
+        status.innerText = `${label} 명령을 보냈습니다.`;
+      }
+    }
+
     function setLoginState() {
       const loggedIn = !!currentUser;
       document.getElementById('loginPanel').classList.toggle('hidden', loggedIn);
       document.getElementById('dashboard').classList.toggle('hidden', !loggedIn);
       if (loggedIn) document.getElementById('helloName').innerText = currentUser.username;
+      const remoteUser = document.getElementById('remoteCommandUser');
+      if (remoteUser) remoteUser.innerText = loggedIn ? currentUser.username : '-';
     }
 
     async function login() {
