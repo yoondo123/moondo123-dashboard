@@ -5923,7 +5923,7 @@ h2::before{
         <div class="stat compact">
           <span class="muted">현재 티어</span>
           <strong id="todayTier">-</strong>
-          <small id="todayPeakTier">최고티어: -</small>
+          <small id="todayPeakTier">오늘 최고티어 -</small>
         </div>
         <div class="stat compact">
           <span class="muted">현재 점수</span>
@@ -6524,23 +6524,39 @@ h2::before{
     }
 
     function normalizeTierName(tier) {
-      return String(tier || '').replace(/\s+/g, '').trim();
+      return String(tier || '')
+        .replace(/\s+/g, '')
+        .replace(/[? ]/g, '')
+        .trim();
     }
 
     function tierPower(tier) {
       const name = normalizeTierName(tier);
       if (!name || name === '-') return 0;
-      if (name.includes('슈퍼챔피언')) return 900;
-      if (name.includes('챔피언')) return 800;
-      if (name.includes('슈퍼챌린저')) return 700;
-      if (name.includes('챌린저')) return 600;
-      if (name.includes('월드클래스')) return 500;
+
+      if (name.includes('슈퍼챔피언스') || name.includes('슈퍼챔피언')) return 900;
+      if (name.includes('챔피언스') || name.includes('챔피언')) return 800;
+      if (name.includes('슈퍼챌린저') || name.includes('슈퍼챌')) return 700;
+      if (name.includes('챌린저') || name.includes('챌린')) return 600;
+      if (name.includes('월드클래스') || name.includes('월클')) return 500;
       if (name.includes('프로')) return 400;
       if (name.includes('세미프로')) return 300;
       if (name.includes('아마추어')) return 200;
+
+      // mojibake fallback for old broken rows
+      if (name.includes('??') && (name.includes('?') || name.includes('?'))) return 900;
+      if (name.includes('?') || name.includes('?')) return 800;
+      if (name.includes('?') || name.includes('??')) return 600;
       return 100;
     }
 
+    function displayTierName(tier) {
+      const raw = String(tier || '').trim();
+      const name = normalizeTierName(raw);
+      if (!name || name === '-') return '-';
+      if (tierPower(raw) >= 900) return '슈퍼챔피언스 감독';
+      return raw;
+    }
 
     async function ensureTodayPeakTier(profile = {}, meta = {}) {
       if (!currentUser?.username) return profile.today_peak_tier || meta.tier || '-';
@@ -6554,7 +6570,7 @@ h2::before{
       try {
         const { data } = await supabaseClient
           .from('game_history')
-          .select('tier, created_at')
+          .select('tier, current_tier, created_at, updated_at')
           .eq('username', currentUser.username)
           .gte('created_at', startOfTodayIso())
           .order('created_at', { ascending: false });
@@ -6584,7 +6600,7 @@ h2::before{
         }
       }
 
-      return nextPeak || currentTier || '-';
+      return displayTierName(nextPeak || currentTier || '-');
     }
 
     function bestTierFromRows(rows, fallbackTier = '-') {
@@ -6593,7 +6609,7 @@ h2::before{
         .filter(tier => tier && String(tier).trim() && String(tier).trim() !== '-');
       if (fallbackTier && fallbackTier !== '-') tiers.push(fallbackTier);
       if (!tiers.length) return '-';
-      return tiers.sort((a, b) => tierPower(b) - tierPower(a))[0] || '-';
+      return displayTierName(tiers.sort((a, b) => tierPower(b) - tierPower(a))[0] || '-');
     }
 
     function isUpdatedSince(row, sinceIso) {
@@ -6837,7 +6853,7 @@ h2::before{
         .flat()
         .filter(tier => tier && String(tier).trim() && String(tier).trim() !== '-');
       if (!clean.length) return '-';
-      return clean.sort((a, b) => tierPower(b) - tierPower(a))[0] || '-';
+      return displayTierName(clean.sort((a, b) => tierPower(b) - tierPower(a))[0] || '-');
     }
 
     async function syncTodayPeakTierRow(row, observedTier = '') {
@@ -6983,7 +6999,7 @@ h2::before{
       document.getElementById('todayLosses').innerText = today.losses;
       document.getElementById('todayFc').innerText = fcFromWins(today.wins);
       document.getElementById('todayTier').innerText = meta.tier;
-      document.getElementById('todayPeakTier').innerText = `최고티어: ${todayPeakTierValue || meta.tier || '-'}`;
+      document.getElementById('todayPeakTier').innerText = `오늘 최고티어 ${displayTierName(todayPeakTierValue || meta.tier || '-')}`;
       document.getElementById('todayScore').innerText = meta.score;
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
