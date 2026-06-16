@@ -4494,6 +4494,40 @@ footer {
       .remote-control-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
+
+    /* === Macro online dot patch === */
+    .ranking-name-cell {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      max-width: 100%;
+    }
+    .macro-online-dot {
+      flex: 0 0 auto;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #2cff9a;
+      box-shadow: 0 0 0 4px rgba(44, 255, 154, .10), 0 0 14px rgba(44, 255, 154, .95);
+    }
+    .macro-online-dot::after {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      animation: macroPulse 1.45s ease-out infinite;
+      box-shadow: 0 0 0 0 rgba(44, 255, 154, .55);
+    }
+    @keyframes macroPulse {
+      0% { box-shadow: 0 0 0 0 rgba(44, 255, 154, .55); }
+      100% { box-shadow: 0 0 0 10px rgba(44, 255, 154, 0); }
+    }
+    @media (max-width: 640px) {
+      .ranking-name-cell { justify-content: flex-start; }
+    }
+
   </style>
 
 <style id="moondo-color-only-purple-sage">
@@ -6979,6 +7013,29 @@ h2::before{
       return displayTierName(clean.sort((a, b) => tierPower(b) - tierPower(a))[0] || '-');
     }
 
+    function isRecentlyOnline(...dates) {
+      const latest = dates
+        .filter(Boolean)
+        .map(value => new Date(value).getTime())
+        .filter(value => Number.isFinite(value))
+        .sort((a, b) => b - a)[0] || 0;
+
+      // 매크로 프로그램이 player_stats를 최근 2분 안에 갱신하면 초록불로 표시합니다.
+      return latest > 0 && Date.now() - latest < 1000 * 60 * 2;
+    }
+
+    function shouldUpdateTodayPeakTier(profile = {}, nextPeak = '') {
+      if (!nextPeak || nextPeak === '-') return false;
+      const storedPeak = profile.today_peak_tier || '';
+      const storedIsToday = peakDateIsToday(profile.today_peak_updated);
+
+      // 날짜가 바뀐 경우에는 새 날짜의 최고티어를 시작합니다.
+      if (!storedIsToday) return true;
+
+      // 같은 날짜에는 절대 낮은 티어로 덮어쓰지 않고, 더 높은 티어일 때만 업데이트합니다.
+      return tierPower(nextPeak) > tierPower(storedPeak);
+    }
+
     async function syncTodayPeakTierRow(row, observedTier = '') {
       if (!row || !row.username) return row;
       const todayKey = todayDate();
@@ -7224,7 +7281,7 @@ h2::before{
           .gte('created_at', sinceIso),
         sessionQuery,
         showLiveRank
-          ? supabaseClient.from('player_stats').select('username, rank, current_rank, score, current_score, tier, current_tier')
+          ? supabaseClient.from('player_stats').select('username, rank, current_rank, score, current_score, tier, current_tier, updated_at, today_peak_tier, today_peak_updated')
           : Promise.resolve({ data: [], error: null }),
       ]);
 
@@ -7236,10 +7293,16 @@ h2::before{
       }
 
       const liveRankMap = {};
+      const liveUpdatedAtMap = {};
+      const livePeakTierMap = {};
       (liveRankRes.data || []).forEach(row => {
         if (!row.username) return;
         const value = firstValidRank(row.current_rank, row.rank);
         liveRankMap[row.username] = value ?? '-';
+        liveUpdatedAtMap[row.username] = row.updated_at || '';
+        if (peakDateIsToday(row.today_peak_updated) && row.today_peak_tier) {
+          livePeakTierMap[row.username] = row.today_peak_tier;
+        }
       });
 
       const historyGrouped = {};
@@ -7283,13 +7346,21 @@ h2::before{
         .map(username => {
           const stats = choosePeriodStats(historyGrouped[username], sessionGrouped[username]);
           const profile = statsMap[username] || {};
+          const storedTodayPeak = peakDateIsToday(profile.today_peak_updated) ? profile.today_peak_tier : '';
+          const liveTodayPeak = livePeakTierMap[username] || '';
+          const currentTier = profile.current_tier || profile.tier || '-';
+          const peakTier = showPeakTier
+            ? bestTierName(storedTodayPeak, liveTodayPeak, peakTierMap[username], currentTier)
+            : undefined;
+
           return {
             username,
             ...stats,
-            tier: profile.current_tier || profile.tier || '-',
+            tier: currentTier,
             score: firstValidNumber(profile.current_score, profile.score) ?? 0,
             liveRank: showLiveRank ? (liveRankMap[username] ?? firstValidRank(profile.current_rank, profile.rank) ?? '-') : undefined,
-            peakTier: showPeakTier ? bestTierName(profile.today_peak_tier, peakTierMap[username], profile.current_tier || profile.tier) : undefined,
+            peakTier,
+            isMacroOnline: isRecentlyOnline(profile.updated_at, liveUpdatedAtMap[username]),
             fc: fcFromWins(stats.wins),
             rate: stats.matches ? stats.wins / stats.matches : 0,
           };
@@ -7301,7 +7372,7 @@ h2::before{
       if (showPeakTier) {
         ranking.forEach(row => {
           const profile = statsMap[row.username] || {};
-          if (row.peakTier && row.peakTier !== '-' && row.peakTier !== profile.today_peak_tier) {
+          if (shouldUpdateTodayPeakTier(profile, row.peakTier)) {
             supabaseClient
               .from('player_stats')
               .update({ today_peak_tier: row.peakTier, today_peak_updated: todayDate() })
@@ -7325,7 +7396,7 @@ h2::before{
       tbody.innerHTML = displayRanking.map((row, i) => `
         <tr>
           <td data-rank="${i + 1}">${i + 1}</td>
-          <td>${row.username}</td>
+          <td><span class="ranking-name-cell">${row.isMacroOnline ? '<span class="macro-online-dot" title="매크로 사용중"></span>' : ''}<span>${row.username}</span></span></td>
           <td>${row.tier}${showPeakTier ? `<span class="mobile-peak-tier"> · 최고 ${row.peakTier || '-'}</span>` : ''}</td>
           <td class="ok">${row.wins}</td>
           <td>${row.draws}</td>
