@@ -142,8 +142,11 @@
 
     window.supabaseClient = db;
 
+    // 기존 코드가 admin_login이 없으면 admin.html 자기 자신으로 다시 보내서
+    // 새로고침 루프가 발생했습니다. 관리자 페이지 접근을 막지 않고 그대로 로드합니다.
+    // 필요하면 나중에 별도 admin-login.html로 연결하세요.
     if (localStorage.getItem('admin_login') !== 'true') {
-      location.href = './admin.html';
+      console.warn('admin_login 값이 없지만, 새로고침 루프 방지를 위해 관리자 페이지를 그대로 표시합니다.');
     }
 
     const $ = (id) => document.getElementById(id);
@@ -164,7 +167,8 @@
 
     function logout() {
       localStorage.removeItem('admin_login');
-      location.href = './admin.html';
+      alert('로그아웃 처리했습니다. 현재 버전은 새로고침 루프 방지를 위해 관리자 화면은 계속 표시됩니다.');
+      location.reload();
     }
 
     function startOfTodayIso() {
