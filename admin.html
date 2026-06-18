@@ -4,10 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOONDO 관리자 로그인</title>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
-
   <style>
     * { box-sizing: border-box; }
     body {
@@ -65,12 +63,9 @@
 <body>
   <div class="box">
     <h2>관리자 로그인</h2>
-
     <input id="adminId" placeholder="아이디" autocomplete="username">
     <input id="adminPw" type="password" placeholder="비밀번호" autocomplete="current-password">
-
     <button type="button" id="loginBtn">로그인</button>
-
     <p id="msg" class="msg"></p>
     <a href="./index.html">일반 대시보드로 이동</a>
   </div>
@@ -122,10 +117,10 @@
 
       try {
         const { data, error } = await supabaseClient
-          .from('admin_users')
-          .select('id, username, status, password')
-          .eq('username', id)
-          .maybeSingle();
+          .rpc('verify_admin_login', {
+            input_username: id,
+            input_password: pw
+          });
 
         if (error) {
           console.error(error);
@@ -133,25 +128,17 @@
           return;
         }
 
-        if (!data) {
-          setMsg('존재하지 않는 관리자 계정입니다.');
+        if (!data || data.length === 0) {
+          setMsg('아이디 또는 비밀번호가 틀렸습니다.');
           return;
         }
 
-        if (data.status !== 'approved') {
-          setMsg('승인되지 않은 관리자 계정입니다.');
-          return;
-        }
-
-        if (String(data.password || '').trim() !== pw) {
-          setMsg('비밀번호가 틀렸습니다.');
-          return;
-        }
+        const admin = data[0];
 
         localStorage.setItem('admin_login', 'true');
         localStorage.setItem('moondo_admin', JSON.stringify({
-          id: data.id,
-          username: data.username,
+          id: admin.id,
+          username: admin.username,
           role: 'admin'
         }));
 
