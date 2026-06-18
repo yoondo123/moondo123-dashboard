@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOONDO 관리자 로그인</title>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
+
   <style>
     * { box-sizing: border-box; }
     body {
@@ -43,17 +45,32 @@
       cursor: pointer;
     }
     button:disabled { opacity: .6; cursor: not-allowed; }
-    .msg { min-height: 18px; margin-top: 12px; color: #ff8b8b; font-size: 13px; }
+    .msg {
+      min-height: 18px;
+      margin-top: 12px;
+      color: #ff8b8b;
+      font-size: 13px;
+    }
     .ok { color: #8dffd8; }
-    a { display: block; margin-top: 14px; color: #aeece4; text-align: center; text-decoration: none; }
+    a {
+      display: block;
+      margin-top: 14px;
+      color: #aeece4;
+      text-align: center;
+      text-decoration: none;
+    }
   </style>
 </head>
+
 <body>
   <div class="box">
     <h2>관리자 로그인</h2>
+
     <input id="adminId" placeholder="아이디" autocomplete="username">
     <input id="adminPw" type="password" placeholder="비밀번호" autocomplete="current-password">
+
     <button type="button" id="loginBtn">로그인</button>
+
     <p id="msg" class="msg"></p>
     <a href="./index.html">일반 대시보드로 이동</a>
   </div>
@@ -71,7 +88,9 @@
 
     const supabaseClient =
       window.supabaseClient ||
-      (window.supabase && SB_URL && SB_KEY ? window.supabase.createClient(SB_URL, SB_KEY) : null);
+      (window.supabase && SB_URL && SB_KEY
+        ? window.supabase.createClient(SB_URL, SB_KEY)
+        : null);
 
     window.supabaseClient = supabaseClient;
 
@@ -106,8 +125,6 @@
           .from('admin_users')
           .select('id, username, status, password')
           .eq('username', id)
-          .eq('password', pw)
-          .eq('status', 'approved')
           .maybeSingle();
 
         if (error) {
@@ -117,7 +134,17 @@
         }
 
         if (!data) {
-          setMsg('아이디 또는 비밀번호가 틀렸습니다.');
+          setMsg('존재하지 않는 관리자 계정입니다.');
+          return;
+        }
+
+        if (data.status !== 'approved') {
+          setMsg('승인되지 않은 관리자 계정입니다.');
+          return;
+        }
+
+        if (String(data.password || '').trim() !== pw) {
+          setMsg('비밀번호가 틀렸습니다.');
           return;
         }
 
@@ -129,7 +156,11 @@
         }));
 
         setMsg('로그인 성공. 이동 중...', true);
-        location.href = './admin-dashboard.html';
+
+        setTimeout(() => {
+          location.href = './admin-dashboard.html';
+        }, 300);
+
       } catch (err) {
         console.error(err);
         setMsg('로그인 중 오류: ' + err.message);
@@ -140,6 +171,7 @@
     }
 
     loginBtn.addEventListener('click', login);
+
     document.getElementById('adminPw').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') login();
     });
