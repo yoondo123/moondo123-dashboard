@@ -7352,7 +7352,7 @@ h2::before{
 
     async function refreshAll() {
       const statsMap = await loadPlayerStatsMap();
-      await Promise.all([
+      await Promise.allSettled([
         loadRanking(statsMap, {
           tbodyId: 'rankingList',
           sinceIso: startOfTodayIso(),
@@ -7372,7 +7372,7 @@ h2::before{
         }),
       ]);
       if (currentUser) {
-        await Promise.all([
+        await Promise.allSettled([
           loadLiveStatus(),
           loadPeriodStats(statsMap),
           loadRecent(),
@@ -7383,8 +7383,25 @@ h2::before{
     }
 
     setLoginState();
-    refreshAll();
-    setInterval(refreshAll, 60000);
+    let refreshBusy = false;
+    async function runAutoRefresh() {
+      if (!refreshBusy) {
+        refreshBusy = true;
+        try {
+          await refreshAll();
+        } catch (error) {
+          console.warn('[WAGGU] refresh skipped:', error);
+        } finally {
+          refreshBusy = false;
+        }
+      }
+      setTimeout(runAutoRefresh, 60000);
+    }
+    runAutoRefresh();
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) refreshAll();
+    });
+    window.addEventListener('focus', refreshAll);
   </script>
 
 <script>
