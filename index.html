@@ -7384,8 +7384,21 @@ h2::before{
 
     setLoginState();
     let refreshBusy = false;
+    let lastUserActivityAt = Date.now();
+    const AUTO_REFRESH_INTERVAL_MS = 60000;
+    const AUTO_REFRESH_IDLE_STOP_MS = 5 * 60 * 1000;
+
+    function markUserActivity() {
+      const wasIdle = Date.now() - lastUserActivityAt >= AUTO_REFRESH_IDLE_STOP_MS;
+      lastUserActivityAt = Date.now();
+      if (wasIdle && !document.hidden) {
+        refreshAll();
+      }
+    }
+
     async function runAutoRefresh() {
-      if (!refreshBusy) {
+      const isIdle = Date.now() - lastUserActivityAt >= AUTO_REFRESH_IDLE_STOP_MS;
+      if (!document.hidden && !isIdle && !refreshBusy) {
         refreshBusy = true;
         try {
           await refreshAll();
@@ -7395,13 +7408,18 @@ h2::before{
           refreshBusy = false;
         }
       }
-      setTimeout(runAutoRefresh, 60000);
+      setTimeout(runAutoRefresh, AUTO_REFRESH_INTERVAL_MS);
     }
     runAutoRefresh();
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) refreshAll();
+      if (!document.hidden) {
+        markUserActivity();
+      }
     });
-    window.addEventListener('focus', refreshAll);
+    window.addEventListener('focus', markUserActivity);
+    ['click', 'touchstart', 'scroll', 'keydown'].forEach(function (eventName) {
+      window.addEventListener(eventName, markUserActivity, { passive: true });
+    });
   </script>
 
 <script>
