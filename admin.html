@@ -285,11 +285,6 @@
         return;
       }
 
-      if (!supabaseClient) {
-        setMsg(TEXT.noConfig);
-        return;
-      }
-
       loginBtn.disabled = true;
       loginBtn.innerText = TEXT.checking;
       setMsg("");
@@ -298,6 +293,11 @@
         let admin = null;
 
         admin = await loginByLocalFallback(id, pw);
+
+        if (!admin && !supabaseClient) {
+          setMsg(TEXT.noConfig);
+          return;
+        }
 
         if (!admin) {
           try {
