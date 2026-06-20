@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MOONDO 관리자 로그인</title>
+  <title>WAGGU 관리자 로그인</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
   <style>
@@ -13,56 +13,75 @@
       min-height: 100vh;
       display: grid;
       place-items: center;
-      background: radial-gradient(circle at 20% 0%, rgba(0,224,194,.14), transparent 32%), #05090d;
+      background: radial-gradient(circle at 18% 0%, rgba(143, 165, 146, .22), transparent 34%), #05070a;
       color: #f5faf7;
-      font-family: Arial, sans-serif;
+      font-family: "Malgun Gothic", Arial, sans-serif;
     }
     .box {
-      width: min(360px, calc(100% - 28px));
+      width: min(370px, calc(100% - 28px));
       padding: 28px;
       border-radius: 18px;
-      background: #101820;
+      background: linear-gradient(180deg, rgba(255,255,255,.045), transparent), #10141b;
       border: 1px solid rgba(255,255,255,.12);
       box-shadow: 0 24px 70px rgba(0,0,0,.45);
     }
-    h2 { margin: 0 0 16px; }
+    .logo {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 14px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #dbe8dd, #8fa592);
+      color: #07100a;
+      font-size: 24px;
+      font-weight: 1000;
+    }
+    h2 { margin: 0 0 6px; font-size: 23px; }
+    .sub { margin: 0 0 18px; color: #93a29a; font-size: 13px; }
     input, button {
       width: 100%;
       height: 44px;
       margin-top: 10px;
-      border-radius: 10px;
+      border-radius: 11px;
       border: 1px solid rgba(255,255,255,.12);
       padding: 0 12px;
       font-size: 15px;
+      font-family: inherit;
     }
-    input { background: #070c11; color: white; }
+    input { background: #070b10; color: white; outline: none; }
+    input:focus { border-color: rgba(143, 165, 146, .72); }
     button {
-      background: #00e0c2;
-      color: #02100e;
-      font-weight: 900;
+      background: linear-gradient(180deg, #a9bbaa, #7d967f);
+      color: #061008;
+      font-weight: 1000;
       cursor: pointer;
     }
     button:disabled { opacity: .6; cursor: not-allowed; }
     .msg {
       min-height: 18px;
-      margin-top: 12px;
-      color: #ff8b8b;
+      margin: 12px 0 0;
+      color: #ff9ca5;
       font-size: 13px;
+      line-height: 1.45;
     }
-    .ok { color: #8dffd8; }
+    .ok { color: #a9e7b6; }
     a {
       display: block;
       margin-top: 14px;
-      color: #aeece4;
+      color: #b9cbbb;
       text-align: center;
       text-decoration: none;
+      font-size: 13px;
     }
   </style>
 </head>
 
 <body>
   <div class="box">
+    <div class="logo">W</div>
     <h2>관리자 로그인</h2>
+    <p class="sub">WAGGU 업데이트 관리 페이지</p>
     <input id="adminId" placeholder="아이디" autocomplete="username">
     <input id="adminPw" type="password" placeholder="비밀번호" autocomplete="current-password">
     <button type="button" id="loginBtn">로그인</button>
@@ -71,15 +90,22 @@
   </div>
 
   <script>
+    const cfg = window.SUPABASE_CONFIG || window.CONFIG || window.APP_CONFIG || {};
     const SB_URL =
       window.SUPABASE_URL ||
-      (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '');
+      window.supabaseUrl ||
+      cfg.SUPABASE_URL ||
+      cfg.url ||
+      '';
 
     const SB_KEY =
       window.SUPABASE_KEY ||
       window.SUPABASE_ANON_KEY ||
-      (typeof SUPABASE_KEY !== 'undefined' ? SUPABASE_KEY : '') ||
-      (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '');
+      window.supabaseKey ||
+      cfg.SUPABASE_KEY ||
+      cfg.SUPABASE_ANON_KEY ||
+      cfg.key ||
+      '';
 
     const supabaseClient =
       window.supabaseClient ||
@@ -97,9 +123,15 @@
       msg.className = ok ? 'msg ok' : 'msg';
     }
 
+    function normalizeRows(data) {
+      if (!data) return [];
+      if (Array.isArray(data)) return data;
+      return [data];
+    }
+
     async function login() {
       const id = document.getElementById('adminId').value.trim();
-      const pw = document.getElementById('adminPw').value.trim();
+      const pw = document.getElementById('adminPw').value;
 
       if (!id || !pw) {
         setMsg('아이디와 비밀번호를 입력해 주세요.');
@@ -116,38 +148,35 @@
       setMsg('');
 
       try {
-        const { data, error } = await supabaseClient
-          .rpc('verify_admin_login', {
-            input_username: id,
-            input_password: pw
-          });
+        const { data, error } = await supabaseClient.rpc('verify_admin_login', {
+          input_username: id,
+          input_password: pw
+        });
 
         if (error) {
           console.error(error);
-          setMsg('로그인 조회 오류: ' + error.message);
+          setMsg('로그인 조회 오류: verify_admin_login SQL 함수를 확인해 주세요.');
           return;
         }
 
-        if (!data || data.length === 0) {
+        const rows = normalizeRows(data);
+        if (!rows.length) {
           setMsg('아이디 또는 비밀번호가 틀렸습니다.');
           return;
         }
 
-        const admin = data[0];
-
+        const admin = rows[0];
         localStorage.setItem('admin_login', 'true');
         localStorage.setItem('moondo_admin', JSON.stringify({
-          id: admin.id,
-          username: admin.username,
-          role: 'admin'
+          id: admin.id || null,
+          username: admin.username || id,
+          role: admin.role || 'admin'
         }));
 
         setMsg('로그인 성공. 이동 중...', true);
-
         setTimeout(() => {
           location.href = './admin-dashboard.html';
-        }, 300);
-
+        }, 250);
       } catch (err) {
         console.error(err);
         setMsg('로그인 중 오류: ' + err.message);
@@ -158,7 +187,6 @@
     }
 
     loginBtn.addEventListener('click', login);
-
     document.getElementById('adminPw').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') login();
     });
