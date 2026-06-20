@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WAGGU 관리자 로그인</title>
+  <title>WAGGU &#44288;&#47532;&#51088; &#47196;&#44536;&#51064;</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
   <style>
@@ -80,47 +80,40 @@
 <body>
   <div class="box">
     <div class="logo">W</div>
-    <h2>관리자 로그인</h2>
-    <p class="sub">WAGGU 업데이트 관리 페이지</p>
-    <input id="adminId" placeholder="아이디" autocomplete="username">
-    <input id="adminPw" type="password" placeholder="비밀번호" autocomplete="current-password">
-    <button type="button" id="loginBtn">로그인</button>
+    <h2>&#44288;&#47532;&#51088; &#47196;&#44536;&#51064;</h2>
+    <p class="sub">WAGGU &#50629;&#45936;&#51060;&#53944; &#44288;&#47532; &#54168;&#51060;&#51648;</p>
+    <input id="adminId" placeholder="&#50500;&#51060;&#46356;" autocomplete="username">
+    <input id="adminPw" type="password" placeholder="&#48708;&#48128;&#48264;&#54840;" autocomplete="current-password">
+    <button type="button" id="loginBtn">&#47196;&#44536;&#51064;</button>
     <p id="msg" class="msg"></p>
-    <a href="./index.html">일반 대시보드로 이동</a>
+    <a href="./index.html">&#51068;&#48152; &#45824;&#49884;&#48372;&#46300;&#47196; &#51060;&#46041;</a>
   </div>
 
   <script>
+    const TEXT = {
+      missing: "\uc544\uc774\ub514\uc640 \ube44\ubc00\ubc88\ud638\ub97c \uc785\ub825\ud574 \uc8fc\uc138\uc694.",
+      noConfig: "Supabase \uc5f0\uacb0 \uc2e4\ud328: config.js\ub97c \ud655\uc778\ud574 \uc8fc\uc138\uc694.",
+      checking: "\ud655\uc778 \uc911...",
+      lookupError: "\ub85c\uadf8\uc778 \uc870\ud68c \uc624\ub958: admin_users \uad8c\ud55c \ub610\ub294 verify_admin_login SQL\uc744 \ud655\uc778\ud574 \uc8fc\uc138\uc694.",
+      denied: "\uc544\uc774\ub514 \ub610\ub294 \ube44\ubc00\ubc88\ud638\uac00 \ud2c0\ub838\uc2b5\ub2c8\ub2e4.",
+      success: "\ub85c\uadf8\uc778 \uc131\uacf5. \uc774\ub3d9 \uc911...",
+      error: "\ub85c\uadf8\uc778 \uc911 \uc624\ub958: ",
+      login: "\ub85c\uadf8\uc778"
+    };
+
     const cfg = window.SUPABASE_CONFIG || window.CONFIG || window.APP_CONFIG || {};
-    const SB_URL =
-      window.SUPABASE_URL ||
-      window.supabaseUrl ||
-      cfg.SUPABASE_URL ||
-      cfg.url ||
-      '';
-
-    const SB_KEY =
-      window.SUPABASE_KEY ||
-      window.SUPABASE_ANON_KEY ||
-      window.supabaseKey ||
-      cfg.SUPABASE_KEY ||
-      cfg.SUPABASE_ANON_KEY ||
-      cfg.key ||
-      '';
-
-    const supabaseClient =
-      window.supabaseClient ||
-      (window.supabase && SB_URL && SB_KEY
-        ? window.supabase.createClient(SB_URL, SB_KEY)
-        : null);
+    const SB_URL = window.SUPABASE_URL || window.supabaseUrl || cfg.SUPABASE_URL || cfg.url || "";
+    const SB_KEY = window.SUPABASE_KEY || window.SUPABASE_ANON_KEY || window.supabaseKey || cfg.SUPABASE_KEY || cfg.SUPABASE_ANON_KEY || cfg.key || "";
+    const supabaseClient = window.supabaseClient || (window.supabase && SB_URL && SB_KEY ? window.supabase.createClient(SB_URL, SB_KEY) : null);
 
     window.supabaseClient = supabaseClient;
 
-    const msg = document.getElementById('msg');
-    const loginBtn = document.getElementById('loginBtn');
+    const msg = document.getElementById("msg");
+    const loginBtn = document.getElementById("loginBtn");
 
     function setMsg(text, ok = false) {
-      msg.innerText = text || '';
-      msg.className = ok ? 'msg ok' : 'msg';
+      msg.innerText = text || "";
+      msg.className = ok ? "msg ok" : "msg";
     }
 
     function normalizeRows(data) {
@@ -129,66 +122,104 @@
       return [data];
     }
 
+    async function sha256Hex(text) {
+      const bytes = new TextEncoder().encode(text);
+      const hash = await crypto.subtle.digest("SHA-256", bytes);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function loginByRpc(id, pw) {
+      const { data, error } = await supabaseClient.rpc("verify_admin_login", {
+        input_username: id,
+        input_password: pw
+      });
+      if (error) throw error;
+      return normalizeRows(data)[0] || null;
+    }
+
+    async function loginByDirectQuery(id, pw) {
+      const { data, error } = await supabaseClient
+        .from("admin_users")
+        .select("id, username, password, password_hash, status, role")
+        .eq("username", id)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      const status = String(data.status || "approved").toLowerCase();
+      if (status !== "approved" && status !== "active") return null;
+
+      const hash = await sha256Hex(pw);
+      if (data.password === pw || data.password_hash === hash) {
+        return data;
+      }
+
+      return null;
+    }
+
+    function saveAdmin(admin, id) {
+      localStorage.setItem("admin_login", "true");
+      localStorage.setItem("moondo_admin", JSON.stringify({
+        id: admin.id || null,
+        username: admin.username || id,
+        role: admin.role || "admin"
+      }));
+    }
+
     async function login() {
-      const id = document.getElementById('adminId').value.trim();
-      const pw = document.getElementById('adminPw').value;
+      const id = document.getElementById("adminId").value.trim();
+      const pw = document.getElementById("adminPw").value;
 
       if (!id || !pw) {
-        setMsg('아이디와 비밀번호를 입력해 주세요.');
+        setMsg(TEXT.missing);
         return;
       }
 
       if (!supabaseClient) {
-        setMsg('Supabase 연결 실패: config.js를 확인해 주세요.');
+        setMsg(TEXT.noConfig);
         return;
       }
 
       loginBtn.disabled = true;
-      loginBtn.innerText = '확인 중...';
-      setMsg('');
+      loginBtn.innerText = TEXT.checking;
+      setMsg("");
 
       try {
-        const { data, error } = await supabaseClient.rpc('verify_admin_login', {
-          input_username: id,
-          input_password: pw
-        });
+        let admin = null;
 
-        if (error) {
-          console.error(error);
-          setMsg('로그인 조회 오류: verify_admin_login SQL 함수를 확인해 주세요.');
+        try {
+          admin = await loginByRpc(id, pw);
+        } catch (rpcError) {
+          console.warn("verify_admin_login failed, falling back to admin_users query:", rpcError);
+        }
+
+        if (!admin) {
+          admin = await loginByDirectQuery(id, pw);
+        }
+
+        if (!admin) {
+          setMsg(TEXT.denied);
           return;
         }
 
-        const rows = normalizeRows(data);
-        if (!rows.length) {
-          setMsg('아이디 또는 비밀번호가 틀렸습니다.');
-          return;
-        }
-
-        const admin = rows[0];
-        localStorage.setItem('admin_login', 'true');
-        localStorage.setItem('moondo_admin', JSON.stringify({
-          id: admin.id || null,
-          username: admin.username || id,
-          role: admin.role || 'admin'
-        }));
-
-        setMsg('로그인 성공. 이동 중...', true);
+        saveAdmin(admin, id);
+        setMsg(TEXT.success, true);
         setTimeout(() => {
-          location.href = './admin-dashboard.html';
+          location.href = "./admin-dashboard.html";
         }, 250);
       } catch (err) {
         console.error(err);
-        setMsg('로그인 중 오류: ' + err.message);
+        setMsg(TEXT.lookupError + " (" + (err.message || err) + ")");
       } finally {
         loginBtn.disabled = false;
-        loginBtn.innerText = '로그인';
+        loginBtn.innerText = TEXT.login;
       }
     }
 
-    loginBtn.addEventListener('click', login);
-    document.getElementById('adminPw').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') login();
+    loginBtn.addEventListener("click", login);
+    document.getElementById("adminPw").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") login();
     });
   </script>
 </body>
