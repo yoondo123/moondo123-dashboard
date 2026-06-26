@@ -5945,7 +5945,7 @@ h2::before{
         <div class="stat compact">
           <span class="muted">FC 채굴량</span>
           <strong id="todayFc">0</strong>
-          <small>승리 1회당 15 FC</small>
+          <small>챔피언스 15 / 슈챔 20 FC</small>
         </div>
         <div class="stat compact">
           <span class="muted">현재 티어</span>
@@ -6102,7 +6102,7 @@ h2::before{
         <div class="stat">
           <span class="muted">누적 FC</span>
           <strong id="lifetimeFc">0</strong>
-          <small>승리 1회당 15 FC</small>
+          <small>챔피언스 15 / 슈챔 20 FC</small>
         </div>
         <div class="stat">
           <span class="muted">현재 티어</span>
@@ -6497,8 +6497,17 @@ h2::before{
       return query.order('session_date', { ascending: false });
     }
 
-    function fcFromWins(wins) {
-      return Number(wins || 0) * 15;
+    function fcPerWinByTier(tier) {
+      const name = normalizeTierName(tier);
+      if (!name || name === '-') return 0;
+      if (name.includes('슈퍼챔피언스') || name.includes('슈퍼챔피언')) return 20;
+      if (name.includes('챔피언스') || name.includes('챔피언')) return 15;
+      if (name.includes('슈퍼챌린저') || name.includes('슈퍼챌린지') || name.includes('슈퍼챌')) return 0;
+      return 0;
+    }
+
+    function fcFromWins(wins, tier) {
+      return Number(wins || 0) * fcPerWinByTier(tier);
     }
 
     function winRate(stats) {
@@ -7110,7 +7119,7 @@ h2::before{
       document.getElementById('todayWins').innerText = today.wins;
       document.getElementById('todayDraws').innerText = today.draws;
       document.getElementById('todayLosses').innerText = today.losses;
-      document.getElementById('todayFc').innerText = fcFromWins(today.wins);
+      document.getElementById('todayFc').innerText = fcFromWins(today.wins, meta.tier);
       document.getElementById('todayTier').innerText = meta.tier;
       document.getElementById('todayPeakTier').innerText = `오늘 최고티어 ${displayTierName(todayPeakTierValue || meta.tier || '-')}`;
       document.getElementById('todayScore').innerText = meta.score;
@@ -7121,7 +7130,7 @@ h2::before{
       document.getElementById('weekWins').innerText = week.wins;
       document.getElementById('weekDraws').innerText = week.draws;
       document.getElementById('weekLosses').innerText = week.losses;
-      document.getElementById('weekFc').innerText = fcFromWins(week.wins);
+      document.getElementById('weekFc').innerText = fcFromWins(week.wins, meta.tier);
       document.getElementById('weekMeta').innerText = `${weekStart} 시작`;
       document.getElementById('weekWinRate').innerText = `승률 ${winRate(week)}%`;
     }
@@ -7129,13 +7138,20 @@ h2::before{
     async function loadRecent() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentList');
-      const [historyRes, sessionRes] = await Promise.all([
+      const [historyRes, sessionRes, profileRes] = await Promise.all([
         loadUserHistory(currentUser.username, rolling7StartIso()),
         loadUserSessions(currentUser.username, rolling7StartKey()),
+        supabaseClient
+          .from('player_stats')
+          .select('current_tier, tier')
+          .eq('username', currentUser.username)
+          .order('updated_at', { ascending: false })
+          .limit(1),
       ]);
 
       const historyRows = historyRes.data || [];
       const sessionRows = sessionRes.data || [];
+      const recentTier = profileRes.data?.[0]?.current_tier || profileRes.data?.[0]?.tier || '-';
       if (historyRes.error && sessionRows.length === 0) {
         const message = historyRes.error.message;
         tbody.innerHTML = `<tr><td colspan="5">오류: ${message}</td></tr>`;
@@ -7157,7 +7173,7 @@ h2::before{
           <td>${row.wins}승 ${row.draws}무 ${row.losses}패</td>
           <td>${row.matches}</td>
           <td>${winRate(row)}%</td>
-          <td>${fcFromWins(row.wins)}</td>
+          <td>${fcFromWins(row.wins, recentTier)}</td>
         </tr>
       `).join('');
     }
@@ -7284,7 +7300,7 @@ h2::before{
             score: firstValidNumber(profile.current_score, profile.score) ?? 0,
             liveRank: showLiveRank ? (liveRankMap[username] ?? firstValidRank(profile.current_rank, profile.rank) ?? '-') : undefined,
             peakTier: showPeakTier ? bestTierName(profile.today_peak_tier, peakTierMap[username], profile.current_tier || profile.tier) : undefined,
-            fc: fcFromWins(stats.wins),
+            fc: fcFromWins(stats.wins, profile.current_tier || profile.tier),
             rate: stats.matches ? stats.wins / stats.matches : 0,
           };
         })
@@ -8260,8 +8276,8 @@ h2::before{
       const latestGame = recentRows[0] || {};
       const todayStats = summarizeRows(todayRows);
       const recentResults = recentRows.map(row => safeNormalizeResult(row.result)).filter(Boolean);
-      const todayFc = todayStats.wins * 15;
       const currentTier = profile.tier || profile.current_tier || latestGame.tier || '-';
+      const todayFc = fcFromWins(todayStats.wins, currentTier);
       const currentScore = profile.score ?? profile.current_score ?? latestGame.score_after ?? 0;
       const currentRank = profile.rank ?? profile.current_rank ?? latestGame.rank_after ?? '-';
 
