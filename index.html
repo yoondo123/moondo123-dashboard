@@ -7209,6 +7209,25 @@ h2::before{
       renderRecentForm(displayResults, '전체 최근 경기 순서');
     }
 
+    function isMacroLiveRow(row) {
+      if (!row) return false;
+      const runningValue = row.is_running ?? row.running ?? row.is_active;
+      if (runningValue === true || runningValue === 1 || runningValue === 'true' || runningValue === '1') return true;
+
+      const statusText = String(row.game_status || row.status || row.state || '').toLowerCase();
+      const looksActive = ['running', 'live', 'playing', 'in_game', 'active', '실행', '진행', '대기'].some(token => statusText.includes(token));
+      const looksStopped = ['stop', 'stopped', 'offline', 'idle', '중지', '종료'].some(token => statusText.includes(token));
+      const seenAt = row.last_seen_at || row.updated_at;
+      const seenTime = seenAt ? new Date(seenAt).getTime() : NaN;
+      const seenRecently = Number.isFinite(seenTime) && Date.now() - seenTime <= 5 * 60 * 1000;
+      return !looksStopped && (looksActive || seenRecently);
+    }
+
+    function rankingNameHtml(row) {
+      const liveDot = row.isMacroLive ? '<span class="ranking-live-dot" title="매크로 실행 중"></span>' : '';
+      return `${liveDot}<span class="ranking-username">${row.username}</span>`;
+    }
+
     async function loadRanking(statsMap, options = {}) {
       const {
         tbodyId = 'rankingList',
@@ -7218,6 +7237,7 @@ h2::before{
         emptyMessage = '오늘 랭킹 데이터가 없습니다.',
         showLiveRank = false,
         showPeakTier = false,
+        showMacroLive = tbodyId === 'rankingList',
       } = options;
       const tbody = document.getElementById(tbodyId);
 
@@ -7239,7 +7259,7 @@ h2::before{
         showLiveRank
           ? supabaseClient
               .from('player_stats')
-              .select('username, rank, current_rank, score, current_score, tier, current_tier, updated_at')
+              .select('username, rank, current_rank, score, current_score, tier, current_tier, updated_at, is_running, game_status, status, last_seen_at')
               .order('updated_at', { ascending: false })
           : Promise.resolve({ data: [], error: null }),
       ]);
@@ -7252,11 +7272,16 @@ h2::before{
       }
 
       const liveRankMap = {};
+      const liveStatusMap = {};
       (liveRankRes.data || []).forEach(row => {
         if (!row.username) return;
-        if (Object.prototype.hasOwnProperty.call(liveRankMap, row.username)) return;
-        const value = firstValidRank(row.current_rank, row.rank);
-        liveRankMap[row.username] = value ?? '-';
+        if (!Object.prototype.hasOwnProperty.call(liveRankMap, row.username)) {
+          const value = firstValidRank(row.current_rank, row.rank);
+          liveRankMap[row.username] = value ?? '-';
+        }
+        if (!Object.prototype.hasOwnProperty.call(liveStatusMap, row.username)) {
+          liveStatusMap[row.username] = isMacroLiveRow(row);
+        }
       });
 
       const historyGrouped = {};
@@ -7306,6 +7331,7 @@ h2::before{
             tier: profile.current_tier || profile.tier || '-',
             score: firstValidNumber(profile.current_score, profile.score) ?? 0,
             liveRank: showLiveRank ? (liveRankMap[username] ?? firstValidRank(profile.current_rank, profile.rank) ?? '-') : undefined,
+            isMacroLive: showMacroLive ? (liveStatusMap[username] ?? isMacroLiveRow(profile)) : false,
             peakTier: showPeakTier ? bestTierName(profile.today_peak_tier, peakTierMap[username], profile.current_tier || profile.tier) : undefined,
             fc: fcFromWins(stats.wins, profile.current_tier || profile.tier),
             rate: stats.matches ? stats.wins / stats.matches : 0,
@@ -7342,7 +7368,7 @@ h2::before{
       tbody.innerHTML = displayRanking.map((row, i) => `
         <tr>
           <td data-rank="${i + 1}">${i + 1}</td>
-          <td>${row.username}</td>
+          <td class="ranking-name-cell">${rankingNameHtml(row)}</td>
           <td>${row.tier}${showPeakTier ? `<span class="mobile-peak-tier"> · 최고 ${row.peakTier || '-'}</span>` : ''}</td>
           <td class="ok">${row.wins}</td>
           <td>${row.draws}</td>
@@ -8468,6 +8494,44 @@ h2::before{
   }
   #rankingList td:nth-child(12) {
     display: none !important;
+  }
+}
+</style>
+
+<style id="waggu-ranking-live-dot">
+#rankingList td.ranking-name-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+}
+#rankingList .ranking-live-dot {
+  display: inline-block !important;
+  width: 8px !important;
+  height: 8px !important;
+  min-width: 8px !important;
+  border-radius: 999px !important;
+  background: #21f28a !important;
+  box-shadow: 0 0 0 3px rgba(33,242,138,.16), 0 0 14px rgba(33,242,138,.75) !important;
+}
+#rankingList .ranking-username {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+@media (max-width: 760px) {
+  #rankingList td.ranking-name-cell {
+    display: flex !important;
+    grid-area: name !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+  }
+  #rankingList .ranking-live-dot {
+    width: 7px !important;
+    height: 7px !important;
+    min-width: 7px !important;
   }
 }
 </style>
