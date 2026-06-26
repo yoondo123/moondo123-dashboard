@@ -6222,11 +6222,27 @@ h2::before{
 
     let currentUser = JSON.parse(localStorage.getItem('moondo_user') || 'null');
 
+    const KST_TIME_ZONE = 'Asia/Seoul';
+    const KST_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+      timeZone: KST_TIME_ZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const KST_WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-US', {
+      timeZone: KST_TIME_ZONE,
+      weekday: 'short'
+    });
+
     function formatLocalDate(d) {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
+      const parts = Object.fromEntries(
+        KST_DATE_FORMATTER.formatToParts(d).map(part => [part.type, part.value])
+      );
+      return `${parts.year}-${parts.month}-${parts.day}`;
+    }
+
+    function kstDayIndex(d) {
+      return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(KST_WEEKDAY_FORMATTER.format(d));
     }
 
     function todayDate() {
@@ -6234,19 +6250,16 @@ h2::before{
     }
 
     function dateFromLocalKey(dateKey) {
-      const [y, m, d] = dateKey.split('-').map(Number);
-      return new Date(y, m - 1, d);
+      return new Date(`${dateKey}T00:00:00+09:00`);
     }
 
     function startOfLocalDay(date = new Date()) {
-      const d = new Date(date);
-      d.setHours(0, 0, 0, 0);
-      return d;
+      return dateFromLocalKey(formatLocalDate(date));
     }
 
     function rolling7StartDate() {
       const d = startOfLocalDay();
-      d.setDate(d.getDate() - 6);
+      d.setUTCDate(d.getUTCDate() - 6);
       return d;
     }
 
@@ -6262,31 +6275,25 @@ h2::before{
       const start = rolling7StartDate();
       return Array.from({ length: 7 }, (_, i) => {
         const d = new Date(start);
-        d.setDate(start.getDate() + i);
+        d.setUTCDate(start.getUTCDate() + i);
         return formatLocalDate(d);
       });
     }
 
     function weeklyResetDate() {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      const daysSinceThursday = (d.getDay() - 4 + 7) % 7;
-      d.setDate(d.getDate() - daysSinceThursday);
+      const d = startOfLocalDay();
+      const kstDay = kstDayIndex(d);
+      const daysSinceThursday = (kstDay - 4 + 7) % 7;
+      d.setUTCDate(d.getUTCDate() - daysSinceThursday);
       return formatLocalDate(d);
     }
 
     function weeklyResetIso() {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      const daysSinceThursday = (d.getDay() - 4 + 7) % 7;
-      d.setDate(d.getDate() - daysSinceThursday);
-      return d.toISOString();
+      return dateFromLocalKey(weeklyResetDate()).toISOString();
     }
 
     function startOfTodayIso() {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      return d.toISOString();
+      return dateFromLocalKey(todayDate()).toISOString();
     }
 
     function isOnOrAfterDateKey(dateKey, minDateKey) {
