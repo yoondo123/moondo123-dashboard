@@ -8599,6 +8599,143 @@ h2::before{
   }
 }
 </style>
+<style id="waggu-mobile-pull-refresh-style">
+#wagguPullRefresh {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  min-width: 154px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(143, 165, 146, .24);
+  border-radius: 999px;
+  background: rgba(12, 15, 18, .88);
+  color: #dfe9df;
+  box-shadow: 0 14px 34px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.05);
+  font-size: 12px;
+  font-weight: 900;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -52px);
+  transition: opacity .16s ease, transform .16s ease;
+  backdrop-filter: blur(14px);
+}
+#wagguPullRefresh.visible {
+  opacity: 1;
+}
+#wagguPullRefresh.ready {
+  color: #07100a;
+  background: linear-gradient(180deg, #dbe8dd, #8fa592);
+}
+@media (min-width: 761px) {
+  #wagguPullRefresh { display: none; }
+}
+</style>
+<script id="waggu-mobile-pull-refresh-script">
+(function () {
+  const THRESHOLD = 78;
+  const MAX_PULL = 116;
+  let startY = 0;
+  let pullY = 0;
+  let tracking = false;
+  let refreshing = false;
+  let indicator = null;
+
+  function isMobileTouch() {
+    return window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+  }
+
+  function ensureIndicator() {
+    if (indicator) return indicator;
+    indicator = document.createElement('div');
+    indicator.id = 'wagguPullRefresh';
+    indicator.textContent = '당겨서 새로고침';
+    document.body.appendChild(indicator);
+    return indicator;
+  }
+
+  function setIndicator(distance) {
+    const el = ensureIndicator();
+    const shown = Math.min(distance, MAX_PULL);
+    el.classList.toggle('visible', shown > 8 || refreshing);
+    el.classList.toggle('ready', shown >= THRESHOLD || refreshing);
+    el.textContent = refreshing ? '새로고침 중...' : (shown >= THRESHOLD ? '놓으면 새로고침' : '당겨서 새로고침');
+    el.style.transform = `translate(-50%, ${Math.max(-52, shown - 52)}px)`;
+  }
+
+  function resetIndicator() {
+    if (!indicator) return;
+    indicator.classList.remove('visible', 'ready');
+    indicator.textContent = '당겨서 새로고침';
+    indicator.style.transform = 'translate(-50%, -52px)';
+  }
+
+  async function runRefresh() {
+    if (refreshing) return;
+    refreshing = true;
+    setIndicator(THRESHOLD);
+    try {
+      if (typeof refreshAll === 'function') {
+        await refreshAll();
+      } else {
+        location.reload();
+      }
+    } catch (error) {
+      console.warn('[WAGGU] pull refresh failed:', error);
+    } finally {
+      setTimeout(() => {
+        refreshing = false;
+        resetIndicator();
+      }, 360);
+    }
+  }
+
+  function onTouchStart(event) {
+    if (!isMobileTouch() || refreshing || window.scrollY > 0) return;
+    const touch = event.touches && event.touches[0];
+    if (!touch) return;
+    tracking = true;
+    startY = touch.clientY;
+    pullY = 0;
+  }
+
+  function onTouchMove(event) {
+    if (!tracking || refreshing) return;
+    const touch = event.touches && event.touches[0];
+    if (!touch) return;
+    pullY = touch.clientY - startY;
+    if (pullY <= 0 || window.scrollY > 0) {
+      resetIndicator();
+      return;
+    }
+    setIndicator(pullY);
+  }
+
+  function onTouchEnd() {
+    if (!tracking) return;
+    tracking = false;
+    if (pullY >= THRESHOLD && window.scrollY <= 0) {
+      runRefresh();
+    } else {
+      resetIndicator();
+    }
+    pullY = 0;
+  }
+
+  function install() {
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+    document.addEventListener('touchcancel', onTouchEnd, { passive: true });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
+  else install();
+})();
+</script>
 </body>
 </html>
 
