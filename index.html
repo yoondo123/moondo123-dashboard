@@ -7069,14 +7069,14 @@ h2::before{
 
     async function loadPeriodStats(statsMap) {
       if (!currentUser) return;
-      const weekStart = rolling7StartKey();
+      const weekStart = weeklyResetDate();
       const profile = statsMap[currentUser.username] || {};
 
       const [todayHistoryRes, todaySessionRes, weekHistoryRes, weekSessionRes, liveRes] = await Promise.all([
         loadUserHistory(currentUser.username, startOfTodayIso()),
         loadUserSessions(currentUser.username, todayDate()),
-        loadUserHistory(currentUser.username, rolling7StartIso()),
-        loadUserSessions(currentUser.username, rolling7StartKey()),
+        loadUserHistory(currentUser.username, weeklyResetIso()),
+        loadUserSessions(currentUser.username, weekStart),
         supabaseClient
           .from('player_stats')
           .select('*')
@@ -7348,8 +7348,8 @@ h2::before{
         }),
         loadRanking(statsMap, {
           tbodyId: 'weeklyRankingList',
-          sinceIso: rolling7StartIso(),
-          sessionFromDate: rolling7StartKey(),
+          sinceIso: weeklyResetIso(),
+          sessionFromDate: weeklyResetDate(),
           sessionExactDate: null,
           emptyMessage: '이번 주 랭킹 데이터가 없습니다.',
           showLiveRank: true,
