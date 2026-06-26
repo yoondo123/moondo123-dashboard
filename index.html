@@ -8663,6 +8663,107 @@ h2::before{
   }
 }
 </style>
+
+<style id="waggu-mobile-refresh-button-style">
+#wagguMobileRefreshBtn {
+  display: none;
+}
+@media (max-width: 760px), (pointer: coarse) {
+  #wagguMobileRefreshBtn {
+    position: fixed;
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 220;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 96px;
+    height: 38px;
+    padding: 0 13px;
+    border: 1px solid rgba(168,232,224,.22);
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(231,238,233,.96), rgba(135,160,145,.96));
+    color: #05090d;
+    box-shadow: 0 12px 30px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.42);
+    font-size: 12px;
+    font-weight: 950;
+    line-height: 1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #wagguMobileRefreshBtn[disabled] {
+    opacity: .72;
+    cursor: wait;
+  }
+  #wagguMobileRefreshBtn .waggu-refresh-mark {
+    font-size: 15px;
+    font-weight: 950;
+  }
+}
+</style>
+
+<script id="waggu-mobile-refresh-button-script">
+(function () {
+  let refreshing = false;
+
+  function isMobileView() {
+    return window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+  }
+
+  function shouldShowButton() {
+    const dashboard = document.getElementById('dashboard');
+    return isMobileView() && dashboard && !dashboard.classList.contains('hidden');
+  }
+
+  async function refreshDashboard(button) {
+    if (refreshing) return;
+    refreshing = true;
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="waggu-refresh-mark">...</span><span>갱신 중</span>';
+    try {
+      if (typeof refreshAll === 'function') {
+        await refreshAll();
+      } else {
+        location.reload();
+      }
+    } catch (error) {
+      console.warn('[WAGGU] mobile refresh failed:', error);
+    } finally {
+      button.innerHTML = original;
+      button.disabled = false;
+      refreshing = false;
+    }
+  }
+
+  function syncVisibility(button) {
+    button.style.display = shouldShowButton() ? 'inline-flex' : 'none';
+  }
+
+  function setup() {
+    if (document.getElementById('wagguMobileRefreshBtn')) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'wagguMobileRefreshBtn';
+    button.innerHTML = '<span class="waggu-refresh-mark">↻</span><span>새로고침</span>';
+    button.addEventListener('click', function () {
+      refreshDashboard(button);
+    });
+    document.body.appendChild(button);
+    syncVisibility(button);
+    window.addEventListener('resize', function () { syncVisibility(button); });
+    document.addEventListener('visibilitychange', function () { syncVisibility(button); });
+    setInterval(function () { syncVisibility(button); }, 1200);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();
+</script>
 <style id="waggu-mobile-pull-refresh-style">
 #wagguPullRefresh {
   position: fixed;
