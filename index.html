@@ -6488,7 +6488,7 @@ h2::before{
     async function loadUserHistory(username, sinceIso) {
       let query = supabaseClient
         .from('game_history')
-        .select('*')
+        .select('username, result, created_at, tier, current_tier')
         .in('result', ['win', 'draw', 'loss']);
       query = applyCurrentAccountFilter(query, username);
       if (sinceIso) query = query.gte('created_at', sinceIso);
@@ -6498,7 +6498,7 @@ h2::before{
     async function loadUserSessions(username, sinceDateKey) {
       let query = supabaseClient
         .from('daily_sessions')
-        .select('*')
+        .select('username, session_date, wins, draws, losses, matches')
         .eq('username', username);
       if (sinceDateKey) query = query.gte('session_date', sinceDateKey);
       return query.order('session_date', { ascending: false });
@@ -7032,7 +7032,7 @@ h2::before{
     async function loadPlayerStatsMap() {
       const { data } = await supabaseClient
         .from('player_stats')
-        .select('*')
+        .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at, is_running, game_status, status, last_seen_at')
         .order('updated_at', { ascending: false });
       const rows = data || [];
       await Promise.all(rows.map(row => syncTodayPeakTierRow(row)));
@@ -7050,7 +7050,7 @@ h2::before{
       // 프로그램이 업로드하는 실제 테이블(player_stats)을 기준으로 실시간 화면을 갱신합니다.
       const { data, error } = await supabaseClient
         .from('player_stats')
-        .select('*')
+        .select('username, ingame_left_score, ingame_right_score, ingame_opponent_nickname, opponent_nickname, ingame_match_time, updated_at')
         .eq('username', currentUser.username)
         .order('updated_at', { ascending: false })
         .limit(1);
@@ -7095,7 +7095,7 @@ h2::before{
         loadUserSessions(currentUser.username, weekStart),
         supabaseClient
           .from('player_stats')
-          .select('*')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at')
           .eq('username', currentUser.username)
           .order('updated_at', { ascending: false })
           .limit(1),
@@ -7243,7 +7243,7 @@ h2::before{
 
       let sessionQuery = supabaseClient
         .from('daily_sessions')
-        .select('*');
+        .select('username, session_date, wins, draws, losses, matches');
       if (sessionExactDate) {
         sessionQuery = sessionQuery.eq('session_date', sessionExactDate);
       } else if (sessionFromDate) {
@@ -7253,7 +7253,7 @@ h2::before{
       const [historyRes, sessionRes, liveRankRes] = await Promise.all([
         supabaseClient
           .from('game_history')
-          .select('*')
+          .select('username, result, created_at, tier, current_tier')
           .gte('created_at', sinceIso),
         sessionQuery,
         showLiveRank
@@ -7418,8 +7418,10 @@ h2::before{
     setLoginState();
     let refreshBusy = false;
     let lastUserActivityAt = Date.now();
-    const AUTO_REFRESH_INTERVAL_MS = 60000;
-    const AUTO_REFRESH_IDLE_STOP_MS = 5 * 60 * 1000;
+    // Keep full-table ranking/history refreshes sparse on Supabase Free.
+    // Manual and mobile refresh buttons still refresh immediately.
+    const AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
+    const AUTO_REFRESH_IDLE_STOP_MS = 3 * 60 * 1000;
 
     function markUserActivity() {
       const wasIdle = Date.now() - lastUserActivityAt >= AUTO_REFRESH_IDLE_STOP_MS;
@@ -8293,7 +8295,7 @@ h2::before{
           .limit(20),
         supabaseClient
           .from('player_stats')
-          .select('*')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, updated_at')
           .eq('username', nickname)
           .order('updated_at', { ascending: false })
           .limit(1)
