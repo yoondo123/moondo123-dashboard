@@ -7233,7 +7233,7 @@ h2::before{
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
       const fcInfoUrl = `https://fc-info.com/coach/${encodeURIComponent(username)}#director`;
-      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" title="FC INFO에서 ${safeUsername} 보기">${safeUsername}</a>`;
+      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" target="_blank" rel="noopener noreferrer" title="FC INFO에서 ${safeUsername} 보기">${safeUsername}</a>`;
     }
 
     async function loadRanking(statsMap, options = {}) {
@@ -8957,37 +8957,25 @@ h2::before{
     return 'https://fc-info.com/coach/' + encodeURIComponent(username) + '#director';
   }
 
-  function openFcInfo(username) {
-    var url = fcInfoUrl(username);
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
-
-  document.addEventListener('click', function (event) {
-    var cell = event.target.closest('#rankingList td.ranking-name-cell, #weeklyRankingList td.ranking-name-cell');
-    if (!cell) return;
-    var username = usernameFromCell(cell);
-    if (!username) return;
-    event.preventDefault();
-    openFcInfo(username);
-  });
-
   function markCells() {
     document.querySelectorAll('#rankingList td.ranking-name-cell, #weeklyRankingList td.ranking-name-cell').forEach(function (cell) {
       var username = usernameFromCell(cell);
       if (!username) return;
-      cell.setAttribute('role', 'link');
-      cell.setAttribute('tabindex', '0');
       cell.setAttribute('title', 'FC INFO에서 ' + username + ' 보기');
+      if (!cell.querySelector('a.ranking-username-link')) {
+        var nameElement = cell.querySelector('.ranking-username');
+        if (!nameElement) return;
+        var link = document.createElement('a');
+        link.className = 'ranking-username ranking-username-link';
+        link.href = fcInfoUrl(username);
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.title = 'FC INFO에서 ' + username + ' 보기';
+        nameElement.replaceWith(link);
+        link.appendChild(nameElement);
+      }
     });
   }
-
-  document.addEventListener('keydown', function (event) {
-    var cell = event.target.closest && event.target.closest('#rankingList td.ranking-name-cell, #weeklyRankingList td.ranking-name-cell');
-    if (!cell || (event.key !== 'Enter' && event.key !== ' ')) return;
-    event.preventDefault();
-    var username = usernameFromCell(cell);
-    if (username) openFcInfo(username);
-  });
 
   var observer = new MutationObserver(markCells);
   function install() {
