@@ -7233,7 +7233,7 @@ h2::before{
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
       const fcInfoUrl = `https://fc-info.com/coach/${encodeURIComponent(username)}#director`;
-      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" target="_blank" rel="noopener noreferrer" title="FC INFO에서 ${safeUsername} 검색">${safeUsername}</a>`;
+      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" title="FC INFO에서 ${safeUsername} 보기">${safeUsername}</a>`;
     }
 
     async function loadRanking(statsMap, options = {}) {
@@ -8534,9 +8534,16 @@ h2::before{
 }
 #rankingList .ranking-username-link,
 #weeklyRankingList .ranking-username-link {
+  position: relative !important;
+  z-index: 5 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  max-width: 100% !important;
   color: inherit !important;
   text-decoration: none !important;
   cursor: pointer !important;
+  pointer-events: auto !important;
+  -webkit-tap-highlight-color: rgba(112, 242, 210, .22) !important;
 }
 #rankingList .ranking-username-link:hover,
 #weeklyRankingList .ranking-username-link:hover {
