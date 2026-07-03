@@ -8959,8 +8959,7 @@ h2::before{
 
   function openFcInfo(username) {
     var url = fcInfoUrl(username);
-    var opened = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!opened) window.location.assign(url);
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   document.addEventListener('click', function (event) {
