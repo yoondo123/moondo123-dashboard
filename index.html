@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -5993,7 +5993,7 @@ h2::before{
         </div>
       </div>
 
-      <h2>오늘 승률 랭킹 TOP 10</h2>
+      <h2>오늘 승률 랭킹</h2>
       <div class="table-wrap">
         <table>
           <thead>
@@ -7339,7 +7339,8 @@ h2::before{
         })
         .filter(row => row.username && row.username !== '-' && row.matches > 0)
         .sort((a, b) => b.rate - a.rate || b.wins - a.wins || b.matches - a.matches || b.score - a.score || a.username.localeCompare(b.username, 'ko'))
-        .slice(0, 10);
+        // 오늘 랭킹은 당일 전적이 있는 전원을 표시하고, 주간 랭킹만 기존 TOP 10을 유지한다.
+        .slice(0, tbodyId === 'rankingList' ? Infinity : 10);
 
       if (showPeakTier) {
         ranking.forEach(row => {
@@ -8924,4 +8925,3 @@ h2::before{
   else removeLifetimeSection();
 })();
 </script>
-
