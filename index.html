@@ -7225,7 +7225,15 @@ h2::before{
 
     function rankingNameHtml(row) {
       const liveDot = row.isMacroLive ? '<span class="ranking-live-dot" title="매크로 실행 중"></span>' : '';
-      return `${liveDot}<span class="ranking-username">${row.username}</span>`;
+      const username = String(row.username || '');
+      const safeUsername = username
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+      const fcInfoUrl = `https://fc-info.com/coach/${encodeURIComponent(username)}#director`;
+      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" target="_blank" rel="noopener noreferrer" title="FC INFO에서 ${safeUsername} 검색">${safeUsername}</a>`;
     }
 
     async function loadRanking(statsMap, options = {}) {
@@ -8523,6 +8531,18 @@ h2::before{
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
+}
+#rankingList .ranking-username-link,
+#weeklyRankingList .ranking-username-link {
+  color: inherit !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+}
+#rankingList .ranking-username-link:hover,
+#weeklyRankingList .ranking-username-link:hover {
+  color: #70f2d2 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
 }
 @media (max-width: 760px) {
   #rankingList td.ranking-name-cell {
