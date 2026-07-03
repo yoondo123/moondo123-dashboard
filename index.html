@@ -8931,6 +8931,78 @@ h2::before{
   else install();
 })();
 </script>
+<style id="waggu-fcinfo-click-final-style">
+#rankingList td.ranking-name-cell,
+#weeklyRankingList td.ranking-name-cell {
+  position: relative !important;
+  z-index: 6 !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+#rankingList td.ranking-name-cell:hover,
+#weeklyRankingList td.ranking-name-cell:hover {
+  color: #70f2d2 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+}
+</style>
+<script id="waggu-fcinfo-click-final-script">
+(function () {
+  function usernameFromCell(cell) {
+    var named = cell.querySelector('.ranking-username');
+    return String(named ? named.textContent : cell.textContent || '').trim();
+  }
+
+  function fcInfoUrl(username) {
+    return 'https://fc-info.com/coach/' + encodeURIComponent(username) + '#director';
+  }
+
+  document.addEventListener('click', function (event) {
+    var cell = event.target.closest('#rankingList td.ranking-name-cell, #weeklyRankingList td.ranking-name-cell');
+    if (!cell) return;
+    var username = usernameFromCell(cell);
+    if (!username) return;
+    event.preventDefault();
+    window.location.assign(fcInfoUrl(username));
+  });
+
+  function markCells() {
+    document.querySelectorAll('#rankingList td.ranking-name-cell, #weeklyRankingList td.ranking-name-cell').forEach(function (cell) {
+      var username = usernameFromCell(cell);
+      if (!username) return;
+      cell.setAttribute('role', 'link');
+      cell.setAttribute('tabindex', '0');
+      cell.setAttribute('title', 'FC INFO에서 ' + username + ' 보기');
+    });
+  }
+
+  document.addEventListener('keydown', function (event) {
+    var cell = event.target.closest && event.target.closest('#rankingList td.ranking-name-cell, #weeklyRankingList td.ranking-name-cell');
+    if (!cell || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    var username = usernameFromCell(cell);
+    if (username) window.location.assign(fcInfoUrl(username));
+  });
+
+  var observer = new MutationObserver(markCells);
+  function install() {
+    markCells();
+    var dashboard = document.getElementById('dashboard') || document.body;
+    observer.observe(dashboard, { childList: true, subtree: true });
+
+    if (new URLSearchParams(window.location.search).get('fcinfoLinkTest') === '1') {
+      var dashboardEl = document.getElementById('dashboard');
+      var ranking = document.getElementById('rankingList');
+      if (dashboardEl) dashboardEl.classList.remove('hidden');
+      if (ranking) ranking.innerHTML = '<tr><td data-rank="1">1</td><td class="ranking-name-cell"><span class="ranking-username">와꾸대장윤도</span></td><td>-</td><td>1</td><td>0</td><td>0</td><td>1</td><td>100%</td><td>0</td><td>-</td><td>0</td><td>-</td></tr>';
+      markCells();
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
+  else install();
+})();
+</script>
 </body>
 </html>
 
