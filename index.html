@@ -7223,17 +7223,66 @@ h2::before{
       return !looksStopped && (looksActive || seenRecently);
     }
 
-    function rankingNameHtml(row) {
-      const liveDot = row.isMacroLive ? '<span class="ranking-live-dot" title="매크로 실행 중"></span>' : '';
-      const username = String(row.username || '');
-      const safeUsername = username
+    function escapeHtml(value) {
+      return String(value ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function normalizeStreakResult(value) {
+      const result = normalizeResult(value);
+      if (['win', 'draw', 'loss'].includes(result)) return result;
+
+      const text = String(value || '').toLowerCase().trim();
+      if (['w', '승', '승리'].includes(text)) return 'win';
+      if (['l', 'lose', '패', '패배'].includes(text)) return 'loss';
+      if (['d', '무', '무승부'].includes(text)) return 'draw';
+      return '';
+    }
+
+    function getRankingStreak(row) {
+      const results = Array.isArray(row.recentResults)
+        ? row.recentResults.map(normalizeStreakResult).filter(Boolean)
+        : [];
+
+      if (!results.length) return '';
+
+      const latest = results[0];
+      let count = 0;
+      for (const result of results) {
+        if (result !== latest) break;
+        count += 1;
+      }
+
+      if (count <= 0) return '';
+
+      if (latest === 'win') {
+        const legendClass = count >= 8 ? ' legend' : '';
+        const icon = count >= 8 ? '👑' : '🔥';
+        return `<span class="ranking-streak-badge win${legendClass}" title="${count}연승중">${icon}${count}연승</span>`;
+      }
+
+      if (latest === 'loss') {
+        return `<span class="ranking-streak-badge loss" title="${count}연패중">💀${count}연패</span>`;
+      }
+
+      if (latest === 'draw') {
+        return `<span class="ranking-streak-badge draw" title="${count}경기 연속 무승부">➖${count}무</span>`;
+      }
+
+      return '';
+    }
+
+    function rankingNameHtml(row) {
+      const liveDot = row.isMacroLive ? '<span class="ranking-live-dot" title="매크로 실행 중"></span>' : '';
+      const username = String(row.username || '');
+      const safeUsername = escapeHtml(username);
+      const streakBadge = getRankingStreak(row);
       const fcInfoUrl = `https://fc-info.com/coach/${encodeURIComponent(username)}#director`;
-      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" target="_blank" rel="noopener noreferrer" title="FC INFO에서 ${safeUsername} 보기">${safeUsername}</a>`;
+      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" target="_blank" rel="noopener noreferrer" title="FC INFO에서 ${safeUsername} 보기">${safeUsername}</a>${streakBadge}`;
     }
 
     async function loadRanking(statsMap, options = {}) {
@@ -7315,6 +7364,19 @@ h2::before{
         }
       });
 
+      const streakResultsMap = {};
+      (historyRes.data || [])
+        .slice()
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+        .forEach(row => {
+          const username = row.username || '-';
+          if (!username || username === '-') return;
+          const result = normalizeStreakResult(row.result);
+          if (!result) return;
+          if (!streakResultsMap[username]) streakResultsMap[username] = [];
+          streakResultsMap[username].push(result);
+        });
+
       const sessionGrouped = {};
       (sessionRes.data || []).forEach(row => {
         const username = row.username || '-';
@@ -7336,6 +7398,7 @@ h2::before{
           return {
             username,
             ...stats,
+            recentResults: streakResultsMap[username] || [],
             tier: profile.current_tier || profile.tier || '-',
             score: firstValidNumber(profile.current_score, profile.score) ?? 0,
             liveRank: showLiveRank ? (liveRankMap[username] ?? firstValidRank(profile.current_rank, profile.rank) ?? '-') : undefined,
@@ -8996,6 +9059,71 @@ h2::before{
   else install();
 })();
 </script>
+
+<style id="moondo-ranking-streak-badge-style">
+#rankingList td.ranking-name-cell,
+#weeklyRankingList td.ranking-name-cell {
+  align-items: center !important;
+}
+
+#rankingList .ranking-streak-badge,
+#weeklyRankingList .ranking-streak-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  margin-left: 7px !important;
+  padding: 3px 8px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.04em !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+}
+
+#rankingList .ranking-streak-badge.win,
+#weeklyRankingList .ranking-streak-badge.win {
+  color: #dffdf5 !important;
+  border: 1px solid rgba(0, 224, 194, .45) !important;
+  background: rgba(0, 224, 194, .13) !important;
+  box-shadow: 0 0 10px rgba(0, 224, 194, .18) !important;
+}
+
+#rankingList .ranking-streak-badge.loss,
+#weeklyRankingList .ranking-streak-badge.loss {
+  color: #ffe4e7 !important;
+  border: 1px solid rgba(226, 93, 104, .45) !important;
+  background: rgba(226, 93, 104, .13) !important;
+  box-shadow: 0 0 10px rgba(226, 93, 104, .16) !important;
+}
+
+#rankingList .ranking-streak-badge.draw,
+#weeklyRankingList .ranking-streak-badge.draw {
+  color: #e7eee9 !important;
+  border: 1px solid rgba(168, 232, 224, .22) !important;
+  background: rgba(231, 238, 233, .08) !important;
+}
+
+#rankingList .ranking-streak-badge.legend,
+#weeklyRankingList .ranking-streak-badge.legend {
+  color: #fff3b8 !important;
+  border-color: rgba(217, 185, 111, .65) !important;
+  background: rgba(217, 185, 111, .15) !important;
+  box-shadow: 0 0 14px rgba(217, 185, 111, .28) !important;
+}
+
+@media (max-width: 760px) {
+  #rankingList .ranking-streak-badge,
+  #weeklyRankingList .ranking-streak-badge {
+    margin-left: 5px !important;
+    padding: 2px 6px !important;
+    font-size: 10px !important;
+  }
+}
+</style>
+
 </body>
 </html>
 
