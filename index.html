@@ -6783,6 +6783,26 @@ h2::before{
       if (status) status.innerText = `${label} \uBA85\uB839 \uC804\uC1A1 \uC911...`;
 
       try {
+        const recentIso = new Date(Date.now() - REMOTE_COMMAND_DEDUP_MS).toISOString();
+        const { data: existing, error: findError } = await supabaseClient
+          .from('remote_commands')
+          .select('id, created_at')
+          .eq('username', currentUser.username)
+          .eq('command', actualCommand)
+          .eq('status', 'pending')
+          .gte('created_at', recentIso)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (findError) throw findError;
+        if (existing && existing.length) {
+          if (status) {
+            status.className = 'ok';
+            status.innerText = `${label} \uBA85\uB839\uC774 \uC774\uBBF8 \uB300\uAE30 \uC911\uC774\uB77C \uC911\uBCF5 \uC694\uCCAD\uC744 \uB9C9\uC558\uC2B5\uB2C8\uB2E4.`;
+          }
+          return;
+        }
+
         const payload = {
           source: 'dashboard',
           requested_at: new Date().toISOString(),
@@ -6791,7 +6811,7 @@ h2::before{
         };
         const clientRequestId = payload.client_request_id;
 
-        const { data: insertedCommand, error } = await supabaseClient
+        const { error } = await supabaseClient
           .from('remote_commands')
           .insert({
             username: currentUser.username,
@@ -6799,35 +6819,9 @@ h2::before{
             status: 'pending',
             payload,
             client_request_id: clientRequestId
-          })
-          .select()
-          .single();
+          });
 
         if (error) throw error;
-
-        const remoteChannel = supabaseClient.channel(`waggu-remote:${currentUser.username}`);
-        await new Promise((resolve, reject) => {
-          const timer = setTimeout(() => reject(new Error('Realtime 연결 시간 초과')), 8000);
-          remoteChannel.subscribe(async channelStatus => {
-            if (channelStatus === 'SUBSCRIBED') {
-              try {
-                await remoteChannel.send({
-                  type: 'broadcast',
-                  event: 'remote_command',
-                  payload: { record: insertedCommand }
-                });
-                clearTimeout(timer);
-                resolve();
-              } catch (sendError) {
-                clearTimeout(timer);
-                reject(sendError);
-              }
-            } else if (channelStatus === 'CHANNEL_ERROR' || channelStatus === 'TIMED_OUT') {
-              clearTimeout(timer);
-              reject(new Error(`Realtime 전송 실패: ${channelStatus}`));
-            }
-          });
-        }).finally(() => supabaseClient.removeChannel(remoteChannel));
 
         if (status) {
           status.className = 'ok';
