@@ -7260,9 +7260,15 @@ h2::before{
       if (count <= 0) return '';
 
       if (latest === 'win') {
-        const legendClass = count >= 8 ? ' legend' : '';
-        const icon = count >= 8 ? '👑' : '🔥';
-        return `<span class="ranking-streak-badge win${legendClass}" title="${count}연승중">${icon}${count}연승</span>`;
+        if (count >= 7) {
+          return `<span class="ranking-streak-badge win legend" title="${count}연승중">👑${count}연승</span>`;
+        }
+
+        if (count >= 5) {
+          return `<span class="ranking-streak-badge lightning" title="${count}연승중">⚡${count}연승</span>`;
+        }
+
+        return `<span class="ranking-streak-badge win" title="${count}연승중">🔥${count}연승</span>`;
       }
 
       if (latest === 'loss') {
@@ -9091,6 +9097,14 @@ h2::before{
   box-shadow: 0 0 10px rgba(0, 224, 194, .18) !important;
 }
 
+#rankingList .ranking-streak-badge.lightning,
+#weeklyRankingList .ranking-streak-badge.lightning {
+  color: #dff7ff !important;
+  border: 1px solid rgba(88, 190, 255, .55) !important;
+  background: rgba(88, 190, 255, .16) !important;
+  box-shadow: 0 0 12px rgba(88, 190, 255, .28) !important;
+}
+
 #rankingList .ranking-streak-badge.loss,
 #weeklyRankingList .ranking-streak-badge.loss {
   color: #ffe4e7 !important;
@@ -9108,10 +9122,12 @@ h2::before{
 
 #rankingList .ranking-streak-badge.legend,
 #weeklyRankingList .ranking-streak-badge.legend {
-  color: #fff3b8 !important;
-  border-color: rgba(217, 185, 111, .65) !important;
-  background: rgba(217, 185, 111, .15) !important;
-  box-shadow: 0 0 14px rgba(217, 185, 111, .28) !important;
+  color: #fff7c4 !important;
+  border-color: rgba(255, 209, 102, .75) !important;
+  background: rgba(255, 209, 102, .18) !important;
+  box-shadow:
+    0 0 8px rgba(255, 209, 102, .35),
+    0 0 18px rgba(255, 209, 102, .28) !important;
 }
 
 @media (max-width: 760px) {
