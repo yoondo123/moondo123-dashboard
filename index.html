@@ -7299,7 +7299,8 @@ h2::before{
       const safeUsername = escapeHtml(username);
       const streakBadge = getRankingStreak(row);
       const fcInfoUrl = `https://fc-info.com/coach/${encodeURIComponent(username)}#director`;
-      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" target="_blank" rel="noopener noreferrer" title="FC INFO에서 ${safeUsername} 보기">${safeUsername}</a>${streakBadge}`;
+      const recordButton = `<button type="button" class="ranking-record-button" data-username="${safeUsername}" title="${safeUsername} 전적 보기" onclick="event.preventDefault();event.stopPropagation();window.openPlayerRecord(this.dataset.username)">전적</button>`;
+      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" target="_blank" rel="noopener noreferrer" title="FC INFO에서 ${safeUsername} 보기">${safeUsername}</a>${recordButton}${streakBadge}`;
     }
 
     async function loadRanking(statsMap, options = {}) {
@@ -8263,6 +8264,19 @@ h2::before{
 .search-today-grid { margin-top: 8px; grid-template-columns: repeat(4, minmax(150px, 1fr)) !important; }
 .search-form-strip { margin-top: 12px !important; }
 #searchFormDots { grid-template-columns: repeat(20, minmax(0, 1fr)); }
+.ranking-record-button {
+  width: auto !important;
+  min-width: 0 !important;
+  height: 24px !important;
+  margin-left: 6px !important;
+  padding: 0 8px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  line-height: 22px !important;
+  font-weight: 900 !important;
+  vertical-align: middle !important;
+  box-shadow: none !important;
+}
 @media (max-width: 760px) {
   .search-record-row { display: grid; grid-template-columns: 1fr; }
   .search-record-row input, .search-record-row button { width: 100% !important; }
@@ -8436,6 +8450,20 @@ h2::before{
         message.innerText = '검색 오류: ' + (error?.message || error);
       }
     }
+  };
+
+  window.openPlayerRecord = function openPlayerRecord(playerName) {
+    const input = document.getElementById('playerSearchInput');
+    if (input) input.value = playerName || '';
+
+    const searchTab = document.querySelector('#moondoTabs [data-tab="search"]');
+    if (searchTab) searchTab.click();
+
+    setTimeout(async function () {
+      await window.searchPlayerRecord();
+      const section = document.querySelector('[data-search-section]');
+      if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
   };
 
   function ready(fn) {
