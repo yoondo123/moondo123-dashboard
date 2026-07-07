@@ -6811,11 +6811,16 @@ h2::before{
           remoteChannel.subscribe(async channelStatus => {
             if (channelStatus === 'SUBSCRIBED') {
               try {
-                await remoteChannel.send({
-                  type: 'broadcast',
-                  event: 'remote_command',
-                  payload: { record: insertedCommand }
-                });
+                for (let attempt = 0; attempt < 3; attempt += 1) {
+                  await remoteChannel.send({
+                    type: 'broadcast',
+                    event: 'remote_command',
+                    payload: { record: insertedCommand }
+                  });
+                  if (attempt < 2) {
+                    await new Promise(wait => setTimeout(wait, 500));
+                  }
+                }
                 clearTimeout(timer);
                 resolve();
               } catch (sendError) {
@@ -7323,7 +7328,8 @@ h2::before{
         supabaseClient
           .from('game_history')
           .select('username, result, created_at, tier, current_tier')
-          .gte('created_at', sinceIso),
+          .gte('created_at', sinceIso)
+          .order('created_at', { ascending: false }),
         sessionQuery,
         showLiveRank
           ? supabaseClient
@@ -7441,7 +7447,11 @@ h2::before{
 
       const rankingScope = `ranking:${tbodyId}:${sessionExactDate || sessionFromDate || sinceIso}`;
       const cachedRanking = loadStatsCache('__ranking__', rankingScope) || [];
-      const displayRanking = ranking.length ? ranking : cachedRanking;
+      // Cached rows may contain an old recentResults array. Keep cached totals
+      // available during a temporary API failure, but never show a stale streak.
+      const displayRanking = ranking.length
+        ? ranking
+        : cachedRanking.map(row => ({ ...row, recentResults: [] }));
       if (ranking.length) saveStatsCache('__ranking__', rankingScope, ranking);
 
       if (displayRanking.length === 0) {
