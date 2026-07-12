@@ -6068,7 +6068,7 @@ h2::before{
         </table>
       </div>
 
-      <h2>최근 7일 경기</h2>
+      <h2>최근 14일 경기</h2>
       <div class="table-wrap">
         <table>
           <thead>
@@ -6257,23 +6257,23 @@ h2::before{
       return dateFromLocalKey(formatLocalDate(date));
     }
 
-    function rolling7StartDate() {
+    function rolling14StartDate() {
       const d = startOfLocalDay();
-      d.setUTCDate(d.getUTCDate() - 6);
+      d.setUTCDate(d.getUTCDate() - 13);
       return d;
     }
 
-    function rolling7StartIso() {
-      return rolling7StartDate().toISOString();
+    function rolling14StartIso() {
+      return rolling14StartDate().toISOString();
     }
 
-    function rolling7StartKey() {
-      return formatLocalDate(rolling7StartDate());
+    function rolling14StartKey() {
+      return formatLocalDate(rolling14StartDate());
     }
 
-    function last7DateKeys() {
-      const start = rolling7StartDate();
-      return Array.from({ length: 7 }, (_, i) => {
+    function last14DateKeys() {
+      const start = rolling14StartDate();
+      return Array.from({ length: 14 }, (_, i) => {
         const d = new Date(start);
         d.setUTCDate(start.getUTCDate() + i);
         return formatLocalDate(d);
@@ -6375,7 +6375,7 @@ h2::before{
         grouped[key].wins += wins;
         grouped[key].draws += draws;
         grouped[key].losses += losses;
-        // 최근 7일 표의 경기수도 승+무+패 합계로 고정합니다.
+        // 최근 14일 표의 경기수도 승+무+패 합계로 고정합니다.
         grouped[key].matches += wins + draws + losses;
       });
       return grouped;
@@ -7157,8 +7157,8 @@ h2::before{
       if (!currentUser) return;
       const tbody = document.getElementById('recentList');
       const [historyRes, sessionRes, profileRes] = await Promise.all([
-        loadUserHistory(currentUser.username, rolling7StartIso()),
-        loadUserSessions(currentUser.username, rolling7StartKey()),
+        loadUserHistory(currentUser.username, rolling14StartIso()),
+        loadUserSessions(currentUser.username, rolling14StartKey()),
         supabaseClient
           .from('player_stats')
           .select('current_tier, tier')
@@ -7178,11 +7178,11 @@ h2::before{
 
       const historyMap = groupHistoryByDay(historyRows);
       const sessionMap = groupSessionsByDay(sessionRows);
-      let rows = last7DateKeys().map(dateKey => ({
+      let rows = last14DateKeys().map(dateKey => ({
         dateKey,
         ...dailyStatsFromMaps(dateKey, historyMap, sessionMap),
       }));
-      // 최근 7일은 캐시를 쓰지 않고 DB의 정상 판정 경기만 기준으로 표시합니다.
+      // 최근 14일은 캐시를 쓰지 않고 DB의 정상 판정 경기만 기준으로 표시합니다.
       // result가 null인 미판정 경기는 loadUserHistory 단계에서 제외됩니다.
 
       tbody.innerHTML = rows.map(row => `
@@ -7592,7 +7592,7 @@ h2::before{
         if (
           title.includes('주간 전적') ||
           title.includes('주간 승률') ||
-          title.includes('최근 7일') ||
+          title.includes('최근 14일') ||
           title.includes('누적 전적')
         ) {
           currentGroup = 'stats';
@@ -7606,7 +7606,7 @@ h2::before{
         if (
           title.includes('주간 전적') ||
           title.includes('주간 승률') ||
-          title.includes('최근 7일') ||
+          title.includes('최근 14일') ||
           title.includes('누적 전적')
         ) {
           currentGroup = 'stats';
@@ -7796,7 +7796,7 @@ h2::before{
       if (
         title.includes('주간전적') ||
         title.includes('주간승률랭킹') ||
-        title.includes('최근7일경기') ||
+        title.includes('최근14일경기') ||
         title.includes('누적전적')
       ) {
         setGroup(h2, 'stats');
