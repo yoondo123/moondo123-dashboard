@@ -5938,6 +5938,20 @@ h2::before{
         </table>
       </div>
 
+      <h2>최근 10경기 상세</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>시간</th>
+              <th>상대</th>
+              <th>결과</th>
+              <th>점수변동</th>
+            </tr>
+          </thead>
+          <tbody id="recentMatchDetailList"></tbody>
+        </table>
+      </div>
 
       <h2>주간 전적</h2>
       <div class="week-grid">
@@ -6003,22 +6017,6 @@ h2::before{
             </tr>
           </thead>
           <tbody id="recentList"></tbody>
-        </table>
-      </div>
-
-      <h2>최근 10경기 상세</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>시간</th>
-              <th>상대</th>
-              <th>결과</th>
-              <th>스코어</th>
-              <th>점수변동</th>
-            </tr>
-          </thead>
-          <tbody id="recentMatchDetailList"></tbody>
         </table>
       </div>
 
@@ -6112,16 +6110,6 @@ h2::before{
             </div>
             <div class="form-dots" id="searchFormDots"></div>
           </div>
-        </div>
-      </div>
-
-      <div class="panel update-download-panel" id="updateDownloadPanel" data-tab-group="always">
-        <div class="update-download-head">
-          <div>
-            <h2>업데이트 다운로드</h2>
-            <p class="muted" id="latestUpdateText">등록된 업데이트를 확인 중입니다.</p>
-          </div>
-          <a class="button secondary hidden" id="latestUpdateButton" href="#" target="_blank" rel="noopener">다운로드</a>
         </div>
       </div>
 
@@ -6649,43 +6637,11 @@ h2::before{
       }).join('');
     }
 
-    async function loadLatestUpdateLink() {
-      const textEl = document.getElementById('latestUpdateText');
-      const buttonEl = document.getElementById('latestUpdateButton');
-      if (!textEl || !buttonEl || !window.supabaseClient && typeof supabaseClient === 'undefined') return;
-
-      try {
-        const client = window.supabaseClient || supabaseClient;
-        const { data, error } = await client
-          .from('app_updates')
-          .select('version, title, description, download_url, created_at')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (error) throw error;
-        const latest = data && data[0];
-        if (!latest) {
-          textEl.innerText = '등록된 업데이트가 없습니다.';
-          buttonEl.classList.add('hidden');
-          return;
-        }
-
-        textEl.innerText = `${latest.version || ''} ${latest.title || '업데이트'}${latest.description ? ' - ' + latest.description : ''}`;
-        buttonEl.href = latest.download_url;
-        buttonEl.classList.remove('hidden');
-      } catch (error) {
-        textEl.innerText = '업데이트 정보를 불러오지 못했습니다.';
-        buttonEl.classList.add('hidden');
-      }
-    }
-
     function setLoginState() {
       const loggedIn = !!currentUser;
       document.getElementById('loginPanel').classList.toggle('hidden', loggedIn);
       document.getElementById('dashboard').classList.toggle('hidden', !loggedIn);
       if (loggedIn) document.getElementById('helloName').innerText = currentUser.username;
-      if (loggedIn) loadLatestUpdateLink();
     }
 
     async function login() {
@@ -7008,22 +6964,6 @@ h2::before{
       }
     }
 
-    function firstMatchScore(...values) {
-      for (const value of values) {
-        if (value === null || value === undefined || value === '' || value === '--') continue;
-        const number = Number(value);
-        if (Number.isFinite(number) && number >= 0) return number;
-      }
-      return null;
-    }
-
-    function matchScoreText(row) {
-      const left = firstMatchScore(row.left_score, row.ingame_left_score, row.my_match_score);
-      const right = firstMatchScore(row.right_score, row.ingame_right_score, row.opponent_match_score);
-      if (left === null || right === null) return '-';
-      return `${left}:${right}`;
-    }
-
     function scoreChangeText(value) {
       if (value === null || value === undefined || value === '') return '-';
       const number = Number(value);
@@ -7040,20 +6980,20 @@ h2::before{
 
       const { data, error } = await supabaseClient
         .from('game_history')
-        .select('result, created_at, opponent_nickname, ingame_left_score, ingame_right_score, left_score, right_score, score_change, score_after, rank_after, tier')
+        .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
         .eq('username', currentUser.username)
         .in('result', ['win', 'draw', 'loss'])
         .order('created_at', { ascending: false })
         .limit(10);
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="5">오류: ${escapeHtml(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4">오류: ${escapeHtml(error.message)}</td></tr>`;
         return;
       }
 
       const rows = data || [];
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="5">최근 경기 상세 기록이 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
       }
 
@@ -7064,7 +7004,6 @@ h2::before{
             <td>${matchDetailDate(row.created_at)}</td>
             <td>${escapeHtml(opponent)}</td>
             <td>${resultLabel(row.result)}</td>
-            <td>${matchScoreText(row)}</td>
             <td>${scoreChangeText(row.score_change)}</td>
           </tr>
         `;
@@ -7553,14 +7492,14 @@ h2::before{
       '#liveState',
       '#todayMatches',
       '#formDots',
-      '#rankingList'
+      '#rankingList',
+      '#recentMatchDetailList'
     ].forEach(selector => setSectionGroup(selector, 'home'));
 
     [
       '#weekMatches',
       '#weeklyRankingList',
       '#recentList',
-      '#recentMatchDetailList',
       '#lifetimeRecord'
     ].forEach(selector => setSectionGroup(selector, 'stats'));
 
@@ -7652,10 +7591,10 @@ h2::before{
     groupByAnchor('#todayMatches', 'home');
     groupByAnchor('#formDots', 'home');
     groupByAnchor('#rankingList', 'home');
+    groupByAnchor('#recentMatchDetailList', 'home');
     groupByAnchor('#weekMatches', 'stats');
     groupByAnchor('#weeklyRankingList', 'stats');
     groupByAnchor('#recentList', 'stats');
-    groupByAnchor('#recentMatchDetailList', 'stats');
     groupByAnchor('#lifetimeRecord', 'stats');
 
     dashboard.querySelectorAll('h2').forEach(h2 => {
@@ -7664,7 +7603,8 @@ h2::before{
         title.includes('실시간경기') ||
         title.includes('오늘전적') ||
         title.includes('최근20판흐름') ||
-        title.includes('오늘승률랭킹')
+        title.includes('오늘승률랭킹') ||
+        title.includes('최근10경기상세')
       ) {
         setGroup(h2, 'home');
       }
@@ -8553,65 +8493,6 @@ h2::before{
     width: 7px !important;
     height: 7px !important;
     min-width: 7px !important;
-  }
-}
-</style>
-
-<style id="waggu-update-download-mobile-fix">
-.update-download-panel {
-  margin: 18px 0 10px !important;
-  padding: 10px 12px !important;
-  border-radius: 16px !important;
-}
-.update-download-head {
-  display: grid !important;
-  grid-template-columns: 1fr auto !important;
-  gap: 10px !important;
-  align-items: center !important;
-}
-.update-download-head h2 {
-  margin: 0 0 3px !important;
-  font-size: 14px !important;
-  line-height: 1.2 !important;
-}
-.update-download-head h2::before {
-  width: 5px !important;
-  height: 17px !important;
-}
-.update-download-head p {
-  font-size: 12px !important;
-  line-height: 1.35 !important;
-}
-.update-download-head a {
-  min-height: 32px !important;
-  height: 32px !important;
-  min-width: 96px !important;
-  padding: 0 12px !important;
-  border-radius: 10px !important;
-  font-size: 11px !important;
-  font-weight: 950 !important;
-}
-@media (max-width: 760px) {
-  .update-download-panel {
-    margin: 14px 0 8px !important;
-    padding: 9px 10px !important;
-  }
-  .update-download-head {
-    grid-template-columns: 1fr auto !important;
-    gap: 8px !important;
-  }
-  .update-download-head h2 {
-    font-size: 13px !important;
-  }
-  .update-download-head p {
-    font-size: 10px !important;
-  }
-  .update-download-head a {
-    min-width: 72px !important;
-    height: 29px !important;
-    min-height: 29px !important;
-    padding: 0 8px !important;
-    font-size: 10px !important;
   }
 }
 </style>
