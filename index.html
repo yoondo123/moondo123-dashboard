@@ -4416,84 +4416,6 @@ footer {
 
   
 
-    .remote-control-panel {
-      margin-top: 22px;
-      border-color: rgba(90, 214, 174, .22);
-      background:
-        linear-gradient(135deg, rgba(90, 214, 174, .09), transparent 42%),
-        rgba(10, 15, 23, .92);
-    }
-    .remote-control-head {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-    .remote-control-head h2 {
-      margin: 0;
-    }
-    .remote-control-actions {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .remote-control-actions button {
-      width: 100%;
-      min-width: 0;
-      padding: 0 10px;
-    }
-    .remote-control-actions button.danger {
-      background: linear-gradient(135deg, #8b1e2d, #51202a);
-      border-color: rgba(255, 102, 115, .38);
-      box-shadow: 0 12px 28px rgba(180, 38, 54, .2);
-    }
-    .remote-control-actions button.warn {
-      background: linear-gradient(135deg, #8a631d, #47532a);
-      border-color: rgba(255, 209, 102, .34);
-      box-shadow: 0 12px 28px rgba(255, 209, 102, .12);
-    }
-    #remoteCommandStatus {
-      min-height: 20px;
-      margin-top: 12px;
-      font-size: 13px;
-      font-weight: 800;
-    }
-    @media (max-width: 760px) {
-      .remote-control-panel {
-        margin-top: 16px;
-        padding: 14px !important;
-      }
-      .remote-control-head {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 6px;
-        margin-bottom: 10px;
-      }
-      .remote-control-head h2 {
-        font-size: 16px !important;
-      }
-      .remote-control-head p {
-        font-size: 12px !important;
-        line-height: 1.35;
-      }
-      .remote-control-actions {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-      }
-      .remote-control-actions button {
-        min-height: 38px !important;
-        height: 38px !important;
-        padding: 0 8px !important;
-        border-radius: 13px !important;
-        font-size: 12px !important;
-        line-height: 1.1 !important;
-      }
-    }
-    @media (max-width: 420px) {
-      .remote-control-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-
   </style>
 
 <style id="moondo-color-only-purple-sage">
@@ -6084,6 +6006,21 @@ h2::before{
         </table>
       </div>
 
+      <h2>최근 10경기 상세</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>시간</th>
+              <th>상대</th>
+              <th>결과</th>
+              <th>스코어</th>
+              <th>점수변동</th>
+            </tr>
+          </thead>
+          <tbody id="recentMatchDetailList"></tbody>
+        </table>
+      </div>
 
       <p class="mobile-note">모바일에서는 표를 좌우로 밀어서 볼 수 있습니다.</p>
 
@@ -6186,21 +6123,6 @@ h2::before{
           </div>
           <a class="button secondary hidden" id="latestUpdateButton" href="#" target="_blank" rel="noopener">다운로드</a>
         </div>
-      </div>
-
-      <div class="panel remote-control-panel" id="remoteControlPanel" data-tab-group="always">
-        <div class="remote-control-head">
-          <h2>원격 제어</h2>
-          <span class="muted" id="remoteCommandUser">-</span>
-        </div>
-        <div class="remote-control-actions">
-          <button type="button" onclick="sendRemoteCommand('start')">시작</button>
-          <button type="button" onclick="sendRemoteCommand('stop')">중지</button>
-          <button type="button" onclick="sendRemoteCommand('restart')">재시작</button>
-          <button type="button" onclick="sendRemoteCommand('stop_after')">경기 후 중지</button>
-          <button type="button" onclick="sendRemoteCommand('club')">클럽 실행</button>
-        </div>
-        <p id="remoteCommandStatus" class="muted"></p>
       </div>
 
       <div class="footer-actions">
@@ -6727,130 +6649,6 @@ h2::before{
       }).join('');
     }
 
-
-
-    const REMOTE_COMMAND_LABELS = {
-      start: '\uC2DC\uC791',
-      stop: '\uC911\uC9C0',
-      restart: '\uC7AC\uC2DC\uC791',
-      stop_after: '\uACBD\uAE30 \uD6C4 \uC911\uC9C0',
-      club: '\uD074\uB7FD \uC2E4\uD589'
-    };
-    const REMOTE_COMMAND_DEDUP_MS = 8000;
-    let remoteCommandSending = false;
-    let remoteCommandLastKey = '';
-    let remoteCommandLastAt = 0;
-
-    function setRemoteCommandButtonsDisabled(disabled) {
-      document.querySelectorAll('#remoteControlPanel button').forEach(button => {
-        button.disabled = disabled;
-        button.style.opacity = disabled ? '.58' : '';
-        button.style.pointerEvents = disabled ? 'none' : '';
-      });
-    }
-
-    async function sendRemoteCommand(command) {
-      const status = document.getElementById('remoteCommandStatus');
-      if (status) {
-        status.className = 'muted';
-        status.innerText = '';
-      }
-      if (!currentUser?.username) {
-        if (status) {
-          status.className = 'bad';
-          status.innerText = '\uB85C\uADF8\uC778 \uD6C4 \uC6D0\uACA9 \uBA85\uB839\uC744 \uC804\uC1A1\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.';
-        }
-        return;
-      }
-
-      const label = REMOTE_COMMAND_LABELS[command] || command;
-      const actualCommand = command === 'restart' ? 'set_mode:restart:on' : command;
-      const now = Date.now();
-      const dedupKey = `${currentUser.username}:${actualCommand}`;
-
-      if (remoteCommandSending || (remoteCommandLastKey === dedupKey && now - remoteCommandLastAt < REMOTE_COMMAND_DEDUP_MS)) {
-        if (status) {
-          status.className = 'muted';
-          status.innerText = `${label} \uBA85\uB839\uC740 \uC774\uBBF8 \uC804\uC1A1 \uC911\uC785\uB2C8\uB2E4.`;
-        }
-        return;
-      }
-
-      remoteCommandSending = true;
-      remoteCommandLastKey = dedupKey;
-      remoteCommandLastAt = now;
-      setRemoteCommandButtonsDisabled(true);
-      if (status) status.innerText = `${label} \uBA85\uB839 \uC804\uC1A1 \uC911...`;
-
-      try {
-        const payload = {
-          source: 'dashboard',
-          requested_at: new Date().toISOString(),
-          button_command: command,
-          client_request_id: `${dedupKey}:${now}`
-        };
-        const clientRequestId = payload.client_request_id;
-
-        const { data: insertedCommand, error } = await supabaseClient
-          .from('remote_commands')
-          .insert({
-            username: currentUser.username,
-            command: actualCommand,
-            status: 'pending',
-            payload,
-            client_request_id: clientRequestId
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        const remoteChannel = supabaseClient.channel(`waggu-remote:${currentUser.username}`);
-        await new Promise((resolve, reject) => {
-          const timer = setTimeout(() => reject(new Error('Realtime 연결 시간 초과')), 8000);
-          remoteChannel.subscribe(async channelStatus => {
-            if (channelStatus === 'SUBSCRIBED') {
-              try {
-                for (let attempt = 0; attempt < 3; attempt += 1) {
-                  await remoteChannel.send({
-                    type: 'broadcast',
-                    event: 'remote_command',
-                    payload: { record: insertedCommand }
-                  });
-                  if (attempt < 2) {
-                    await new Promise(wait => setTimeout(wait, 500));
-                  }
-                }
-                clearTimeout(timer);
-                resolve();
-              } catch (sendError) {
-                clearTimeout(timer);
-                reject(sendError);
-              }
-            } else if (channelStatus === 'CHANNEL_ERROR' || channelStatus === 'TIMED_OUT') {
-              clearTimeout(timer);
-              reject(new Error(`Realtime 전송 실패: ${channelStatus}`));
-            }
-          });
-        }).finally(() => supabaseClient.removeChannel(remoteChannel));
-
-        if (status) {
-          status.className = 'ok';
-          status.innerText = `${label} \uBA85\uB839\uC744 \uC804\uC1A1\uD588\uC2B5\uB2C8\uB2E4.`;
-        }
-      } catch (error) {
-        remoteCommandLastKey = '';
-        remoteCommandLastAt = 0;
-        if (status) {
-          status.className = 'bad';
-          status.innerText = `\uBA85\uB839 \uC804\uC1A1 \uC2E4\uD328: ${error.message}`;
-        }
-      } finally {
-        remoteCommandSending = false;
-        setTimeout(() => setRemoteCommandButtonsDisabled(false), 900);
-      }
-    }
-
     async function loadLatestUpdateLink() {
       const textEl = document.getElementById('latestUpdateText');
       const buttonEl = document.getElementById('latestUpdateButton');
@@ -6887,8 +6685,6 @@ h2::before{
       document.getElementById('loginPanel').classList.toggle('hidden', loggedIn);
       document.getElementById('dashboard').classList.toggle('hidden', !loggedIn);
       if (loggedIn) document.getElementById('helloName').innerText = currentUser.username;
-      const remoteUser = document.getElementById('remoteCommandUser');
-      if (remoteUser) remoteUser.innerText = loggedIn ? currentUser.username : '-';
       if (loggedIn) loadLatestUpdateLink();
     }
 
@@ -7194,6 +6990,85 @@ h2::before{
           <td>${fcFromWins(row.wins, recentTier)}</td>
         </tr>
       `).join('');
+    }
+
+    function matchDetailDate(value) {
+      if (!value) return '-';
+      try {
+        return new Date(value).toLocaleString('ko-KR', {
+          timeZone: KST_TIME_ZONE,
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(/\.\s?/g, '.').replace(',', '');
+      } catch (_) {
+        return String(value).slice(0, 16);
+      }
+    }
+
+    function firstMatchScore(...values) {
+      for (const value of values) {
+        if (value === null || value === undefined || value === '' || value === '--') continue;
+        const number = Number(value);
+        if (Number.isFinite(number) && number >= 0) return number;
+      }
+      return null;
+    }
+
+    function matchScoreText(row) {
+      const left = firstMatchScore(row.left_score, row.ingame_left_score, row.my_match_score);
+      const right = firstMatchScore(row.right_score, row.ingame_right_score, row.opponent_match_score);
+      if (left === null || right === null) return '-';
+      return `${left}:${right}`;
+    }
+
+    function scoreChangeText(value) {
+      if (value === null || value === undefined || value === '') return '-';
+      const number = Number(value);
+      if (!Number.isFinite(number)) return escapeHtml(value);
+      if (number > 0) return `<span class="ok">+${number}</span>`;
+      if (number < 0) return `<span class="bad">${number}</span>`;
+      return '0';
+    }
+
+    async function loadRecentMatchDetails() {
+      if (!currentUser) return;
+      const tbody = document.getElementById('recentMatchDetailList');
+      if (!tbody) return;
+
+      const { data, error } = await supabaseClient
+        .from('game_history')
+        .select('result, created_at, opponent_nickname, ingame_left_score, ingame_right_score, left_score, right_score, score_change, score_after, rank_after, tier')
+        .eq('username', currentUser.username)
+        .in('result', ['win', 'draw', 'loss'])
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="5">오류: ${escapeHtml(error.message)}</td></tr>`;
+        return;
+      }
+
+      const rows = data || [];
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5">최근 경기 상세 기록이 없습니다.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rows.map(row => {
+        const opponent = row.opponent_nickname || '상대 미확인';
+        return `
+          <tr>
+            <td>${matchDetailDate(row.created_at)}</td>
+            <td>${escapeHtml(opponent)}</td>
+            <td>${resultLabel(row.result)}</td>
+            <td>${matchScoreText(row)}</td>
+            <td>${scoreChangeText(row.score_change)}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
     async function loadRecentForm() {
@@ -7504,6 +7379,7 @@ h2::before{
           loadLiveStatus(),
           loadPeriodStats(statsMap),
           loadRecent(),
+          loadRecentMatchDetails(),
           loadRecentForm(),
         ]);
         document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
@@ -7684,6 +7560,7 @@ h2::before{
       '#weekMatches',
       '#weeklyRankingList',
       '#recentList',
+      '#recentMatchDetailList',
       '#lifetimeRecord'
     ].forEach(selector => setSectionGroup(selector, 'stats'));
 
@@ -7775,11 +7652,10 @@ h2::before{
     groupByAnchor('#todayMatches', 'home');
     groupByAnchor('#formDots', 'home');
     groupByAnchor('#rankingList', 'home');
-    setGroup(document.getElementById('remoteControlPanel'), 'always');
-
     groupByAnchor('#weekMatches', 'stats');
     groupByAnchor('#weeklyRankingList', 'stats');
     groupByAnchor('#recentList', 'stats');
+    groupByAnchor('#recentMatchDetailList', 'stats');
     groupByAnchor('#lifetimeRecord', 'stats');
 
     dashboard.querySelectorAll('h2').forEach(h2 => {
@@ -8681,7 +8557,7 @@ h2::before{
 }
 </style>
 
-<style id="waggu-remote-mobile-final-fix">
+<style id="waggu-update-download-mobile-fix">
 .update-download-panel {
   margin: 18px 0 10px !important;
   padding: 10px 12px !important;
@@ -8715,53 +8591,6 @@ h2::before{
   font-size: 11px !important;
   font-weight: 950 !important;
 }
-#remoteControlPanel {
-  margin: 18px 0 12px !important;
-  padding: 10px 12px !important;
-  border-radius: 16px !important;
-}
-#remoteControlPanel .remote-control-head {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 8px !important;
-  margin-bottom: 8px !important;
-}
-#remoteControlPanel .remote-control-head h2 {
-  margin: 0 !important;
-  font-size: 14px !important;
-  line-height: 1.2 !important;
-}
-#remoteControlPanel .remote-control-head h2::before {
-  width: 5px !important;
-  height: 17px !important;
-}
-#remoteControlPanel .remote-control-actions {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  gap: 6px !important;
-}
-#remoteControlPanel .remote-control-actions button,
-#remoteControlPanel .remote-control-actions button.danger,
-#remoteControlPanel .remote-control-actions button.warn {
-  width: 100% !important;
-  min-width: 0 !important;
-  min-height: 32px !important;
-  height: 32px !important;
-  padding: 0 4px !important;
-  border-radius: 10px !important;
-  font-size: 11px !important;
-  line-height: 1.1 !important;
-  background: linear-gradient(180deg, rgba(143,165,146,.95), rgba(111,136,116,.95)) !important;
-  border-color: rgba(143,165,146,.24) !important;
-  color: #070a08 !important;
-  box-shadow: none !important;
-}
-#remoteCommandStatus {
-  min-height: 14px !important;
-  margin-top: 6px !important;
-  font-size: 11px !important;
-}
 @media (max-width: 760px) {
   .update-download-panel {
     margin: 14px 0 8px !important;
@@ -8783,28 +8612,6 @@ h2::before{
     min-height: 29px !important;
     padding: 0 8px !important;
     font-size: 10px !important;
-  }
-  #remoteControlPanel {
-    margin: 14px 0 10px !important;
-    padding: 9px 10px !important;
-  }
-  #remoteControlPanel .remote-control-head {
-    gap: 6px !important;
-    margin-bottom: 7px !important;
-  }
-  #remoteControlPanel .remote-control-actions {
-    display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    gap: 4px !important;
-  }
-  #remoteControlPanel .remote-control-actions button {
-    width: 100% !important;
-    min-height: 29px !important;
-    height: 29px !important;
-    padding: 0 2px !important;
-    border-radius: 9px !important;
-    font-size: 9px !important;
-    line-height: 1.1 !important;
   }
 }
 </style>
