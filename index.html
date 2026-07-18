@@ -8497,6 +8497,104 @@ h2::before{
 }
 </style>
 
+<style id="waggu-recent-match-compact-mobile">
+@media (max-width: 760px) {
+  #dashboard h2:has(+ .table-wrap #recentMatchDetailList) {
+    margin: 14px 0 6px !important;
+    font-size: 14px !important;
+    line-height: 1.1 !important;
+  }
+  #dashboard h2:has(+ .table-wrap #recentMatchDetailList)::before {
+    width: 4px !important;
+    height: 15px !important;
+  }
+  #dashboard .table-wrap:has(#recentMatchDetailList) {
+    margin: 0 0 10px !important;
+    padding: 5px !important;
+    border: 1px solid rgba(255,255,255,.08) !important;
+    border-radius: 10px !important;
+    background: rgba(10, 13, 18, .82) !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+  .table-wrap table:has(#recentMatchDetailList),
+  .table-wrap table:has(#recentMatchDetailList) tbody,
+  #recentMatchDetailList {
+    display: grid !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: 3px !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+  .table-wrap table:has(#recentMatchDetailList) thead {
+    display: none !important;
+  }
+  #recentMatchDetailList tr {
+    display: grid !important;
+    grid-template-columns: 64px minmax(0, 1fr) 30px 48px !important;
+    align-items: center !important;
+    gap: 4px !important;
+    min-height: 27px !important;
+    margin: 0 !important;
+    padding: 3px 6px !important;
+    border: 1px solid rgba(255,255,255,.07) !important;
+    border-radius: 7px !important;
+    background: rgba(16, 18, 24, .88) !important;
+    box-shadow: none !important;
+  }
+  #recentMatchDetailList tr:nth-child(even) {
+    background: rgba(12, 18, 20, .9) !important;
+  }
+  #recentMatchDetailList td,
+  #recentMatchDetailList td:nth-child(n) {
+    display: block !important;
+    min-width: 0 !important;
+    width: auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0 2px !important;
+    border: 0 !important;
+    background: transparent !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    font-weight: 850 !important;
+  }
+  #recentMatchDetailList td::before,
+  #recentMatchDetailList td::after {
+    content: none !important;
+    display: none !important;
+  }
+  #recentMatchDetailList td:nth-child(1) {
+    color: #d8fff5 !important;
+    font-size: 9px !important;
+  }
+  #recentMatchDetailList td:nth-child(2) {
+    color: #ffffff !important;
+  }
+  #recentMatchDetailList td:nth-child(3) {
+    text-align: center !important;
+    font-size: 10px !important;
+    font-weight: 950 !important;
+  }
+  #recentMatchDetailList td:nth-child(4) {
+    text-align: right !important;
+    font-size: 10px !important;
+    font-weight: 950 !important;
+  }
+  #recentMatchDetailList td[colspan],
+  #recentMatchDetailList td[colspan]:nth-child(n) {
+    grid-column: 1 / -1 !important;
+    text-align: center !important;
+    padding: 6px !important;
+  }
+}
+</style>
+
 <style id="waggu-mobile-refresh-button-style">
 #wagguMobileRefreshBtn {
   display: none;
