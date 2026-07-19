@@ -6246,7 +6246,7 @@ h2::before{
 
     function summarizeMatches(rows) {
       // result가 null/빈값인 미판정 경기는 전적 계산에서 제외합니다.
-      return (rows || []).reduce((acc, row) => {
+      return dedupeMatchDetails(rows || [], Infinity).reduce((acc, row) => {
         const result = normalizeResult(row.result);
         if (!['win', 'draw', 'loss'].includes(result)) return acc;
         if (result === 'win') acc.wins += 1;
@@ -6278,7 +6278,7 @@ h2::before{
 
     function groupHistoryByDay(rows) {
       const grouped = {};
-      (rows || []).forEach(row => {
+      dedupeMatchDetails(rows || [], Infinity).forEach(row => {
         const key = row.created_at ? formatLocalDate(new Date(row.created_at)) : todayDate();
         if (!grouped[key]) grouped[key] = emptyStats();
         const result = normalizeResult(row.result);
@@ -6415,7 +6415,7 @@ h2::before{
     async function loadUserHistory(username, sinceIso) {
       let query = supabaseClient
         .from('game_history')
-        .select('username, result, created_at, tier, current_tier')
+        .select('username, result, created_at, opponent_nickname, score_change, tier, current_tier')
         .in('result', ['win', 'draw', 'loss']);
       query = applyCurrentAccountFilter(query, username);
       if (sinceIso) query = query.gte('created_at', sinceIso);
@@ -6990,6 +6990,29 @@ h2::before{
       return '0';
     }
 
+    function matchDetailDedupKey(row) {
+      const time = row?.created_at ? new Date(row.created_at).getTime() : 0;
+      const minuteBucket = Number.isFinite(time) ? Math.floor(time / 60000) : 0;
+      const username = String(row?.username || '').trim().toLowerCase();
+      const opponent = String(row?.opponent_nickname || '').trim().toLowerCase();
+      const result = normalizeResult(row?.result);
+      const delta = String(row?.score_change ?? '').trim();
+      return `${username}|${minuteBucket}|${opponent}|${result}|${delta}`;
+    }
+
+    function dedupeMatchDetails(rows, limit = 10) {
+      const seen = new Set();
+      const output = [];
+      for (const row of rows || []) {
+        const key = matchDetailDedupKey(row);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        output.push(row);
+        if (output.length >= limit) break;
+      }
+      return output;
+    }
+
     async function loadRecentMatchDetails() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentMatchDetailList');
@@ -7001,14 +7024,14 @@ h2::before{
         .eq('username', currentUser.username)
         .in('result', ['win', 'draw', 'loss'])
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(25);
 
       if (error) {
         tbody.innerHTML = `<tr><td colspan="4">오류: ${escapeHtml(error.message)}</td></tr>`;
         return;
       }
 
-      const rows = data || [];
+      const rows = dedupeMatchDetails(data || [], 10);
       if (!rows.length) {
         tbody.innerHTML = '<tr><td colspan="4">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
@@ -7031,7 +7054,7 @@ h2::before{
       if (!currentUser) return;
       let query = supabaseClient
         .from('game_history')
-        .select('result, created_at')
+        .select('username, result, created_at, opponent_nickname, score_change')
         .in('result', ['win', 'draw', 'loss']);
       query = applyCurrentAccountFilter(query, currentUser.username);
       const { data, error } = await query
@@ -7159,7 +7182,7 @@ h2::before{
       const [historyRes, sessionRes, liveRankRes] = await Promise.all([
         supabaseClient
           .from('game_history')
-          .select('username, result, created_at, tier, current_tier')
+          .select('username, result, created_at, opponent_nickname, score_change, tier, current_tier')
           .gte('created_at', sinceIso)
           .order('created_at', { ascending: false }),
         sessionQuery,
@@ -7191,8 +7214,9 @@ h2::before{
         }
       });
 
+      const historyRows = dedupeMatchDetails(historyRes.data || [], Infinity);
       const historyGrouped = {};
-      (historyRes.data || []).forEach(row => {
+      historyRows.forEach(row => {
         const username = row.username || '-';
         if (!historyGrouped[username]) historyGrouped[username] = emptyStats();
         const result = normalizeResult(row.result);
@@ -7204,7 +7228,7 @@ h2::before{
       });
 
       const peakTierMap = {};
-      (historyRes.data || []).forEach(row => {
+      historyRows.forEach(row => {
         const username = row.username || '-';
         if (!username || username === '-') return;
         const tier = row.tier || row.current_tier;
@@ -7215,7 +7239,7 @@ h2::before{
       });
 
       const streakResultsMap = {};
-      (historyRes.data || [])
+      historyRows
         .slice()
         .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
         .forEach(row => {
@@ -8181,7 +8205,10 @@ h2::before{
   }
 
   function summarizeRows(rows) {
-    return (rows || []).reduce((acc, row) => {
+    const cleanRows = typeof dedupeMatchDetails === 'function'
+      ? dedupeMatchDetails(rows || [], Infinity)
+      : (rows || []);
+    return cleanRows.reduce((acc, row) => {
       const result = safeNormalizeResult(row.result);
       if (result === 'win') acc.wins += 1;
       if (result === 'draw') acc.draws += 1;
@@ -8229,7 +8256,9 @@ h2::before{
     const tbody = document.getElementById('searchRecentMatchDetailList');
     if (!tbody) return;
 
-    const detailRows = (rows || []).slice(0, 10);
+    const detailRows = typeof dedupeMatchDetails === 'function'
+      ? dedupeMatchDetails(rows || [], 10)
+      : (rows || []).slice(0, 10);
     if (!detailRows.length) {
       tbody.innerHTML = '<tr><td colspan="4">최근 경기 상세 기록이 없습니다.</td></tr>';
       return;
@@ -8279,7 +8308,7 @@ h2::before{
       const [todayRes, recentRes, profileRes] = await Promise.all([
         supabaseClient
           .from('game_history')
-          .select('result, created_at')
+          .select('username, result, created_at, opponent_nickname, score_change')
           .eq('username', nickname)
           .gte('created_at', todayStart)
           .in('result', ['win', 'draw', 'loss'])
@@ -8290,7 +8319,7 @@ h2::before{
           .eq('username', nickname)
           .in('result', ['win', 'draw', 'loss'])
           .order('created_at', { ascending: false })
-          .limit(20),
+          .limit(25),
         supabaseClient
           .from('player_stats')
           .select('username, current_score, score, current_rank, rank, current_tier, tier, updated_at')
