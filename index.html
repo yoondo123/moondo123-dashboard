@@ -7003,9 +7003,6 @@ h2::before{
       if (hasScoreChange && isChampionOrHigherTier(tier)) {
         return scoreChangeText(scoreChange);
       }
-      if (hasScoreChange && !tier) {
-        return scoreChangeText(scoreChange);
-      }
       return resultLabel(row?.result);
     }
 
@@ -7037,20 +7034,29 @@ h2::before{
       const tbody = document.getElementById('recentMatchDetailList');
       if (!tbody) return;
 
-      const { data, error } = await supabaseClient
-        .from('game_history')
-        .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
-        .eq('username', currentUser.username)
-        .in('result', ['win', 'draw', 'loss'])
-        .order('created_at', { ascending: false })
-        .limit(25);
+      const [historyRes, profileRes] = await Promise.all([
+        supabaseClient
+          .from('game_history')
+          .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
+          .eq('username', currentUser.username)
+          .in('result', ['win', 'draw', 'loss'])
+          .order('created_at', { ascending: false })
+          .limit(25),
+        supabaseClient
+          .from('player_stats')
+          .select('current_tier, tier')
+          .eq('username', currentUser.username)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+      ]);
 
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="4">오류: ${escapeHtml(error.message)}</td></tr>`;
+      if (historyRes.error) {
+        tbody.innerHTML = `<tr><td colspan="4">오류: ${escapeHtml(historyRes.error.message)}</td></tr>`;
         return;
       }
 
-      const rows = dedupeMatchDetails(data || [], 10);
+      const fallbackTier = profileRes.data?.[0]?.current_tier || profileRes.data?.[0]?.tier || '';
+      const rows = dedupeMatchDetails(historyRes.data || [], 10);
       if (!rows.length) {
         tbody.innerHTML = '<tr><td colspan="4">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
@@ -7063,7 +7069,7 @@ h2::before{
             <td>${matchDetailDate(row.created_at)}</td>
             <td>${escapeHtml(opponent)}</td>
             <td>${resultLabel(row.result)}</td>
-            <td>${scoreOrResultText(row)}</td>
+            <td>${scoreOrResultText(row, fallbackTier)}</td>
           </tr>
         `;
       }).join('');
