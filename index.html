@@ -5946,7 +5946,7 @@ h2::before{
               <th>시간</th>
               <th>상대</th>
               <th>결과</th>
-              <th>점수변동</th>
+              <th>점수/전적</th>
             </tr>
           </thead>
           <tbody id="recentMatchDetailList"></tbody>
@@ -6120,7 +6120,7 @@ h2::before{
                     <th>시간</th>
                     <th>상대</th>
                     <th>결과</th>
-                    <th>점수변동</th>
+                    <th>점수/전적</th>
                   </tr>
                 </thead>
                 <tbody id="searchRecentMatchDetailList"></tbody>
@@ -6990,6 +6990,25 @@ h2::before{
       return '0';
     }
 
+    function isChampionOrHigherTier(tier) {
+      const text = String(tier || '').replace(/\s+/g, '');
+      return text.includes('챔피언스');
+    }
+
+    function scoreOrResultText(row, fallbackTier = '') {
+      const scoreChange = row?.score_change;
+      const hasScoreChange = scoreChange !== null && scoreChange !== undefined && scoreChange !== '';
+      const tier = row?.tier || row?.current_tier || fallbackTier || '';
+
+      if (hasScoreChange && isChampionOrHigherTier(tier)) {
+        return scoreChangeText(scoreChange);
+      }
+      if (hasScoreChange && !tier) {
+        return scoreChangeText(scoreChange);
+      }
+      return resultLabel(row?.result);
+    }
+
     function matchDetailDedupKey(row) {
       const time = row?.created_at ? new Date(row.created_at).getTime() : 0;
       const minuteBucket = Number.isFinite(time) ? Math.floor(time / 60000) : 0;
@@ -7044,7 +7063,7 @@ h2::before{
             <td>${matchDetailDate(row.created_at)}</td>
             <td>${escapeHtml(opponent)}</td>
             <td>${resultLabel(row.result)}</td>
-            <td>${scoreChangeText(row.score_change)}</td>
+            <td>${scoreOrResultText(row)}</td>
           </tr>
         `;
       }).join('');
@@ -8252,7 +8271,7 @@ h2::before{
     }
   }
 
-  function renderSearchMatchDetails(rows) {
+  function renderSearchMatchDetails(rows, fallbackTier = '') {
     const tbody = document.getElementById('searchRecentMatchDetailList');
     if (!tbody) return;
 
@@ -8267,9 +8286,9 @@ h2::before{
     tbody.innerHTML = detailRows.map(row => {
       const opponent = row.opponent_nickname || '상대 미확인';
       const result = typeof resultLabel === 'function' ? resultLabel(row.result) : safeResultShort(row.result);
-      const delta = typeof scoreChangeText === 'function'
-        ? scoreChangeText(row.score_change)
-        : (row.score_change ?? '-');
+      const delta = typeof scoreOrResultText === 'function'
+        ? scoreOrResultText(row, fallbackTier)
+        : (typeof scoreChangeText === 'function' ? scoreChangeText(row.score_change) : (row.score_change ?? '-'));
       return `
         <tr>
           <td>${searchMatchDetailDate(row.created_at)}</td>
@@ -8356,7 +8375,7 @@ h2::before{
       setText('searchCurrentScore', currentScore ?? 0);
       setText('searchCurrentRank', currentRank === null || currentRank === undefined ? '-' : currentRank);
       renderSearchForm(recentResults);
-      renderSearchMatchDetails(recentRows);
+      renderSearchMatchDetails(recentRows, currentTier);
 
       if (resultBox) resultBox.classList.remove('hidden');
       if (message) {
