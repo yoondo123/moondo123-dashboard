@@ -6493,6 +6493,23 @@ h2::before{
       return missing;
     }
 
+    function missingResultsForDetails(sessionStats, historyRows) {
+      const session = normalizeStats(sessionStats);
+      const counts = { win: 0, draw: 0, loss: 0 };
+      (historyRows || []).forEach(row => {
+        const result = normalizeResult(row?.result);
+        if (result && counts[result] !== undefined) counts[result] += 1;
+      });
+      const missing = [];
+      const add = (result, count) => {
+        for (let i = 0; i < Math.max(0, count); i += 1) missing.push(result);
+      };
+      add('win', session.wins - counts.win);
+      add('draw', session.draws - counts.draw);
+      add('loss', session.losses - counts.loss);
+      return missing;
+    }
+
     function makeSessionFallbackRows(results, fallbackTier = '') {
       const now = new Date();
       return (results || []).map((result, index) => ({
@@ -7064,7 +7081,7 @@ h2::before{
       const tbody = document.getElementById('recentMatchDetailList');
       if (!tbody) return;
 
-      const [historyRes, todayHistoryRes, todaySessionRes, profileRes] = await Promise.all([
+      const [historyRes, todaySessionRes, profileRes] = await Promise.all([
         supabaseClient
           .from('game_history')
           .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
@@ -7072,7 +7089,6 @@ h2::before{
           .in('result', ['win', 'draw', 'loss'])
           .order('created_at', { ascending: false })
           .limit(25),
-        loadUserHistory(currentUser.username, startOfTodayIso()),
         loadUserSessions(currentUser.username, todayDate()),
         supabaseClient
           .from('player_stats')
@@ -7088,9 +7104,12 @@ h2::before{
       }
 
       const fallbackTier = profileRes.data?.[0]?.current_tier || profileRes.data?.[0]?.tier || '';
-      const missing = missingResultsFromSession(
+      const todayHistoryRows = (historyRes.data || []).filter(row => (
+        row?.created_at && formatLocalDate(new Date(row.created_at)) === todayDate()
+      ));
+      const missing = missingResultsForDetails(
         summarizeSessions(todaySessionRes.data || []),
-        summarizeMatches(todayHistoryRes.data || [])
+        todayHistoryRows
       );
       const rows = dedupeMatchDetails(
         [...makeSessionFallbackRows(missing, fallbackTier), ...(historyRes.data || [])],
@@ -8414,8 +8433,8 @@ h2::before{
       const profile = (profileRes.data && profileRes.data[0]) || {};
       const latestGame = (recentRes.data || [])[0] || {};
       const currentTier = profile.tier || profile.current_tier || latestGame.tier || '-';
-      const missing = typeof missingResultsFromSession === 'function'
-        ? missingResultsFromSession(summarizeSessions(todaySessionRes.data || []), summarizeMatches(todayRows))
+      const missing = typeof missingResultsForDetails === 'function'
+        ? missingResultsForDetails(summarizeSessions(todaySessionRes.data || []), todayRows)
         : [];
       const recentRows = [
         ...(typeof makeSessionFallbackRows === 'function' ? makeSessionFallbackRows(missing, currentTier) : []),
