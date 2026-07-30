@@ -7082,21 +7082,47 @@ h2::before{
         .select('username, result, created_at, opponent_nickname, score_change, tier')
         .in('result', ['win', 'draw', 'loss']);
       query = applyCurrentAccountFilter(query, currentUser.username);
-      const { data, error } = await query
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const [recentRes, todayHistoryRes, todaySessionRes, profileRes] = await Promise.all([
+        query.order('created_at', { ascending: false }).limit(40),
+        loadUserHistory(currentUser.username, startOfTodayIso()),
+        loadUserSessions(currentUser.username, todayDate()),
+        supabaseClient
+          .from('player_stats')
+          .select('current_tier, tier')
+          .eq('username', currentUser.username)
+          .order('updated_at', { ascending: false })
+          .limit(1),
+      ]);
 
-      if (error) {
+      if (recentRes.error) {
         renderRecentForm([], '전적 조회 오류');
         return;
       }
 
-      const rows = data || [];
-      const results = rows.map(row => normalizeResult(row.result)).filter(Boolean);
+      const rows = recentRes.data || [];
+      const todayHistory = summarizeMatches(todayHistoryRes.data || []);
+      const todaySession = summarizeSessions(todaySessionRes.data || []);
+      const fallbackTier = profileRes.data?.[0]?.current_tier || profileRes.data?.[0]?.tier || '';
+      let results = rows.map(row => normalizeResult(row.result)).filter(Boolean);
+      if (!isChampionOrHigherTier(fallbackTier) && todaySession.matches > 0) {
+        const todayResults = expandStatsToResults(todaySession);
+        const olderResults = rows
+          .filter(row => !(row?.created_at && formatLocalDate(new Date(row.created_at)) === todayDate()))
+          .map(row => normalizeResult(row.result))
+          .filter(Boolean);
+        results = [...todayResults, ...olderResults];
+      } else {
+        const addMissing = (result, count) => {
+          for (let i = 0; i < Math.max(0, count); i += 1) results.unshift(result);
+        };
+        addMissing('loss', todaySession.losses - todayHistory.losses);
+        addMissing('draw', todaySession.draws - todayHistory.draws);
+        addMissing('win', todaySession.wins - todayHistory.wins);
+      }
       const cachedResults = loadStatsCache(currentUser.username, 'recentForm') || [];
       const displayResults = results.length ? results : cachedResults;
       if (results.length) saveStatsCache(currentUser.username, 'recentForm', results);
-      renderRecentForm(displayResults, '전체 최근 경기 순서');
+      renderRecentForm(displayResults.slice(0, 20), '최근 기록');
     }
 
     function isMacroLiveRow(row) {
