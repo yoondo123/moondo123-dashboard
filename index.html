@@ -2708,6 +2708,13 @@ footer {
     font-size: 22px !important;
   }
 
+  #todayScore.promotion-score,
+  #searchCurrentScore.promotion-score {
+    font-size: 15px !important;
+    line-height: 1.12 !important;
+    white-space: nowrap !important;
+  }
+
   .form-strip {
     margin: 10px 0 0 !important;
     padding: 10px 11px !important;
@@ -6542,9 +6549,11 @@ h2::before{
         }
       }
 
-      const match = text.match(/(?:승급|승격)[^\d]{0,12}(\d+)\s*점/);
-      if (match) {
-        const remaining = Number(match[1]);
+      const exactMatch = text.match(/(?:승급|승격)(?:까지)?[^\d]{0,12}(\d{1,2})\s*점/)
+        || text.match(/(\d{1,2})\s*점[^\d]{0,8}(?:남음|남았|필요)/);
+      if (exactMatch) {
+        const remaining = Number(exactMatch[1]);
+        if (!Number.isFinite(remaining) || remaining < 0 || remaining > 50) return null;
         return { remaining, text: `승급까지 ${remaining}점` };
       }
       return null;
@@ -6564,6 +6573,25 @@ h2::before{
       textEl.innerText = progress.text;
     }
 
+    function scoreDisplayForTier(tier, score, progressValue) {
+      if (isChampionOrHigherTier(tier)) {
+        return { text: score ?? 0, promotion: false };
+      }
+      const progress = parseLeagueProgress(progressValue);
+      if (progress && Number.isFinite(progress.remaining)) {
+        return { text: progress.text, promotion: true };
+      }
+      return { text: '-', promotion: false };
+    }
+
+    function renderTierScore(elementId, tier, score, progressValue) {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+      const display = scoreDisplayForTier(tier, score, progressValue);
+      element.innerText = display.text;
+      element.classList.toggle('promotion-score', display.promotion);
+    }
+
     function normalizeTierName(tier) {
       return String(tier || '')
         .replace(/\s+/g, '')
@@ -6579,6 +6607,7 @@ h2::before{
       if (name.includes('챔피언스') || name.includes('챔피언')) return 800;
       if (name.includes('슈퍼챌린저') || name.includes('슈퍼챌')) return 700;
       if (name.includes('챌린저') || name.includes('챌린')) return 600;
+      if (name.includes('마스터')) return 550;
       if (name.includes('월드클래스') || name.includes('월클')) return 500;
       if (name.includes('프로')) return 400;
       if (name.includes('세미프로')) return 300;
@@ -7061,8 +7090,9 @@ h2::before{
       document.getElementById('todayFc').innerText = fcFromWins(today.wins, meta.tier);
       document.getElementById('todayTier').innerText = meta.tier;
       document.getElementById('todayPeakTier').innerText = `오늘 최고티어 ${displayTierName(todayPeakTierValue || meta.tier || '-')}`;
-      renderPromotionProgress(meta.tier, live?.league_progress || profile.league_progress);
-      document.getElementById('todayScore').innerText = meta.score;
+      const promotionProgress = live?.league_progress || profile.league_progress;
+      renderPromotionProgress(meta.tier, promotionProgress);
+      renderTierScore('todayScore', meta.tier, meta.score, promotionProgress);
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
 
@@ -8593,7 +8623,7 @@ h2::before{
       setText('searchTodayFcMeta', `오늘 채굴 ${todayFc} FC`);
       setText('searchCurrentTier', currentTier || '-');
       setText('searchPromotionText', searchPromotionText(currentTier, profile.league_progress));
-      setText('searchCurrentScore', currentScore ?? 0);
+      renderTierScore('searchCurrentScore', currentTier, currentScore, profile.league_progress);
       setText('searchCurrentRank', currentRank === null || currentRank === undefined ? '-' : currentRank);
       renderSearchForm(recentResults);
       renderSearchMatchDetails(recentRows, currentTier);
