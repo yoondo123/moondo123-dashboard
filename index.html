@@ -6778,6 +6778,56 @@ h2::before{
       return rows;
     }
 
+    function lowerTierRecentFormFromSession(username, stats, olderResults = []) {
+      const todayKey = todayDate();
+      const scope = `recentFormState:${todayKey}`;
+      const current = normalizeStats(stats);
+      const previousState = loadStatsCache(username, scope);
+      const previousStats = previousState?.stats ? normalizeStats(previousState.stats) : null;
+      let results = Array.isArray(previousState?.results)
+        ? previousState.results.map(normalizeResult).filter(Boolean)
+        : [];
+
+      const isSameDayUsable =
+        previousState?.date === todayKey &&
+        previousStats &&
+        previousStats.matches <= current.matches;
+
+      if (!isSameDayUsable) {
+        results = sessionStatsToRecentResults(current, 20);
+      } else {
+        const deltas = {
+          win: Math.max(0, current.wins - previousStats.wins),
+          draw: Math.max(0, current.draws - previousStats.draws),
+          loss: Math.max(0, current.losses - previousStats.losses),
+        };
+        const added = [];
+        ['win', 'draw', 'loss'].forEach(result => {
+          for (let i = 0; i < deltas[result]; i += 1) added.push(result);
+        });
+        if (added.length) {
+          results = [...added.reverse(), ...results].slice(0, 20);
+        }
+      }
+
+      if (!results.length && current.matches > 0) {
+        results = sessionStatsToRecentResults(current, 20);
+      }
+
+      const merged = [...results, ...(olderResults || [])]
+        .map(normalizeResult)
+        .filter(Boolean)
+        .slice(0, 20);
+
+      saveStatsCache(username, scope, {
+        date: todayKey,
+        stats: current,
+        results: merged,
+      });
+      saveStatsCache(username, 'recentForm', merged);
+      return merged;
+    }
+
     function renderRecentForm(results, sourceText = '') {
       const dots = document.getElementById('formDots');
       const summary = document.getElementById('formSummary');
@@ -7269,13 +7319,12 @@ h2::before{
       let results = rows.map(row => normalizeResult(row.result)).filter(Boolean);
       let sourceText = '최근 기록';
       if (!isChampionOrHigherTier(fallbackTier) && todaySession.matches > 0) {
-        const todayResults = sessionStatsToRecentResults(todaySession, 20);
         const olderResults = rows
           .filter(row => !(row?.created_at && formatLocalDate(new Date(row.created_at)) === todayDate()))
           .map(row => normalizeResult(row.result))
           .filter(Boolean);
-        results = [...todayResults, ...olderResults];
-        sourceText = '오늘 누적 기준';
+        results = lowerTierRecentFormFromSession(currentUser.username, todaySession, olderResults);
+        sourceText = '오늘 전적 기준';
       } else {
         const addMissing = (result, count) => {
           for (let i = 0; i < Math.max(0, count); i += 1) results.unshift(result);
@@ -7284,7 +7333,9 @@ h2::before{
         addMissing('draw', todaySession.draws - todayHistory.draws);
         addMissing('win', todaySession.wins - todayHistory.wins);
       }
-      const cachedResults = loadStatsCache(currentUser.username, 'recentForm') || [];
+      const cachedResults = loadStatsCache(currentUser.username, `recentFormState:${todayDate()}`)?.results
+        || loadStatsCache(currentUser.username, 'recentForm')
+        || [];
       const displayResults = results.length ? results : cachedResults;
       if (results.length) saveStatsCache(currentUser.username, 'recentForm', results);
       renderRecentForm(displayResults.slice(0, 20), sourceText);
