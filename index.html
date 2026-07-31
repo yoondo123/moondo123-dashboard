@@ -6637,6 +6637,45 @@ h2::before{
       ].slice(0, 20);
     }
 
+    function sessionStatsToRecentResults(stats, limit = 20) {
+      const counts = {
+        win: Math.max(0, Number(stats?.wins || 0)),
+        draw: Math.max(0, Number(stats?.draws || 0)),
+        loss: Math.max(0, Number(stats?.losses || 0)),
+      };
+      const total = counts.win + counts.draw + counts.loss;
+      const output = [];
+      const order = ['win', 'draw', 'loss'];
+      while (output.length < Math.min(limit, total)) {
+        let added = false;
+        for (const result of order) {
+          if (counts[result] <= 0 || output.length >= limit) continue;
+          output.push(result);
+          counts[result] -= 1;
+          added = true;
+        }
+        if (!added) break;
+      }
+      return output;
+    }
+
+    function sessionSummaryDetailRows(stats, fallbackTier = '') {
+      const rows = [];
+      const addRow = (result, count) => {
+        if (Number(count || 0) <= 0) return;
+        rows.push({
+          session_summary: true,
+          result,
+          count: Number(count),
+          tier: fallbackTier,
+        });
+      };
+      addRow('win', stats?.wins);
+      addRow('draw', stats?.draws);
+      addRow('loss', stats?.losses);
+      return rows;
+    }
+
     function renderRecentForm(results, sourceText = '') {
       const dots = document.getElementById('formDots');
       const summary = document.getElementById('formSummary');
@@ -7034,7 +7073,7 @@ h2::before{
       const tbody = document.getElementById('recentMatchDetailList');
       if (!tbody) return;
 
-      const [historyRes, profileRes] = await Promise.all([
+      const [historyRes, todaySessionRes, profileRes] = await Promise.all([
         supabaseClient
           .from('game_history')
           .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
@@ -7042,6 +7081,7 @@ h2::before{
           .in('result', ['win', 'draw', 'loss'])
           .order('created_at', { ascending: false })
           .limit(25),
+        loadUserSessions(currentUser.username, todayDate()),
         supabaseClient
           .from('player_stats')
           .select('current_tier, tier')
@@ -7056,13 +7096,33 @@ h2::before{
       }
 
       const fallbackTier = profileRes.data?.[0]?.current_tier || profileRes.data?.[0]?.tier || '';
-      const rows = dedupeMatchDetails(historyRes.data || [], 10);
+      const historyRows = dedupeMatchDetails(historyRes.data || [], 10);
+      const todaySession = summarizeSessions(todaySessionRes.data || []);
+      let rows = historyRows;
+      if (!isChampionOrHigherTier(fallbackTier) && todaySession.matches > 0) {
+        rows = [
+          ...sessionSummaryDetailRows(todaySession, fallbackTier),
+          ...historyRows,
+        ].slice(0, 10);
+      }
       if (!rows.length) {
         tbody.innerHTML = '<tr><td colspan="4">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
       }
 
       tbody.innerHTML = rows.map(row => {
+        if (row.session_summary) {
+          const count = Number(row.count || 0);
+          const label = resultShort(row.result);
+          return `
+            <tr>
+              <td>오늘 누적</td>
+              <td>하위 티어 집계</td>
+              <td>${resultLabel(row.result)}</td>
+              <td>${count}${label}</td>
+            </tr>
+          `;
+        }
         const opponent = row.opponent_nickname || '상대 미확인';
         return `
           <tr>
@@ -7104,13 +7164,15 @@ h2::before{
       const todaySession = summarizeSessions(todaySessionRes.data || []);
       const fallbackTier = profileRes.data?.[0]?.current_tier || profileRes.data?.[0]?.tier || '';
       let results = rows.map(row => normalizeResult(row.result)).filter(Boolean);
+      let sourceText = '최근 기록';
       if (!isChampionOrHigherTier(fallbackTier) && todaySession.matches > 0) {
-        const todayResults = expandStatsToResults(todaySession);
+        const todayResults = sessionStatsToRecentResults(todaySession, 20);
         const olderResults = rows
           .filter(row => !(row?.created_at && formatLocalDate(new Date(row.created_at)) === todayDate()))
           .map(row => normalizeResult(row.result))
           .filter(Boolean);
         results = [...todayResults, ...olderResults];
+        sourceText = '오늘 누적 기준';
       } else {
         const addMissing = (result, count) => {
           for (let i = 0; i < Math.max(0, count); i += 1) results.unshift(result);
@@ -7122,7 +7184,7 @@ h2::before{
       const cachedResults = loadStatsCache(currentUser.username, 'recentForm') || [];
       const displayResults = results.length ? results : cachedResults;
       if (results.length) saveStatsCache(currentUser.username, 'recentForm', results);
-      renderRecentForm(displayResults.slice(0, 20), '최근 기록');
+      renderRecentForm(displayResults.slice(0, 20), sourceText);
     }
 
     function isMacroLiveRow(row) {
