@@ -619,29 +619,6 @@
     .stat.compact small {
       min-height: 16px;
     }
-    .promotion-progress {
-      display: none;
-      margin-top: 10px;
-      gap: 5px;
-      align-items: center;
-    }
-    .promotion-progress.show {
-      display: flex;
-    }
-    .promotion-slot {
-      width: 100%;
-      max-width: 34px;
-      height: 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.13);
-      background: rgba(255,255,255,.08);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
-    }
-    .promotion-slot.filled {
-      border-color: rgba(112,242,210,.55);
-      background: linear-gradient(90deg, rgba(112,242,210,.9), rgba(174,255,117,.82));
-      box-shadow: 0 0 12px rgba(112,242,210,.24);
-    }
     #lifetimeRecord {
       color: #ffffff;
     }
@@ -5897,13 +5874,6 @@ h2::before{
           <strong id="todayTier">-</strong>
           <small id="todayPeakTier">오늘 최고티어 -</small>
           <small id="todayPromotionText"></small>
-          <div class="promotion-progress" id="todayPromotionProgress" aria-hidden="true">
-            <span class="promotion-slot"></span>
-            <span class="promotion-slot"></span>
-            <span class="promotion-slot"></span>
-            <span class="promotion-slot"></span>
-            <span class="promotion-slot"></span>
-          </div>
         </div>
         <div class="stat compact">
           <span class="muted">현재 점수</span>
@@ -6120,7 +6090,7 @@ h2::before{
             <div class="stat compact">
               <span class="muted">현재 티어</span>
               <strong id="searchCurrentTier">-</strong>
-              <small>실시간 기준</small>
+              <small id="searchPromotionText">실시간 기준</small>
             </div>
             <div class="stat compact">
               <span class="muted">현재 점수</span>
@@ -6582,25 +6552,16 @@ h2::before{
 
     function renderPromotionProgress(tier, progressValue) {
       const textEl = document.getElementById('todayPromotionText');
-      const barEl = document.getElementById('todayPromotionProgress');
-      if (!textEl || !barEl) return;
+      if (!textEl) return;
 
       const progress = parseLeagueProgress(progressValue);
       const show = !isChampionOrHigherTier(tier) && progress && Number.isFinite(progress.remaining);
       if (!show) {
         textEl.innerText = '';
-        barEl.classList.remove('show');
-        [...barEl.children].forEach(slot => slot.classList.remove('filled'));
         return;
       }
 
-      const remaining = Math.max(0, Math.min(5, Math.ceil(progress.remaining)));
-      const filled = Math.max(0, Math.min(5, 5 - remaining));
       textEl.innerText = progress.text;
-      barEl.classList.add('show');
-      [...barEl.children].forEach((slot, index) => {
-        slot.classList.toggle('filled', index < filled);
-      });
     }
 
     function normalizeTierName(tier) {
@@ -8455,6 +8416,17 @@ h2::before{
     return stats.matches ? ((stats.wins / stats.matches) * 100).toFixed(1) : '0.0';
   }
 
+  function searchPromotionText(tier, progressValue) {
+    const progress = typeof parseLeagueProgress === 'function'
+      ? parseLeagueProgress(progressValue)
+      : null;
+    const isChampion = typeof isChampionOrHigherTier === 'function'
+      ? isChampionOrHigherTier(tier)
+      : String(tier || '').replace(/\s+/g, '').includes('챔피언스');
+    if (!progress || isChampion || !Number.isFinite(progress.remaining)) return '실시간 기준';
+    return progress.text || `승급까지 ${progress.remaining}점`;
+  }
+
   function safeStreakSummary(results) {
     const clean = (results || []).map(safeNormalizeResult).filter(Boolean).slice(0, 20);
     if (!clean.length) return '기록 대기';
@@ -8589,7 +8561,7 @@ h2::before{
           .limit(25),
         supabaseClient
           .from('player_stats')
-          .select('username, current_score, score, current_rank, rank, current_tier, tier, updated_at')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, league_progress, updated_at')
           .eq('username', nickname)
           .order('updated_at', { ascending: false })
           .limit(1)
@@ -8620,6 +8592,7 @@ h2::before{
       setText('searchTodayFc', todayFc);
       setText('searchTodayFcMeta', `오늘 채굴 ${todayFc} FC`);
       setText('searchCurrentTier', currentTier || '-');
+      setText('searchPromotionText', searchPromotionText(currentTier, profile.league_progress));
       setText('searchCurrentScore', currentScore ?? 0);
       setText('searchCurrentRank', currentRank === null || currentRank === undefined ? '-' : currentRank);
       renderSearchForm(recentResults);
