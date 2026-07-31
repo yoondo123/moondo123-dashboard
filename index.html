@@ -619,6 +619,29 @@
     .stat.compact small {
       min-height: 16px;
     }
+    .promotion-progress {
+      display: none;
+      margin-top: 10px;
+      gap: 5px;
+      align-items: center;
+    }
+    .promotion-progress.show {
+      display: flex;
+    }
+    .promotion-slot {
+      width: 100%;
+      max-width: 34px;
+      height: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.13);
+      background: rgba(255,255,255,.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .promotion-slot.filled {
+      border-color: rgba(112,242,210,.55);
+      background: linear-gradient(90deg, rgba(112,242,210,.9), rgba(174,255,117,.82));
+      box-shadow: 0 0 12px rgba(112,242,210,.24);
+    }
     #lifetimeRecord {
       color: #ffffff;
     }
@@ -5873,6 +5896,14 @@ h2::before{
           <span class="muted">현재 티어</span>
           <strong id="todayTier">-</strong>
           <small id="todayPeakTier">오늘 최고티어 -</small>
+          <small id="todayPromotionText"></small>
+          <div class="promotion-progress" id="todayPromotionProgress" aria-hidden="true">
+            <span class="promotion-slot"></span>
+            <span class="promotion-slot"></span>
+            <span class="promotion-slot"></span>
+            <span class="promotion-slot"></span>
+            <span class="promotion-slot"></span>
+          </div>
         </div>
         <div class="stat compact">
           <span class="muted">현재 점수</span>
@@ -6501,6 +6532,77 @@ h2::before{
       return { tier, score, rank: rank ?? '-' };
     }
 
+    function parseLeagueProgress(value) {
+      if (!value) return null;
+      let source = value;
+      if (typeof source === 'string') {
+        const text = source.trim();
+        if (!text || text === '{}' || text === '[]') return null;
+        try {
+          source = JSON.parse(text);
+        } catch (_) {
+          source = { text };
+        }
+      }
+
+      const text = typeof source === 'object'
+        ? [
+            source.text,
+            source.raw,
+            source.display,
+            source.message,
+            source.progress_text,
+            source.league_progress,
+          ].filter(Boolean).join(' ')
+        : String(source || '');
+
+      const numericCandidates = [
+        source?.promotion_remaining,
+        source?.remaining_promotion_points,
+        source?.points_to_promotion,
+        source?.promotion_points_left,
+        source?.remaining_points,
+        source?.remaining,
+        source?.to_promotion,
+      ];
+      for (const candidate of numericCandidates) {
+        const number = Number(candidate);
+        if (Number.isFinite(number) && number >= 0) {
+          return { remaining: number, text: `승급까지 ${number}점` };
+        }
+      }
+
+      const match = text.match(/(?:승급|승격)[^\d]{0,12}(\d+)\s*점/);
+      if (match) {
+        const remaining = Number(match[1]);
+        return { remaining, text: `승급까지 ${remaining}점` };
+      }
+      return null;
+    }
+
+    function renderPromotionProgress(tier, progressValue) {
+      const textEl = document.getElementById('todayPromotionText');
+      const barEl = document.getElementById('todayPromotionProgress');
+      if (!textEl || !barEl) return;
+
+      const progress = parseLeagueProgress(progressValue);
+      const show = !isChampionOrHigherTier(tier) && progress && Number.isFinite(progress.remaining);
+      if (!show) {
+        textEl.innerText = '';
+        barEl.classList.remove('show');
+        [...barEl.children].forEach(slot => slot.classList.remove('filled'));
+        return;
+      }
+
+      const remaining = Math.max(0, Math.min(5, Math.ceil(progress.remaining)));
+      const filled = Math.max(0, Math.min(5, 5 - remaining));
+      textEl.innerText = progress.text;
+      barEl.classList.add('show');
+      [...barEl.children].forEach((slot, index) => {
+        slot.classList.toggle('filled', index < filled);
+      });
+    }
+
     function normalizeTierName(tier) {
       return String(tier || '')
         .replace(/\s+/g, '')
@@ -6851,7 +6953,7 @@ h2::before{
     async function loadPlayerStatsMap() {
       const { data } = await supabaseClient
         .from('player_stats')
-        .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at, is_running, game_status, status, last_seen_at')
+        .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, league_progress, updated_at, is_running, game_status, status, last_seen_at')
         .order('updated_at', { ascending: false });
       const rows = data || [];
       await Promise.all(rows.map(row => syncTodayPeakTierRow(row)));
@@ -6914,7 +7016,7 @@ h2::before{
         loadUserSessions(currentUser.username, weekStart),
         supabaseClient
           .from('player_stats')
-          .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, league_progress, updated_at')
           .eq('username', currentUser.username)
           .order('updated_at', { ascending: false })
           .limit(1),
@@ -6948,6 +7050,7 @@ h2::before{
       document.getElementById('todayFc').innerText = fcFromWins(today.wins, meta.tier);
       document.getElementById('todayTier').innerText = meta.tier;
       document.getElementById('todayPeakTier').innerText = `오늘 최고티어 ${displayTierName(todayPeakTierValue || meta.tier || '-')}`;
+      renderPromotionProgress(meta.tier, live?.league_progress || profile.league_progress);
       document.getElementById('todayScore').innerText = meta.score;
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
