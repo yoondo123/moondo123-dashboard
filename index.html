@@ -2708,13 +2708,6 @@ footer {
     font-size: 22px !important;
   }
 
-  #todayScore.promotion-score,
-  #searchCurrentScore.promotion-score {
-    font-size: 15px !important;
-    line-height: 1.12 !important;
-    white-space: nowrap !important;
-  }
-
   .form-strip {
     margin: 10px 0 0 !important;
     padding: 10px 11px !important;
@@ -5880,7 +5873,6 @@ h2::before{
           <span class="muted">현재 티어</span>
           <strong id="todayTier">-</strong>
           <small id="todayPeakTier">오늘 최고티어 -</small>
-          <small id="todayPromotionText"></small>
         </div>
         <div class="stat compact">
           <span class="muted">현재 점수</span>
@@ -5954,7 +5946,7 @@ h2::before{
               <th>시간</th>
               <th>상대</th>
               <th>결과</th>
-              <th>점수/전적</th>
+              <th>점수변동</th>
             </tr>
           </thead>
           <tbody id="recentMatchDetailList"></tbody>
@@ -6097,7 +6089,7 @@ h2::before{
             <div class="stat compact">
               <span class="muted">현재 티어</span>
               <strong id="searchCurrentTier">-</strong>
-              <small id="searchPromotionText">실시간 기준</small>
+              <small>실시간 기준</small>
             </div>
             <div class="stat compact">
               <span class="muted">현재 점수</span>
@@ -6128,7 +6120,7 @@ h2::before{
                     <th>시간</th>
                     <th>상대</th>
                     <th>결과</th>
-                    <th>점수/전적</th>
+                    <th>점수변동</th>
                   </tr>
                 </thead>
                 <tbody id="searchRecentMatchDetailList"></tbody>
@@ -6509,89 +6501,6 @@ h2::before{
       return { tier, score, rank: rank ?? '-' };
     }
 
-    function parseLeagueProgress(value) {
-      if (!value) return null;
-      let source = value;
-      if (typeof source === 'string') {
-        const text = source.trim();
-        if (!text || text === '{}' || text === '[]') return null;
-        try {
-          source = JSON.parse(text);
-        } catch (_) {
-          source = { text };
-        }
-      }
-
-      const text = typeof source === 'object'
-        ? [
-            source.text,
-            source.raw,
-            source.display,
-            source.message,
-            source.progress_text,
-            source.league_progress,
-          ].filter(Boolean).join(' ')
-        : String(source || '');
-
-      const numericCandidates = [
-        source?.promotion_remaining,
-        source?.remaining_promotion_points,
-        source?.points_to_promotion,
-        source?.promotion_points_left,
-        source?.remaining_points,
-        source?.remaining,
-        source?.to_promotion,
-      ];
-      for (const candidate of numericCandidates) {
-        const number = Number(candidate);
-        if (Number.isFinite(number) && number >= 0) {
-          return { remaining: number, text: `승급까지 ${number}점` };
-        }
-      }
-
-      const exactMatch = text.match(/(?:승급|승격)(?:까지)?[^\d]{0,12}(\d{1,2})\s*점/)
-        || text.match(/(\d{1,2})\s*점[^\d]{0,8}(?:남음|남았|필요)/);
-      if (exactMatch) {
-        const remaining = Number(exactMatch[1]);
-        if (!Number.isFinite(remaining) || remaining < 0 || remaining > 50) return null;
-        return { remaining, text: `승급까지 ${remaining}점` };
-      }
-      return null;
-    }
-
-    function renderPromotionProgress(tier, progressValue) {
-      const textEl = document.getElementById('todayPromotionText');
-      if (!textEl) return;
-
-      const progress = parseLeagueProgress(progressValue);
-      const show = !isChampionOrHigherTier(tier) && progress && Number.isFinite(progress.remaining);
-      if (!show) {
-        textEl.innerText = '';
-        return;
-      }
-
-      textEl.innerText = progress.text;
-    }
-
-    function scoreDisplayForTier(tier, score, progressValue) {
-      if (isChampionOrHigherTier(tier)) {
-        return { text: score ?? 0, promotion: false };
-      }
-      const progress = parseLeagueProgress(progressValue);
-      if (progress && Number.isFinite(progress.remaining)) {
-        return { text: progress.text, promotion: true };
-      }
-      return { text: '-', promotion: false };
-    }
-
-    function renderTierScore(elementId, tier, score, progressValue) {
-      const element = document.getElementById(elementId);
-      if (!element) return;
-      const display = scoreDisplayForTier(tier, score, progressValue);
-      element.innerText = display.text;
-      element.classList.toggle('promotion-score', display.promotion);
-    }
-
     function normalizeTierName(tier) {
       return String(tier || '')
         .replace(/\s+/g, '')
@@ -6607,7 +6516,6 @@ h2::before{
       if (name.includes('챔피언스') || name.includes('챔피언')) return 800;
       if (name.includes('슈퍼챌린저') || name.includes('슈퍼챌')) return 700;
       if (name.includes('챌린저') || name.includes('챌린')) return 600;
-      if (name.includes('마스터')) return 550;
       if (name.includes('월드클래스') || name.includes('월클')) return 500;
       if (name.includes('프로')) return 400;
       if (name.includes('세미프로')) return 300;
@@ -6727,95 +6635,6 @@ h2::before{
         ...Array(draws).fill('draw'),
         ...Array(losses).fill('loss'),
       ].slice(0, 20);
-    }
-
-    function sessionStatsToRecentResults(stats, limit = 20) {
-      const counts = {
-        win: Math.max(0, Number(stats?.wins || 0)),
-        draw: Math.max(0, Number(stats?.draws || 0)),
-        loss: Math.max(0, Number(stats?.losses || 0)),
-      };
-      const total = counts.win + counts.draw + counts.loss;
-      const output = [];
-      const order = ['win', 'draw', 'loss'];
-      while (output.length < Math.min(limit, total)) {
-        let added = false;
-        for (const result of order) {
-          if (counts[result] <= 0 || output.length >= limit) continue;
-          output.push(result);
-          counts[result] -= 1;
-          added = true;
-        }
-        if (!added) break;
-      }
-      return output;
-    }
-
-    function sessionSummaryDetailRows(stats, fallbackTier = '') {
-      const rows = [];
-      const addRow = (result, count) => {
-        if (Number(count || 0) <= 0) return;
-        rows.push({
-          session_summary: true,
-          result,
-          count: Number(count),
-          tier: fallbackTier,
-        });
-      };
-      addRow('win', stats?.wins);
-      addRow('draw', stats?.draws);
-      addRow('loss', stats?.losses);
-      return rows;
-    }
-
-    function lowerTierRecentFormFromSession(username, stats, olderResults = []) {
-      const todayKey = todayDate();
-      const scope = `recentFormState:${todayKey}`;
-      const current = normalizeStats(stats);
-      const previousState = loadStatsCache(username, scope);
-      const previousStats = previousState?.stats ? normalizeStats(previousState.stats) : null;
-      let results = Array.isArray(previousState?.results)
-        ? previousState.results.map(normalizeResult).filter(Boolean)
-        : [];
-
-      const isSameDayUsable =
-        previousState?.date === todayKey &&
-        previousStats &&
-        previousStats.matches <= current.matches;
-
-      if (!isSameDayUsable) {
-        results = sessionStatsToRecentResults(current, 20);
-      } else {
-        const deltas = {
-          win: Math.max(0, current.wins - previousStats.wins),
-          draw: Math.max(0, current.draws - previousStats.draws),
-          loss: Math.max(0, current.losses - previousStats.losses),
-        };
-        const added = [];
-        ['win', 'draw', 'loss'].forEach(result => {
-          for (let i = 0; i < deltas[result]; i += 1) added.push(result);
-        });
-        if (added.length) {
-          results = [...added.reverse(), ...results].slice(0, 20);
-        }
-      }
-
-      if (!results.length && current.matches > 0) {
-        results = sessionStatsToRecentResults(current, 20);
-      }
-
-      const merged = [...results, ...(olderResults || [])]
-        .map(normalizeResult)
-        .filter(Boolean)
-        .slice(0, 20);
-
-      saveStatsCache(username, scope, {
-        date: todayKey,
-        stats: current,
-        results: merged,
-      });
-      saveStatsCache(username, 'recentForm', merged);
-      return merged;
     }
 
     function renderRecentForm(results, sourceText = '') {
@@ -6993,7 +6812,7 @@ h2::before{
     async function loadPlayerStatsMap() {
       const { data } = await supabaseClient
         .from('player_stats')
-        .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, league_progress, updated_at, is_running, game_status, status, last_seen_at')
+        .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at, is_running, game_status, status, last_seen_at')
         .order('updated_at', { ascending: false });
       const rows = data || [];
       await Promise.all(rows.map(row => syncTodayPeakTierRow(row)));
@@ -7056,7 +6875,7 @@ h2::before{
         loadUserSessions(currentUser.username, weekStart),
         supabaseClient
           .from('player_stats')
-          .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, league_progress, updated_at')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at')
           .eq('username', currentUser.username)
           .order('updated_at', { ascending: false })
           .limit(1),
@@ -7090,9 +6909,7 @@ h2::before{
       document.getElementById('todayFc').innerText = fcFromWins(today.wins, meta.tier);
       document.getElementById('todayTier').innerText = meta.tier;
       document.getElementById('todayPeakTier').innerText = `오늘 최고티어 ${displayTierName(todayPeakTierValue || meta.tier || '-')}`;
-      const promotionProgress = live?.league_progress || profile.league_progress;
-      renderPromotionProgress(meta.tier, promotionProgress);
-      renderTierScore('todayScore', meta.tier, meta.score, promotionProgress);
+      document.getElementById('todayScore').innerText = meta.score;
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
 
@@ -7173,22 +6990,6 @@ h2::before{
       return '0';
     }
 
-    function isChampionOrHigherTier(tier) {
-      const text = String(tier || '').replace(/\s+/g, '');
-      return text.includes('챔피언스');
-    }
-
-    function scoreOrResultText(row, fallbackTier = '') {
-      const scoreChange = row?.score_change;
-      const hasScoreChange = scoreChange !== null && scoreChange !== undefined && scoreChange !== '';
-      const tier = row?.tier || row?.current_tier || fallbackTier || '';
-
-      if (hasScoreChange && isChampionOrHigherTier(tier)) {
-        return scoreChangeText(scoreChange);
-      }
-      return resultLabel(row?.result);
-    }
-
     function matchDetailDedupKey(row) {
       const time = row?.created_at ? new Date(row.created_at).getTime() : 0;
       const minuteBucket = Number.isFinite(time) ? Math.floor(time / 60000) : 0;
@@ -7217,63 +7018,33 @@ h2::before{
       const tbody = document.getElementById('recentMatchDetailList');
       if (!tbody) return;
 
-      const [historyRes, todaySessionRes, profileRes] = await Promise.all([
-        supabaseClient
-          .from('game_history')
-          .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
-          .eq('username', currentUser.username)
-          .in('result', ['win', 'draw', 'loss'])
-          .order('created_at', { ascending: false })
-          .limit(25),
-        loadUserSessions(currentUser.username, todayDate()),
-        supabaseClient
-          .from('player_stats')
-          .select('current_tier, tier')
-          .eq('username', currentUser.username)
-          .order('updated_at', { ascending: false })
-          .limit(1)
-      ]);
+      const { data, error } = await supabaseClient
+        .from('game_history')
+        .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
+        .eq('username', currentUser.username)
+        .in('result', ['win', 'draw', 'loss'])
+        .order('created_at', { ascending: false })
+        .limit(25);
 
-      if (historyRes.error) {
-        tbody.innerHTML = `<tr><td colspan="4">오류: ${escapeHtml(historyRes.error.message)}</td></tr>`;
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="4">오류: ${escapeHtml(error.message)}</td></tr>`;
         return;
       }
 
-      const fallbackTier = profileRes.data?.[0]?.current_tier || profileRes.data?.[0]?.tier || '';
-      const historyRows = dedupeMatchDetails(historyRes.data || [], 10);
-      const todaySession = summarizeSessions(todaySessionRes.data || []);
-      let rows = historyRows;
-      if (!isChampionOrHigherTier(fallbackTier) && todaySession.matches > 0) {
-        rows = [
-          ...sessionSummaryDetailRows(todaySession, fallbackTier),
-          ...historyRows,
-        ].slice(0, 10);
-      }
+      const rows = dedupeMatchDetails(data || [], 10);
       if (!rows.length) {
         tbody.innerHTML = '<tr><td colspan="4">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
       }
 
       tbody.innerHTML = rows.map(row => {
-        if (row.session_summary) {
-          const count = Number(row.count || 0);
-          const label = resultShort(row.result);
-          return `
-            <tr>
-              <td>오늘 누적</td>
-              <td>하위 티어 집계</td>
-              <td>${resultLabel(row.result)}</td>
-              <td>${count}${label}</td>
-            </tr>
-          `;
-        }
         const opponent = row.opponent_nickname || '상대 미확인';
         return `
           <tr>
             <td>${matchDetailDate(row.created_at)}</td>
             <td>${escapeHtml(opponent)}</td>
             <td>${resultLabel(row.result)}</td>
-            <td>${scoreOrResultText(row, fallbackTier)}</td>
+            <td>${scoreChangeText(row.score_change)}</td>
           </tr>
         `;
       }).join('');
@@ -7283,53 +7054,24 @@ h2::before{
       if (!currentUser) return;
       let query = supabaseClient
         .from('game_history')
-        .select('username, result, created_at, opponent_nickname, score_change, tier')
+        .select('username, result, created_at, opponent_nickname, score_change')
         .in('result', ['win', 'draw', 'loss']);
       query = applyCurrentAccountFilter(query, currentUser.username);
-      const [recentRes, todayHistoryRes, todaySessionRes, profileRes] = await Promise.all([
-        query.order('created_at', { ascending: false }).limit(40),
-        loadUserHistory(currentUser.username, startOfTodayIso()),
-        loadUserSessions(currentUser.username, todayDate()),
-        supabaseClient
-          .from('player_stats')
-          .select('current_tier, tier')
-          .eq('username', currentUser.username)
-          .order('updated_at', { ascending: false })
-          .limit(1),
-      ]);
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-      if (recentRes.error) {
+      if (error) {
         renderRecentForm([], '전적 조회 오류');
         return;
       }
 
-      const rows = recentRes.data || [];
-      const todayHistory = summarizeMatches(todayHistoryRes.data || []);
-      const todaySession = summarizeSessions(todaySessionRes.data || []);
-      const fallbackTier = profileRes.data?.[0]?.current_tier || profileRes.data?.[0]?.tier || '';
-      let results = rows.map(row => normalizeResult(row.result)).filter(Boolean);
-      let sourceText = '최근 기록';
-      if (!isChampionOrHigherTier(fallbackTier) && todaySession.matches > 0) {
-        const olderResults = rows
-          .filter(row => !(row?.created_at && formatLocalDate(new Date(row.created_at)) === todayDate()))
-          .map(row => normalizeResult(row.result))
-          .filter(Boolean);
-        results = lowerTierRecentFormFromSession(currentUser.username, todaySession, olderResults);
-        sourceText = '오늘 전적 기준';
-      } else {
-        const addMissing = (result, count) => {
-          for (let i = 0; i < Math.max(0, count); i += 1) results.unshift(result);
-        };
-        addMissing('loss', todaySession.losses - todayHistory.losses);
-        addMissing('draw', todaySession.draws - todayHistory.draws);
-        addMissing('win', todaySession.wins - todayHistory.wins);
-      }
-      const cachedResults = loadStatsCache(currentUser.username, `recentFormState:${todayDate()}`)?.results
-        || loadStatsCache(currentUser.username, 'recentForm')
-        || [];
+      const rows = data || [];
+      const results = rows.map(row => normalizeResult(row.result)).filter(Boolean);
+      const cachedResults = loadStatsCache(currentUser.username, 'recentForm') || [];
       const displayResults = results.length ? results : cachedResults;
       if (results.length) saveStatsCache(currentUser.username, 'recentForm', results);
-      renderRecentForm(displayResults.slice(0, 20), sourceText);
+      renderRecentForm(displayResults, '전체 최근 경기 순서');
     }
 
     function isMacroLiveRow(row) {
@@ -8446,17 +8188,6 @@ h2::before{
     return stats.matches ? ((stats.wins / stats.matches) * 100).toFixed(1) : '0.0';
   }
 
-  function searchPromotionText(tier, progressValue) {
-    const progress = typeof parseLeagueProgress === 'function'
-      ? parseLeagueProgress(progressValue)
-      : null;
-    const isChampion = typeof isChampionOrHigherTier === 'function'
-      ? isChampionOrHigherTier(tier)
-      : String(tier || '').replace(/\s+/g, '').includes('챔피언스');
-    if (!progress || isChampion || !Number.isFinite(progress.remaining)) return '실시간 기준';
-    return progress.text || `승급까지 ${progress.remaining}점`;
-  }
-
   function safeStreakSummary(results) {
     const clean = (results || []).map(safeNormalizeResult).filter(Boolean).slice(0, 20);
     if (!clean.length) return '기록 대기';
@@ -8521,7 +8252,7 @@ h2::before{
     }
   }
 
-  function renderSearchMatchDetails(rows, fallbackTier = '') {
+  function renderSearchMatchDetails(rows) {
     const tbody = document.getElementById('searchRecentMatchDetailList');
     if (!tbody) return;
 
@@ -8536,9 +8267,9 @@ h2::before{
     tbody.innerHTML = detailRows.map(row => {
       const opponent = row.opponent_nickname || '상대 미확인';
       const result = typeof resultLabel === 'function' ? resultLabel(row.result) : safeResultShort(row.result);
-      const delta = typeof scoreOrResultText === 'function'
-        ? scoreOrResultText(row, fallbackTier)
-        : (typeof scoreChangeText === 'function' ? scoreChangeText(row.score_change) : (row.score_change ?? '-'));
+      const delta = typeof scoreChangeText === 'function'
+        ? scoreChangeText(row.score_change)
+        : (row.score_change ?? '-');
       return `
         <tr>
           <td>${searchMatchDetailDate(row.created_at)}</td>
@@ -8591,7 +8322,7 @@ h2::before{
           .limit(25),
         supabaseClient
           .from('player_stats')
-          .select('username, current_score, score, current_rank, rank, current_tier, tier, league_progress, updated_at')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, updated_at')
           .eq('username', nickname)
           .order('updated_at', { ascending: false })
           .limit(1)
@@ -8602,12 +8333,12 @@ h2::before{
       if (profileRes.error) throw profileRes.error;
 
       const todayRows = todayRes.data || [];
-      const profile = (profileRes.data && profileRes.data[0]) || {};
-      const latestGame = (recentRes.data || [])[0] || {};
-      const currentTier = profile.tier || profile.current_tier || latestGame.tier || '-';
       const recentRows = recentRes.data || [];
+      const profile = (profileRes.data && profileRes.data[0]) || {};
+      const latestGame = recentRows[0] || {};
       const todayStats = summarizeRows(todayRows);
       const recentResults = recentRows.map(row => safeNormalizeResult(row.result)).filter(Boolean);
+      const currentTier = profile.tier || profile.current_tier || latestGame.tier || '-';
       const todayFc = fcFromWins(todayStats.wins, currentTier);
       const currentScore = profile.score ?? profile.current_score ?? latestGame.score_after ?? 0;
       const currentRank = profile.rank ?? profile.current_rank ?? latestGame.rank_after ?? '-';
@@ -8622,11 +8353,10 @@ h2::before{
       setText('searchTodayFc', todayFc);
       setText('searchTodayFcMeta', `오늘 채굴 ${todayFc} FC`);
       setText('searchCurrentTier', currentTier || '-');
-      setText('searchPromotionText', searchPromotionText(currentTier, profile.league_progress));
-      renderTierScore('searchCurrentScore', currentTier, currentScore, profile.league_progress);
+      setText('searchCurrentScore', currentScore ?? 0);
       setText('searchCurrentRank', currentRank === null || currentRank === undefined ? '-' : currentRank);
       renderSearchForm(recentResults);
-      renderSearchMatchDetails(recentRows, currentTier);
+      renderSearchMatchDetails(recentRows);
 
       if (resultBox) resultBox.classList.remove('hidden');
       if (message) {
