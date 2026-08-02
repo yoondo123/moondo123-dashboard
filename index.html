@@ -7335,6 +7335,7 @@ h2::before{
 
     async function refreshAll() {
       const statsMap = await loadPlayerStatsMap();
+      await checkSuperChampionsAnnouncements();
       await Promise.allSettled([
         loadRanking(statsMap, {
           tbodyId: 'rankingList',
@@ -9091,6 +9092,296 @@ h2::before{
   }
 }
 </style>
+
+
+<style id="moondo-super-champions-announcement-style">
+  #superChampionsToastArea {
+    position: fixed;
+    top: max(14px, env(safe-area-inset-top));
+    left: 50%;
+    z-index: 99999;
+    width: min(620px, calc(100% - 24px));
+    pointer-events: none;
+    transform: translateX(-50%);
+  }
+
+  .super-champions-toast {
+    position: relative;
+    display: grid;
+    grid-template-columns: 50px minmax(0, 1fr);
+    align-items: center;
+    gap: 13px;
+    min-height: 82px;
+    padding: 14px 18px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 220, 112, .58);
+    border-radius: 19px;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(255, 221, 105, .22), transparent 36%),
+      linear-gradient(135deg, rgba(0, 224, 194, .18), transparent 48%),
+      rgba(8, 15, 20, .97);
+    box-shadow:
+      0 22px 65px rgba(0, 0, 0, .55),
+      0 0 30px rgba(255, 211, 110, .15),
+      inset 0 1px 0 rgba(255, 255, 255, .09);
+    backdrop-filter: blur(18px);
+    opacity: 0;
+    transform: translateY(-130%);
+    transition: transform .48s cubic-bezier(.2,.9,.25,1), opacity .35s ease;
+  }
+
+  .super-champions-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .super-champions-toast.hide {
+    opacity: 0;
+    transform: translateY(-130%);
+  }
+
+  .super-champions-toast::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6fffe2, #ffd36e, #ffffff);
+    transform-origin: left center;
+    animation: superChampionsTimer 3s linear forwards;
+  }
+
+  .super-champions-toast-icon {
+    display: grid;
+    place-items: center;
+    width: 50px;
+    height: 50px;
+    border: 1px solid rgba(255, 221, 105, .48);
+    border-radius: 16px;
+    background: rgba(255, 211, 110, .12);
+    font-size: 27px;
+    box-shadow: 0 0 22px rgba(255, 211, 110, .16);
+  }
+
+  .super-champions-toast-kicker {
+    display: block;
+    margin-bottom: 4px;
+    color: #ffd96f;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: .12em;
+  }
+
+  .super-champions-toast-message {
+    color: #f8fffc;
+    font-size: clamp(16px, 2.8vw, 21px);
+    font-weight: 950;
+    line-height: 1.35;
+    word-break: keep-all;
+  }
+
+  .super-champions-toast-name {
+    color: #6fffe2;
+    text-shadow: 0 0 16px rgba(111, 255, 226, .28);
+  }
+
+  @keyframes superChampionsTimer {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+  }
+
+  @media (max-width: 520px) {
+    .super-champions-toast {
+      grid-template-columns: 42px minmax(0, 1fr);
+      min-height: 72px;
+      gap: 10px;
+      padding: 12px 13px;
+      border-radius: 15px;
+    }
+
+    .super-champions-toast-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      font-size: 23px;
+    }
+
+    .super-champions-toast-message {
+      font-size: 15px;
+    }
+  }
+</style>
+
+<script id="moondo-super-champions-announcement-script">
+  const SUPER_CHAMPIONS_ANNOUNCEMENT_LIFETIME_MS = 60 * 60 * 1000;
+  const SUPER_CHAMPIONS_TOAST_DURATION_MS = 3000;
+  const SUPER_CHAMPIONS_HISTORY_LOOKBACK_MS = 3 * 60 * 60 * 1000;
+  const SUPER_CHAMPIONS_SEEN_PREFIX = 'moondo_super_champions_seen:';
+  let superChampionsAnnouncementBusy = false;
+  let superChampionsToastQueue = Promise.resolve();
+
+  function isSuperChampionsTier(tier) {
+    const name = String(tier || '')
+      .replace(/\s+/g, '')
+      .replace(/감독/g, '')
+      .trim();
+    return name.includes('슈퍼챔피언스') || name.includes('슈퍼챔피언');
+  }
+
+  function superChampionsEventId(event) {
+    return `${event.username}:${event.achievedAt}`;
+  }
+
+  function superChampionsSeenKey(event) {
+    return SUPER_CHAMPIONS_SEEN_PREFIX + superChampionsEventId(event);
+  }
+
+  function hasSeenSuperChampionsEvent(event) {
+    try {
+      return Number(localStorage.getItem(superChampionsSeenKey(event)) || 0) > Date.now();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function markSuperChampionsEventSeen(event) {
+    try {
+      localStorage.setItem(
+        superChampionsSeenKey(event),
+        String(new Date(event.achievedAt).getTime() + SUPER_CHAMPIONS_ANNOUNCEMENT_LIFETIME_MS)
+      );
+    } catch (_) {}
+  }
+
+  function cleanExpiredSuperChampionsSeenEvents() {
+    try {
+      const now = Date.now();
+      for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+        const key = localStorage.key(index);
+        if (!key || !key.startsWith(SUPER_CHAMPIONS_SEEN_PREFIX)) continue;
+        if (Number(localStorage.getItem(key) || 0) <= now) localStorage.removeItem(key);
+      }
+    } catch (_) {}
+  }
+
+  function ensureSuperChampionsToastArea() {
+    let area = document.getElementById('superChampionsToastArea');
+    if (!area) {
+      area = document.createElement('div');
+      area.id = 'superChampionsToastArea';
+      area.setAttribute('aria-live', 'polite');
+      area.setAttribute('aria-atomic', 'true');
+      document.body.appendChild(area);
+    }
+    return area;
+  }
+
+  function escapeSuperChampionsText(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function showSuperChampionsToast(event) {
+    superChampionsToastQueue = superChampionsToastQueue.then(() => new Promise(resolve => {
+      const area = ensureSuperChampionsToastArea();
+      const toast = document.createElement('div');
+      toast.className = 'super-champions-toast';
+      toast.setAttribute('role', 'status');
+      toast.innerHTML = `
+        <div class="super-champions-toast-icon" aria-hidden="true">🏆</div>
+        <div>
+          <span class="super-champions-toast-kicker">SUPER CHAMPIONS</span>
+          <div class="super-champions-toast-message">
+            <span class="super-champions-toast-name">${escapeSuperChampionsText(event.username)}님</span>
+            슈퍼 챔피언스 달성을 축하합니다!
+          </div>
+        </div>
+      `;
+      area.replaceChildren(toast);
+      markSuperChampionsEventSeen(event);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => toast.classList.add('show'));
+      });
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+        toast.classList.add('hide');
+        setTimeout(() => {
+          toast.remove();
+          resolve();
+        }, 520);
+      }, SUPER_CHAMPIONS_TOAST_DURATION_MS);
+    }));
+
+    return superChampionsToastQueue;
+  }
+
+  function findRecentSuperChampionsTransitions(rows) {
+    const byUser = new Map();
+
+    (rows || []).forEach(row => {
+      if (!row || !row.username || !row.created_at) return;
+      if (!byUser.has(row.username)) byUser.set(row.username, []);
+      byUser.get(row.username).push(row);
+    });
+
+    const now = Date.now();
+    const events = [];
+
+    byUser.forEach((userRows, username) => {
+      userRows.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+      for (let index = 1; index < userRows.length; index += 1) {
+        const previousTier = userRows[index - 1].current_tier || userRows[index - 1].tier || '';
+        const currentTier = userRows[index].current_tier || userRows[index].tier || '';
+        const achievedAt = new Date(userRows[index].created_at).getTime();
+
+        if (
+          isSuperChampionsTier(currentTier) &&
+          !isSuperChampionsTier(previousTier) &&
+          Number.isFinite(achievedAt) &&
+          now - achievedAt >= 0 &&
+          now - achievedAt < SUPER_CHAMPIONS_ANNOUNCEMENT_LIFETIME_MS
+        ) {
+          events.push({ username, achievedAt: new Date(achievedAt).toISOString() });
+        }
+      }
+    });
+
+    return events.sort((a, b) => new Date(a.achievedAt) - new Date(b.achievedAt));
+  }
+
+  async function checkSuperChampionsAnnouncements() {
+    if (superChampionsAnnouncementBusy || typeof supabaseClient === 'undefined') return;
+    superChampionsAnnouncementBusy = true;
+
+    try {
+      cleanExpiredSuperChampionsSeenEvents();
+      const lookbackIso = new Date(Date.now() - SUPER_CHAMPIONS_HISTORY_LOOKBACK_MS).toISOString();
+      const { data, error } = await supabaseClient
+        .from('game_history')
+        .select('username, tier, current_tier, created_at')
+        .gte('created_at', lookbackIso)
+        .order('created_at', { ascending: true })
+        .limit(2000);
+
+      if (error) throw error;
+
+      const events = findRecentSuperChampionsTransitions(data || []);
+      for (const event of events) {
+        if (!hasSeenSuperChampionsEvent(event)) await showSuperChampionsToast(event);
+      }
+    } catch (error) {
+      console.warn('[MOONDO] 슈퍼 챔피언스 축하 팝업 확인 실패:', error);
+    } finally {
+      superChampionsAnnouncementBusy = false;
+    }
+  }
+</script>
 
 </body>
 </html>
