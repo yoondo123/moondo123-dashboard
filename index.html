@@ -6674,9 +6674,12 @@ h2::before{
     }
 
     function currentMeta(profile, live) {
-      const tier = live?.current_tier || live?.tier || profile.current_tier || profile.tier || '-';
       const score = firstValidNumber(live?.current_score, live?.score, profile.current_score, profile.score) ?? 0;
       const rank = firstValidRank(live?.current_rank, live?.rank, profile.current_rank, profile.rank);
+      const tier = tierWithRank(
+        live?.current_tier || live?.tier || profile.current_tier || profile.tier || '-',
+        rank,
+      );
       return { tier, score, rank: rank ?? '-' };
     }
 
@@ -6715,6 +6718,18 @@ h2::before{
       return raw;
     }
 
+    const SUPER_CHAMPIONS_MAX_RANK = 20;
+
+    function isSuperChampionsRank(rank) {
+      const value = Number(rank);
+      return Number.isFinite(value) && value >= 1 && value <= SUPER_CHAMPIONS_MAX_RANK;
+    }
+
+    function tierWithRank(tier, rank) {
+      if (isSuperChampionsRank(rank)) return '슈퍼챔피언스 감독';
+      return displayTierName(tier || '-');
+    }
+
     function todayTierPower(tier) {
       const name = normalizeTierName(tier);
       if (!name || name === '-') return 0;
@@ -6746,9 +6761,16 @@ h2::before{
 
     function calculateTodayExtremes(historyRows, sessionRows, meta, peakTier) {
       const observedTiers = [
-        meta?.tier,
-        ...(historyRows || []).flatMap(row => [row?.tier, row?.current_tier]),
-        ...(sessionRows || []).flatMap(row => [row?.current_tier, row?.end_tier]),
+        tierWithRank(meta?.tier, meta?.rank),
+        ...(historyRows || []).flatMap(row => [
+          tierWithRank(row?.tier, row?.rank_after),
+          tierWithRank(row?.current_tier, row?.rank_after),
+        ]),
+        ...(sessionRows || []).flatMap(row => [
+          tierWithRank(row?.current_tier, row?.current_rank),
+          tierWithRank(row?.end_tier, row?.end_rank),
+          isSuperChampionsRank(row?.best_rank) ? '슈퍼챔피언스 감독' : '-',
+        ]),
       ].filter(tier => tier && String(tier).trim() && String(tier).trim() !== '-');
       const highTierCandidates = [peakTier, ...observedTiers]
         .filter(tier => tier && String(tier).trim() && String(tier).trim() !== '-');
@@ -6803,7 +6825,11 @@ h2::before{
 
     async function ensureTodayPeakTier(profile = {}, meta = {}) {
       if (!currentUser?.username) return profile.today_peak_tier || meta.tier || '-';
-      const currentTier = meta.tier || profile.current_tier || profile.tier || '-';
+      const currentRank = firstValidRank(meta.rank, profile.current_rank, profile.rank);
+      const currentTier = tierWithRank(
+        meta.tier || profile.current_tier || profile.tier || '-',
+        currentRank,
+      );
       const todayKey = todayDate();
       const storedPeak = profile.today_peak_tier || '';
       const storedDate = profile.today_peak_updated || '';
@@ -6813,7 +6839,7 @@ h2::before{
       try {
         const { data } = await supabaseClient
           .from('game_history')
-          .select('tier, current_tier, created_at')
+          .select('tier, current_tier, rank_after, created_at')
           .eq('username', currentUser.username)
           .gte('created_at', startOfTodayIso())
           .order('created_at', { ascending: false });
@@ -6848,7 +6874,10 @@ h2::before{
 
     function bestTierFromRows(rows, fallbackTier = '-') {
       const tiers = (rows || [])
-        .map(row => row?.tier || row?.current_tier)
+        .map(row => tierWithRank(
+          row?.tier || row?.current_tier,
+          firstValidRank(row?.rank_after, row?.current_rank, row?.rank),
+        ))
         .filter(tier => tier && String(tier).trim() && String(tier).trim() !== '-');
       if (fallbackTier && fallbackTier !== '-') tiers.push(fallbackTier);
       if (!tiers.length) return '-';
@@ -7043,7 +7072,9 @@ h2::before{
     async function syncTodayPeakTierRow(row, observedTier = '') {
       if (!row || !row.username) return row;
       const todayKey = todayDate();
-      const currentTier = row.current_tier || row.tier || '';
+      const currentRank = firstValidRank(row.current_rank, row.rank);
+      const currentTier = tierWithRank(row.current_tier || row.tier || '', currentRank);
+      const resolvedObservedTier = tierWithRank(observedTier, currentRank);
       const storedPeak = row.today_peak_tier || '';
       const storedDate = row.today_peak_updated || '';
       const isToday = peakDateIsToday(storedDate, todayKey);
@@ -7053,10 +7084,10 @@ h2::before{
       // 오늘 날짜가 맞으면 저장된 최고티어는 절대 낮추지 않습니다.
       // 현재 티어가 강등되어도 storedPeak가 더 높으면 그대로 유지됩니다.
       if (isToday) {
-        nextPeak = bestTierName(storedPeak, observedTier, currentTier);
+        nextPeak = bestTierName(storedPeak, resolvedObservedTier, currentTier);
       } else {
         // 날짜가 바뀐 경우에만 오늘 최고티어를 새로 시작합니다.
-        nextPeak = bestTierName(observedTier, currentTier);
+        nextPeak = bestTierName(resolvedObservedTier, currentTier);
       }
 
       if (!nextPeak || nextPeak === '-') return row;
@@ -7444,7 +7475,7 @@ h2::before{
 
       let sessionQuery = supabaseClient
         .from('daily_sessions')
-        .select('username, session_date, wins, draws, losses, matches');
+        .select('username, session_date, wins, draws, losses, matches, best_rank, current_rank, current_tier, end_rank, end_tier');
       if (sessionExactDate) {
         sessionQuery = sessionQuery.eq('session_date', sessionExactDate);
       } else if (sessionFromDate) {
@@ -7454,7 +7485,7 @@ h2::before{
       const [historyRes, sessionRes, liveRankRes] = await Promise.all([
         supabaseClient
           .from('game_history')
-          .select('username, result, created_at, opponent_nickname, score_change, tier, current_tier')
+          .select('username, result, created_at, opponent_nickname, score_change, rank_after, tier, current_tier')
           .gte('created_at', sinceIso)
           .order('created_at', { ascending: false }),
         sessionQuery,
@@ -7503,10 +7534,23 @@ h2::before{
       historyRows.forEach(row => {
         const username = row.username || '-';
         if (!username || username === '-') return;
-        const tier = row.tier || row.current_tier;
-        if (!tier) return;
+        const tier = tierWithRank(row.tier || row.current_tier, row.rank_after);
+        if (!tier || tier === '-') return;
         if (!peakTierMap[username] || tierPower(tier) > tierPower(peakTierMap[username])) {
           peakTierMap[username] = tier;
+        }
+      });
+      (sessionRes.data || []).forEach(row => {
+        const username = row.username || '-';
+        if (!username || username === '-') return;
+        const sessionPeak = bestTierName(
+          tierWithRank(row.current_tier, row.current_rank),
+          tierWithRank(row.end_tier, row.end_rank),
+          isSuperChampionsRank(row.best_rank) ? '슈퍼챔피언스 감독' : '-',
+        );
+        if (sessionPeak === '-') return;
+        if (!peakTierMap[username] || tierPower(sessionPeak) > tierPower(peakTierMap[username])) {
+          peakTierMap[username] = sessionPeak;
         }
       });
 
@@ -7541,16 +7585,18 @@ h2::before{
         .map(username => {
           const stats = choosePeriodStats(historyGrouped[username], sessionGrouped[username]);
           const profile = statsMap[username] || {};
+          const liveRank = liveRankMap[username] ?? firstValidRank(profile.current_rank, profile.rank) ?? '-';
+          const currentTier = tierWithRank(profile.current_tier || profile.tier || '-', liveRank);
           return {
             username,
             ...stats,
             recentResults: streakResultsMap[username] || [],
-            tier: profile.current_tier || profile.tier || '-',
+            tier: currentTier,
             score: firstValidNumber(profile.current_score, profile.score) ?? 0,
-            liveRank: showLiveRank ? (liveRankMap[username] ?? firstValidRank(profile.current_rank, profile.rank) ?? '-') : undefined,
+            liveRank: showLiveRank ? liveRank : undefined,
             isMacroLive: showMacroLive ? (liveStatusMap[username] ?? isMacroLiveRow(profile)) : false,
-            peakTier: showPeakTier ? bestTierName(profile.today_peak_tier, peakTierMap[username], profile.current_tier || profile.tier) : undefined,
-            fc: fcFromWins(stats.wins, profile.current_tier || profile.tier),
+            peakTier: showPeakTier ? bestTierName(profile.today_peak_tier, peakTierMap[username], currentTier) : undefined,
+            fc: fcFromWins(stats.wins, currentTier),
             rate: stats.matches ? stats.wins / stats.matches : 0,
           };
         })
@@ -8629,10 +8675,17 @@ h2::before{
       const latestGame = recentRows[0] || {};
       const todayStats = summarizeRows(todayRows);
       const recentResults = recentRows.map(row => safeNormalizeResult(row.result)).filter(Boolean);
-      const currentTier = profile.tier || profile.current_tier || latestGame.tier || '-';
-      const todayFc = fcFromWins(todayStats.wins, currentTier);
       const currentScore = profile.score ?? profile.current_score ?? latestGame.score_after ?? 0;
-      const currentRank = profile.rank ?? profile.current_rank ?? latestGame.rank_after ?? '-';
+      const currentRank = firstValidRank(
+        profile.current_rank,
+        profile.rank,
+        latestGame.rank_after,
+      ) ?? '-';
+      const currentTier = tierWithRank(
+        profile.current_tier || profile.tier || latestGame.current_tier || latestGame.tier || '-',
+        currentRank,
+      );
+      const todayFc = fcFromWins(todayStats.wins, currentTier);
       const searchMeta = { tier: currentTier, score: currentScore, rank: currentRank };
       const searchExtremes = typeof calculateTodayExtremes === 'function'
         ? calculateTodayExtremes(
