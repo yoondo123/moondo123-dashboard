@@ -5795,6 +5795,111 @@ h2::before{
 }
 </style>
 
+<style id="today-extremes-style">
+  .today-extremes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 10px 0 0;
+  }
+  .today-extreme-card {
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 8px;
+    background: #11151d;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+  }
+  .today-extreme-card.high {
+    border-color: rgba(90, 214, 174, .28);
+  }
+  .today-extreme-card.low {
+    border-color: rgba(112, 167, 255, .24);
+  }
+  .today-extreme-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 10px;
+    color: #f7f8fb;
+    font-size: 13px;
+    font-weight: 900;
+  }
+  .today-extreme-title::before {
+    content: "";
+    width: 4px;
+    height: 14px;
+    border-radius: 2px;
+    background: #5ad6ae;
+  }
+  .today-extreme-card.low .today-extreme-title::before {
+    background: #70a7ff;
+  }
+  .today-extreme-values {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .today-extreme-value {
+    min-width: 0;
+    padding: 0 12px;
+  }
+  .today-extreme-value:first-child {
+    padding-left: 0;
+  }
+  .today-extreme-value:last-child {
+    padding-right: 0;
+  }
+  .today-extreme-value + .today-extreme-value {
+    border-left: 1px solid rgba(255, 255, 255, .08);
+  }
+  .today-extreme-value span,
+  .today-extreme-value strong {
+    display: block;
+    min-width: 0;
+  }
+  .today-extreme-value span {
+    margin-bottom: 5px;
+    color: #9ca7ba;
+    font-size: 11px;
+    font-weight: 750;
+  }
+  .today-extreme-value strong {
+    color: #f7f8fb;
+    font-size: 15px;
+    font-weight: 950;
+    line-height: 1.25;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .today-extreme-card.high .today-extreme-value strong {
+    color: #8af0ce;
+  }
+  .today-extreme-card.low .today-extreme-value strong {
+    color: #9fc2ff;
+  }
+  @media (max-width: 640px) {
+    .today-extremes {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .today-extreme-card {
+      padding: 10px 12px;
+    }
+    .today-extreme-title {
+      margin-bottom: 8px;
+    }
+    .today-extreme-value {
+      padding: 0 8px;
+    }
+    .today-extreme-value span {
+      font-size: 10px;
+    }
+    .today-extreme-value strong {
+      font-size: 13px;
+    }
+  }
+</style>
+
 </head>
 <body>
   <main>
@@ -5884,6 +5989,43 @@ h2::before{
           <strong id="todayRank">-</strong>
           <small>실시간 기준</small>
         </div>
+      </div>
+
+      <div class="today-extremes">
+        <section class="today-extreme-card high" aria-labelledby="todayHighTitle">
+          <div class="today-extreme-title" id="todayHighTitle">오늘 최고</div>
+          <div class="today-extreme-values">
+            <div class="today-extreme-value">
+              <span>최고 티어</span>
+              <strong id="todayHighestTier">-</strong>
+            </div>
+            <div class="today-extreme-value">
+              <span>최고 점수</span>
+              <strong id="todayHighestScore">-</strong>
+            </div>
+            <div class="today-extreme-value">
+              <span>최고 등수</span>
+              <strong id="todayHighestRank">-</strong>
+            </div>
+          </div>
+        </section>
+        <section class="today-extreme-card low" aria-labelledby="todayLowTitle">
+          <div class="today-extreme-title" id="todayLowTitle">오늘 최저</div>
+          <div class="today-extreme-values">
+            <div class="today-extreme-value">
+              <span>최저 등급</span>
+              <strong id="todayLowestTier">-</strong>
+            </div>
+            <div class="today-extreme-value">
+              <span>최저 점수</span>
+              <strong id="todayLowestScore">-</strong>
+            </div>
+            <div class="today-extreme-value">
+              <span>최저 등수</span>
+              <strong id="todayLowestRank">-</strong>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div class="form-strip">
@@ -6415,7 +6557,7 @@ h2::before{
     async function loadUserHistory(username, sinceIso) {
       let query = supabaseClient
         .from('game_history')
-        .select('username, result, created_at, opponent_nickname, score_change, tier, current_tier')
+        .select('username, result, created_at, opponent_nickname, score_change, score_after, rank_after, tier, current_tier')
         .in('result', ['win', 'draw', 'loss']);
       query = applyCurrentAccountFilter(query, username);
       if (sinceIso) query = query.gte('created_at', sinceIso);
@@ -6425,7 +6567,7 @@ h2::before{
     async function loadUserSessions(username, sinceDateKey) {
       let query = supabaseClient
         .from('daily_sessions')
-        .select('username, session_date, wins, draws, losses, matches')
+        .select('username, session_date, wins, draws, losses, matches, start_score, score_start, score_end, end_score, highest_score, best_rank, current_score, current_rank, current_tier, end_rank, end_tier')
         .eq('username', username);
       if (sinceDateKey) query = query.gte('session_date', sinceDateKey);
       return query.order('session_date', { ascending: false });
@@ -6534,6 +6676,92 @@ h2::before{
       if (!name || name === '-') return '-';
       if (tierPower(raw) >= 900) return '슈퍼챔피언스 감독';
       return raw;
+    }
+
+    function todayTierPower(tier) {
+      const name = normalizeTierName(tier);
+      if (!name || name === '-') return 0;
+
+      let base = 100;
+      if (name.includes('슈퍼챔피언스') || name.includes('슈퍼챔피언')) base = 900;
+      else if (name.includes('챔피언스') || name.includes('챔피언')) base = 800;
+      else if (name.includes('슈퍼챌린저') || name.includes('슈퍼챌린지') || name.includes('슈퍼챌')) base = 700;
+      else if (name.includes('챌린저') || name.includes('챌린지') || name.includes('챌린')) base = 600;
+      else if (name.includes('월드클래스') || name.includes('월클')) base = 500;
+      else if (name.includes('세미프로')) base = 300;
+      else if (name.includes('프로')) base = 400;
+      else if (name.includes('아마추어')) base = 200;
+
+      const division = name.match(/([123])부/);
+      const divisionBonus = division ? 4 - Number(division[1]) : 0;
+      return (base * 10) + divisionBonus;
+    }
+
+    function validTodayNumber(value) {
+      const number = Number(value);
+      return Number.isFinite(number) && number > 0 ? number : null;
+    }
+
+    function validTodayRank(value) {
+      const rank = validTodayNumber(value);
+      return rank && rank < 9999 ? rank : null;
+    }
+
+    function calculateTodayExtremes(historyRows, sessionRows, meta, peakTier) {
+      const observedTiers = [
+        meta?.tier,
+        ...(historyRows || []).flatMap(row => [row?.tier, row?.current_tier]),
+        ...(sessionRows || []).flatMap(row => [row?.current_tier, row?.end_tier]),
+      ].filter(tier => tier && String(tier).trim() && String(tier).trim() !== '-');
+      const highTierCandidates = [peakTier, ...observedTiers]
+        .filter(tier => tier && String(tier).trim() && String(tier).trim() !== '-');
+      const highestTier = highTierCandidates.length
+        ? displayTierName([...highTierCandidates].sort((a, b) => todayTierPower(b) - todayTierPower(a))[0])
+        : '-';
+      const lowestTier = observedTiers.length
+        ? displayTierName([...observedTiers].sort((a, b) => todayTierPower(a) - todayTierPower(b))[0])
+        : highestTier;
+
+      const scores = [
+        meta?.score,
+        ...(historyRows || []).map(row => row?.score_after),
+        ...(sessionRows || []).flatMap(row => [
+          row?.start_score,
+          row?.score_start,
+          row?.score_end,
+          row?.end_score,
+          row?.highest_score,
+          row?.current_score,
+        ]),
+      ].map(validTodayNumber).filter(value => value !== null);
+
+      const ranks = [
+        meta?.rank,
+        ...(historyRows || []).map(row => row?.rank_after),
+        ...(sessionRows || []).flatMap(row => [
+          row?.best_rank,
+          row?.current_rank,
+          row?.end_rank,
+        ]),
+      ].map(validTodayRank).filter(value => value !== null);
+
+      return {
+        highestTier,
+        lowestTier,
+        highestScore: scores.length ? Math.max(...scores) : null,
+        lowestScore: scores.length ? Math.min(...scores) : null,
+        highestRank: ranks.length ? Math.min(...ranks) : null,
+        lowestRank: ranks.length ? Math.max(...ranks) : null,
+      };
+    }
+
+    function renderTodayExtremes(extremes) {
+      document.getElementById('todayHighestTier').innerText = extremes.highestTier || '-';
+      document.getElementById('todayLowestTier').innerText = extremes.lowestTier || '-';
+      document.getElementById('todayHighestScore').innerText = extremes.highestScore === null ? '-' : `${extremes.highestScore.toLocaleString()}점`;
+      document.getElementById('todayLowestScore').innerText = extremes.lowestScore === null ? '-' : `${extremes.lowestScore.toLocaleString()}점`;
+      document.getElementById('todayHighestRank').innerText = extremes.highestRank === null ? '-' : `${extremes.highestRank.toLocaleString()}등`;
+      document.getElementById('todayLowestRank').innerText = extremes.lowestRank === null ? '-' : `${extremes.lowestRank.toLocaleString()}등`;
     }
 
     async function ensureTodayPeakTier(profile = {}, meta = {}) {
@@ -6883,6 +7111,12 @@ h2::before{
       const live = liveRes.data?.[0];
       const meta = currentMeta(profile, live);
       const todayPeakTierValue = await ensureTodayPeakTier(profile, meta);
+      const todayExtremes = calculateTodayExtremes(
+        todayHistoryRes.data || [],
+        todaySessionRes.data || [],
+        meta,
+        todayPeakTierValue,
+      );
 
       // 누적 전적은 player_stats가 아니라 game_history 기준으로 계산합니다.
       // result가 null/빈값인 미판정 경기는 제외하고, 관리자 초기화 전까지 쌓인 정상 경기만 표시합니다.
@@ -6912,6 +7146,7 @@ h2::before{
       document.getElementById('todayScore').innerText = meta.score;
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
+      renderTodayExtremes(todayExtremes);
 
       document.getElementById('weekMatches').innerText = week.matches;
       document.getElementById('weekWins').innerText = week.wins;
