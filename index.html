@@ -6245,6 +6245,43 @@ h2::before{
             </div>
           </div>
 
+          <div class="today-extremes search-today-extremes">
+            <section class="today-extreme-card high" aria-labelledby="searchTodayHighTitle">
+              <div class="today-extreme-title" id="searchTodayHighTitle">오늘 최고</div>
+              <div class="today-extreme-values">
+                <div class="today-extreme-value">
+                  <span>최고 티어</span>
+                  <strong id="searchTodayHighestTier">-</strong>
+                </div>
+                <div class="today-extreme-value">
+                  <span>최고 점수</span>
+                  <strong id="searchTodayHighestScore">-</strong>
+                </div>
+                <div class="today-extreme-value">
+                  <span>최고 등수</span>
+                  <strong id="searchTodayHighestRank">-</strong>
+                </div>
+              </div>
+            </section>
+            <section class="today-extreme-card low" aria-labelledby="searchTodayLowTitle">
+              <div class="today-extreme-title" id="searchTodayLowTitle">오늘 최저</div>
+              <div class="today-extreme-values">
+                <div class="today-extreme-value">
+                  <span>최저 등급</span>
+                  <strong id="searchTodayLowestTier">-</strong>
+                </div>
+                <div class="today-extreme-value">
+                  <span>최저 점수</span>
+                  <strong id="searchTodayLowestScore">-</strong>
+                </div>
+                <div class="today-extreme-value">
+                  <span>최저 등수</span>
+                  <strong id="searchTodayLowestRank">-</strong>
+                </div>
+              </div>
+            </section>
+          </div>
+
           <div class="form-strip search-form-strip">
             <div class="form-head">
               <span class="form-title">최근 20판 흐름</span>
@@ -8454,6 +8491,16 @@ h2::before{
     }, { wins: 0, draws: 0, losses: 0, matches: 0 });
   }
 
+  function renderSearchTodayExtremes(extremes) {
+    const data = extremes || {};
+    setText('searchTodayHighestTier', data.highestTier || '-');
+    setText('searchTodayLowestTier', data.lowestTier || '-');
+    setText('searchTodayHighestScore', data.highestScore === null || data.highestScore === undefined ? '-' : `${Number(data.highestScore).toLocaleString()}점`);
+    setText('searchTodayLowestScore', data.lowestScore === null || data.lowestScore === undefined ? '-' : `${Number(data.lowestScore).toLocaleString()}점`);
+    setText('searchTodayHighestRank', data.highestRank === null || data.highestRank === undefined ? '-' : `${Number(data.highestRank).toLocaleString()}등`);
+    setText('searchTodayLowestRank', data.lowestRank === null || data.lowestRank === undefined ? '-' : `${Number(data.lowestRank).toLocaleString()}등`);
+  }
+
   function renderSearchForm(results) {
     const dots = document.getElementById('searchFormDots');
     const summary = document.getElementById('searchFormSummary');
@@ -8540,11 +8587,12 @@ h2::before{
 
     try {
       const todayStart = typeof startOfTodayIso === 'function' ? startOfTodayIso() : new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+      const todayKey = typeof todayDate === 'function' ? todayDate() : new Date().toISOString().slice(0, 10);
 
-      const [todayRes, recentRes, profileRes] = await Promise.all([
+      const [todayRes, recentRes, profileRes, todaySessionRes] = await Promise.all([
         supabaseClient
           .from('game_history')
-          .select('username, result, created_at, opponent_nickname, score_change')
+          .select('username, result, created_at, opponent_nickname, score_change, score_after, rank_after, tier, current_tier')
           .eq('username', nickname)
           .gte('created_at', todayStart)
           .in('result', ['win', 'draw', 'loss'])
@@ -8558,10 +8606,16 @@ h2::before{
           .limit(25),
         supabaseClient
           .from('player_stats')
-          .select('username, current_score, score, current_rank, rank, current_tier, tier, updated_at')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at')
           .eq('username', nickname)
           .order('updated_at', { ascending: false })
-          .limit(1)
+          .limit(1),
+        supabaseClient
+          .from('daily_sessions')
+          .select('username, session_date, start_score, score_start, score_end, end_score, highest_score, best_rank, current_score, current_rank, current_tier, end_rank, end_tier')
+          .eq('username', nickname)
+          .eq('session_date', todayKey)
+          .order('updated_at', { ascending: false })
       ]);
 
       if (todayRes.error) throw todayRes.error;
@@ -8569,6 +8623,7 @@ h2::before{
       if (profileRes.error) throw profileRes.error;
 
       const todayRows = todayRes.data || [];
+      const todaySessionRows = todaySessionRes.error ? [] : (todaySessionRes.data || []);
       const recentRows = recentRes.data || [];
       const profile = (profileRes.data && profileRes.data[0]) || {};
       const latestGame = recentRows[0] || {};
@@ -8578,6 +8633,22 @@ h2::before{
       const todayFc = fcFromWins(todayStats.wins, currentTier);
       const currentScore = profile.score ?? profile.current_score ?? latestGame.score_after ?? 0;
       const currentRank = profile.rank ?? profile.current_rank ?? latestGame.rank_after ?? '-';
+      const searchMeta = { tier: currentTier, score: currentScore, rank: currentRank };
+      const searchExtremes = typeof calculateTodayExtremes === 'function'
+        ? calculateTodayExtremes(
+            todayRows,
+            todaySessionRows,
+            searchMeta,
+            profile.today_peak_tier || currentTier,
+          )
+        : {
+            highestTier: currentTier || '-',
+            lowestTier: currentTier || '-',
+            highestScore: Number(currentScore) || null,
+            lowestScore: Number(currentScore) || null,
+            highestRank: Number(currentRank) || null,
+            lowestRank: Number(currentRank) || null,
+          };
 
       setText('searchedPlayerName', nickname);
       setText('searchedPlayerMeta', `오늘 ${todayStats.matches}경기 · 최근 ${recentResults.length}경기 조회`);
@@ -8591,6 +8662,7 @@ h2::before{
       setText('searchCurrentTier', currentTier || '-');
       setText('searchCurrentScore', currentScore ?? 0);
       setText('searchCurrentRank', currentRank === null || currentRank === undefined ? '-' : currentRank);
+      renderSearchTodayExtremes(searchExtremes);
       renderSearchForm(recentResults);
       renderSearchMatchDetails(recentRows);
 
