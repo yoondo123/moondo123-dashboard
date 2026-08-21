@@ -5913,6 +5913,65 @@ h2::before{
       font-size: 13px;
     }
   }
+
+  .remote-control-panel {
+    margin-top: 18px;
+    padding: 14px 16px !important;
+    border-color: rgba(57, 244, 211, .2) !important;
+    background:
+      linear-gradient(135deg, rgba(57, 244, 211, .07), transparent 46%),
+      rgba(10, 17, 22, .94) !important;
+  }
+  .remote-control-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .remote-control-head h2 {
+    margin: 0 !important;
+    font-size: 16px !important;
+  }
+  .remote-control-head h2::before {
+    width: 5px !important;
+    height: 18px !important;
+  }
+  .remote-control-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .remote-control-actions button {
+    width: 100%;
+    min-width: 0;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 8px !important;
+    border-radius: 11px !important;
+    font-size: 12px !important;
+    box-shadow: none !important;
+  }
+  #remoteCommandStatus {
+    min-height: 16px;
+    margin: 8px 0 0;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  @media (max-width: 640px) {
+    .remote-control-panel {
+      padding: 11px !important;
+    }
+    .remote-control-actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .remote-control-actions button {
+      height: 34px !important;
+      min-height: 34px !important;
+      font-size: 11px !important;
+    }
+  }
 </style>
 
 </head>
@@ -6338,6 +6397,20 @@ h2::before{
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="panel remote-control-panel" id="remoteControlPanel" data-tab-group="always">
+        <div class="remote-control-head">
+          <h2>웹 원격</h2>
+          <span class="muted" id="remoteCommandUser">-</span>
+        </div>
+        <div class="remote-control-actions">
+          <button type="button" onclick="sendRemoteCommand('start')">시작</button>
+          <button type="button" onclick="sendRemoteCommand('stop')">정지</button>
+          <button type="button" onclick="sendRemoteCommand('stop_after')">경기 후 종료</button>
+          <button type="button" onclick="sendRemoteCommand('screenshot')">스크린샷</button>
+        </div>
+        <p id="remoteCommandStatus" class="muted"></p>
       </div>
 
       <div class="footer-actions">
@@ -7022,11 +7095,130 @@ h2::before{
       }).join('');
     }
 
+    const REMOTE_COMMAND_LABELS = {
+      start: '시작',
+      stop: '정지',
+      stop_after: '경기 후 종료',
+      screenshot: '스크린샷'
+    };
+    const REMOTE_COMMAND_DEDUP_MS = 8000;
+    let remoteCommandSending = false;
+    let remoteCommandLastKey = '';
+    let remoteCommandLastAt = 0;
+
+    function setRemoteCommandButtonsDisabled(disabled) {
+      document.querySelectorAll('#remoteControlPanel button').forEach(button => {
+        button.disabled = disabled;
+      });
+    }
+
+    async function sendRemoteCommand(command) {
+      const status = document.getElementById('remoteCommandStatus');
+      if (status) {
+        status.className = 'muted';
+        status.innerText = '';
+      }
+      if (!currentUser?.username) {
+        if (status) {
+          status.className = 'bad';
+          status.innerText = '로그인 후 원격 명령을 보낼 수 있습니다.';
+        }
+        return;
+      }
+
+      const label = REMOTE_COMMAND_LABELS[command] || command;
+      const now = Date.now();
+      const dedupKey = `${currentUser.username}:${command}`;
+      if (
+        remoteCommandSending ||
+        (remoteCommandLastKey === dedupKey && now - remoteCommandLastAt < REMOTE_COMMAND_DEDUP_MS)
+      ) {
+        if (status) status.innerText = `${label} 명령은 이미 전송 중입니다.`;
+        return;
+      }
+
+      remoteCommandSending = true;
+      remoteCommandLastKey = dedupKey;
+      remoteCommandLastAt = now;
+      setRemoteCommandButtonsDisabled(true);
+      if (status) status.innerText = `${label} 명령 전송 중...`;
+
+      try {
+        const clientRequestId = `${dedupKey}:${now}`;
+        const payload = {
+          source: 'dashboard',
+          requested_at: new Date().toISOString(),
+          button_command: command,
+          client_request_id: clientRequestId
+        };
+        const commandRow = {
+          user_id: currentUser.id || null,
+          username: currentUser.username,
+          command,
+          status: 'pending',
+          payload,
+          client_request_id: clientRequestId
+        };
+
+        const { data: insertedCommand, error } = await supabaseClient
+          .from('remote_commands')
+          .insert(commandRow)
+          .select()
+          .single();
+        if (error) throw error;
+
+        const remoteChannel = supabaseClient.channel(`waggu-remote:${currentUser.username}`);
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(() => reject(new Error('Realtime 연결 시간 초과')), 8000);
+          remoteChannel.subscribe(async channelStatus => {
+            if (channelStatus === 'SUBSCRIBED') {
+              try {
+                await remoteChannel.send({
+                  type: 'broadcast',
+                  event: 'remote_command',
+                  payload: { record: insertedCommand }
+                });
+                clearTimeout(timer);
+                resolve();
+              } catch (sendError) {
+                clearTimeout(timer);
+                reject(sendError);
+              }
+            } else if (channelStatus === 'CHANNEL_ERROR' || channelStatus === 'TIMED_OUT') {
+              clearTimeout(timer);
+              reject(new Error(`Realtime 전송 실패: ${channelStatus}`));
+            }
+          });
+        }).finally(() => supabaseClient.removeChannel(remoteChannel));
+
+        if (status) {
+          status.className = 'ok';
+          status.innerText = `${label} 명령을 전송했습니다.`;
+        }
+      } catch (error) {
+        remoteCommandLastKey = '';
+        remoteCommandLastAt = 0;
+        if (status) {
+          status.className = 'bad';
+          status.innerText = `명령 전송 실패: ${error.message}`;
+        }
+      } finally {
+        remoteCommandSending = false;
+        setTimeout(() => setRemoteCommandButtonsDisabled(false), 700);
+      }
+    }
+
     function setLoginState() {
       const loggedIn = !!currentUser;
       document.getElementById('loginPanel').classList.toggle('hidden', loggedIn);
       document.getElementById('dashboard').classList.toggle('hidden', !loggedIn);
       if (loggedIn) document.getElementById('helloName').innerText = currentUser.username;
+      const remoteUser = document.getElementById('remoteCommandUser');
+      if (remoteUser) remoteUser.innerText = loggedIn ? currentUser.username : '-';
+      if (!loggedIn) {
+        const remoteStatus = document.getElementById('remoteCommandStatus');
+        if (remoteStatus) remoteStatus.innerText = '';
+      }
     }
 
     async function login() {
@@ -8056,6 +8248,7 @@ h2::before{
     const mobileNote = dashboard.querySelector('.mobile-note');
     setGroup(mobileNote, 'stats');
 
+    setGroup(document.getElementById('remoteControlPanel'), 'always');
     dashboard.querySelectorAll(':scope > .footer-actions').forEach(el => setGroup(el, 'always'));
 
     function applyTab(tabName) {
