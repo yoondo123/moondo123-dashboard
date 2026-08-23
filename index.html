@@ -6777,14 +6777,72 @@ h2::before{
       return rank && rank < 99999 ? rank : null;
     }
 
+    function firstValidTier(...values) {
+      for (const value of values) {
+        const text = String(value || '').trim();
+        if (text && text !== '-' && text !== '--') return text;
+      }
+      return null;
+    }
+
+    function currentMetaCacheKey(username = currentUser?.username) {
+      return `waggu_current_meta:${String(username || '').trim().toLowerCase()}`;
+    }
+
+    function loadCurrentMetaCache(username = currentUser?.username) {
+      if (!username) return {};
+      try {
+        return JSON.parse(localStorage.getItem(currentMetaCacheKey(username)) || '{}') || {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function saveCurrentMetaCache(username, meta) {
+      if (!username || !meta) return;
+      try {
+        const previous = loadCurrentMetaCache(username);
+        const next = { ...previous, updatedAt: Date.now() };
+        const tier = firstValidTier(meta.tier);
+        const score = firstValidNumber(meta.score);
+        const rank = firstValidRank(meta.rank);
+        if (tier) next.tier = tier;
+        if (score) next.score = score;
+        if (rank) next.rank = rank;
+        localStorage.setItem(currentMetaCacheKey(username), JSON.stringify(next));
+      } catch (_) {}
+    }
+
     function currentMeta(profile, live) {
-      const score = firstValidNumber(live?.current_score, live?.score, profile.current_score, profile.score) ?? 0;
-      const rank = firstValidRank(live?.current_rank, live?.rank, profile.current_rank, profile.rank);
+      const username = live?.username || profile?.username || currentUser?.username;
+      const cached = loadCurrentMetaCache(username);
+      const score = firstValidNumber(
+        live?.current_score,
+        live?.score,
+        profile.current_score,
+        profile.score,
+        cached.score,
+      ) ?? 0;
+      const rank = firstValidRank(
+        live?.current_rank,
+        live?.rank,
+        profile.current_rank,
+        profile.rank,
+        cached.rank,
+      );
       const tier = tierWithRank(
-        live?.current_tier || live?.tier || profile.current_tier || profile.tier || '-',
+        firstValidTier(
+          live?.current_tier,
+          live?.tier,
+          profile.current_tier,
+          profile.tier,
+          cached.tier,
+        ) || '-',
         rank,
       );
-      return { tier, score, rank: rank ?? '-' };
+      const meta = { tier, score, rank: rank ?? '-' };
+      saveCurrentMetaCache(username, meta);
+      return meta;
     }
 
     function normalizeTierName(tier) {
@@ -7372,10 +7430,11 @@ h2::before{
     }
 
     async function loadPlayerStatsMap() {
-      const { data } = await supabaseClient
+      const { data, error } = await supabaseClient
         .from('player_stats')
         .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at, is_running, game_status, status, last_seen_at')
         .order('updated_at', { ascending: false });
+      if (error) throw error;
       const rows = data || [];
       await Promise.all(rows.map(row => syncTodayPeakTierRow(row)));
       const map = {};
@@ -7444,6 +7503,10 @@ h2::before{
       ]);
       const live = liveRes.data?.[0];
       const meta = currentMeta(profile, live);
+      const displayedTier = document.getElementById('todayTier')?.innerText;
+      if (!firstValidTier(meta.tier) && firstValidTier(displayedTier)) {
+        meta.tier = displayedTier;
+      }
       const todayPeakTierValue = await ensureTodayPeakTier(profile, meta);
       const todayExtremes = calculateTodayExtremes(
         todayHistoryRes.data || [],
@@ -7460,14 +7523,20 @@ h2::before{
       const todayHistory = summarizeMatches(todayHistoryRes.data || []);
       const todaySessions = summarizeSessions(todaySessionRes.data || []);
       const todayScope = `today:${todayDate()}`;
-      const today = choosePeriodStats(todayHistory, todaySessions);
+      const freshToday = choosePeriodStats(todayHistory, todaySessions);
+      const today = (todayHistoryRes.error || todaySessionRes.error)
+        ? restoreStatsFromCache(currentUser.username, todayScope, freshToday)
+        : freshToday;
       cacheStatsIfUseful(currentUser.username, todayScope, today);
 
       // 주간 전적은 매주 목요일 00:00 이후 기록만 봅니다.
       const weekHistory = summarizeMatches(weekHistoryRes.data || []);
       const weekSessions = summarizeSessions(weekSessionRes.data || []);
       const weekScope = `week:${weekStart}`;
-      const week = choosePeriodStats(weekHistory, weekSessions);
+      const freshWeek = choosePeriodStats(weekHistory, weekSessions);
+      const week = (weekHistoryRes.error || weekSessionRes.error)
+        ? restoreStatsFromCache(currentUser.username, weekScope, freshWeek)
+        : freshWeek;
       cacheStatsIfUseful(currentUser.username, weekScope, week);
 
       document.getElementById('todayMatches').innerText = today.matches;
