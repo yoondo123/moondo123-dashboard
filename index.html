@@ -6008,6 +6008,28 @@ h2::before{
     line-height: 1.15;
     white-space: nowrap;
   }
+  .recent-7-summary-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 2px 0 7px;
+    color: #c7d5e6;
+    font-size: 12px;
+    font-weight: 900;
+  }
+  .recent-7-summary-title::before {
+    content: "";
+    width: 4px;
+    height: 14px;
+    border-radius: 2px;
+    background: #6eb6ff;
+  }
+  .recent-14-summary.recent-7-summary {
+    border-color: rgba(110, 182, 255, .2);
+  }
+  .recent-7-summary .recent-14-summary-item strong {
+    color: #8bc7ff;
+  }
   @media (max-width: 640px) {
     .recent-14-summary-item {
       padding: 9px 8px;
@@ -6293,6 +6315,24 @@ h2::before{
           <span>14일 채굴 FC</span>
           <strong id="recent14TotalFc">0 FC</strong>
           <small id="recent14AverageFc">하루 평균 0 FC</small>
+        </div>
+      </div>
+      <div class="recent-7-summary-title">최근 7일 요약</div>
+      <div class="recent-14-summary recent-7-summary" id="recent7Summary" aria-label="최근 7일 경기 요약">
+        <div class="recent-14-summary-item">
+          <span>평균 승률</span>
+          <strong id="recent7AverageWinRate">0.0%</strong>
+          <small>전체 경기 기준</small>
+        </div>
+        <div class="recent-14-summary-item">
+          <span>하루 평균 승리</span>
+          <strong id="recent7AverageWins">0.0승</strong>
+          <small>7일 합계 기준</small>
+        </div>
+        <div class="recent-14-summary-item">
+          <span>7일 채굴 FC</span>
+          <strong id="recent7TotalFc">0 FC</strong>
+          <small id="recent7AverageFc">하루 평균 0 FC</small>
         </div>
       </div>
       <div class="table-wrap">
@@ -7626,7 +7666,7 @@ h2::before{
       document.getElementById('weekWinRate').innerText = `승률 ${winRate(week)}%`;
     }
 
-    function renderRecent14Summary(rows, tier) {
+    function renderRecentPeriodSummary(rows, tier, idPrefix) {
       const safeRows = Array.isArray(rows) ? rows : [];
       const totals = safeRows.reduce((sum, row) => {
         const wins = Number(row?.wins || 0);
@@ -7644,10 +7684,16 @@ h2::before{
       const averageWins = dayCount ? totals.wins / dayCount : 0;
       const averageFc = dayCount ? totals.fc / dayCount : 0;
 
-      document.getElementById('recent14AverageWinRate').innerText = `${averageWinRate.toFixed(1)}%`;
-      document.getElementById('recent14AverageWins').innerText = `${averageWins.toFixed(1)}승`;
-      document.getElementById('recent14TotalFc').innerText = `${Math.round(totals.fc).toLocaleString('ko-KR')} FC`;
-      document.getElementById('recent14AverageFc').innerText = `하루 평균 ${Math.round(averageFc).toLocaleString('ko-KR')} FC`;
+      document.getElementById(`${idPrefix}AverageWinRate`).innerText = `${averageWinRate.toFixed(1)}%`;
+      document.getElementById(`${idPrefix}AverageWins`).innerText = `${averageWins.toFixed(1)}승`;
+      document.getElementById(`${idPrefix}TotalFc`).innerText = `${Math.round(totals.fc).toLocaleString('ko-KR')} FC`;
+      document.getElementById(`${idPrefix}AverageFc`).innerText = `하루 평균 ${Math.round(averageFc).toLocaleString('ko-KR')} FC`;
+    }
+
+    function renderRecent14Summary(rows, tier) {
+      const safeRows = Array.isArray(rows) ? rows : [];
+      renderRecentPeriodSummary(safeRows, tier, 'recent14');
+      renderRecentPeriodSummary(safeRows.slice(-7), tier, 'recent7');
     }
 
     async function loadRecent() {
