@@ -5974,6 +5974,55 @@ h2::before{
   }
 </style>
 
+<style id="waggu-recent-14-summary-style">
+  .recent-14-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0 0 10px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 8px;
+    background: rgba(16, 19, 25, .92);
+    overflow: hidden;
+  }
+  .recent-14-summary-item {
+    min-width: 0;
+    padding: 11px 14px;
+  }
+  .recent-14-summary-item + .recent-14-summary-item {
+    border-left: 1px solid rgba(255, 255, 255, .08);
+  }
+  .recent-14-summary-item span,
+  .recent-14-summary-item small {
+    display: block;
+    color: #8f9cad;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+  .recent-14-summary-item strong {
+    display: block;
+    margin: 4px 0 2px;
+    color: #70f2d2;
+    font-size: 18px;
+    font-weight: 950;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+  @media (max-width: 640px) {
+    .recent-14-summary-item {
+      padding: 9px 8px;
+      text-align: center;
+    }
+    .recent-14-summary-item span,
+    .recent-14-summary-item small {
+      font-size: 9px;
+    }
+    .recent-14-summary-item strong {
+      font-size: 14px;
+    }
+  }
+</style>
+
 </head>
 <body>
   <main>
@@ -6229,6 +6278,23 @@ h2::before{
       </div>
 
       <h2>최근 14일 경기</h2>
+      <div class="recent-14-summary" id="recent14Summary" aria-label="최근 14일 경기 요약">
+        <div class="recent-14-summary-item">
+          <span>평균 승률</span>
+          <strong id="recent14AverageWinRate">0.0%</strong>
+          <small>전체 경기 기준</small>
+        </div>
+        <div class="recent-14-summary-item">
+          <span>하루 평균 승리</span>
+          <strong id="recent14AverageWins">0.0승</strong>
+          <small>14일 합계 기준</small>
+        </div>
+        <div class="recent-14-summary-item">
+          <span>14일 채굴 FC</span>
+          <strong id="recent14TotalFc">0 FC</strong>
+          <small id="recent14AverageFc">하루 평균 0 FC</small>
+        </div>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -7560,6 +7626,30 @@ h2::before{
       document.getElementById('weekWinRate').innerText = `승률 ${winRate(week)}%`;
     }
 
+    function renderRecent14Summary(rows, tier) {
+      const safeRows = Array.isArray(rows) ? rows : [];
+      const totals = safeRows.reduce((sum, row) => {
+        const wins = Number(row?.wins || 0);
+        const draws = Number(row?.draws || 0);
+        const losses = Number(row?.losses || 0);
+        const matches = Number(row?.matches ?? (wins + draws + losses));
+        sum.wins += wins;
+        sum.matches += matches;
+        sum.fc += fcFromWins(wins, tier);
+        return sum;
+      }, { wins: 0, matches: 0, fc: 0 });
+
+      const dayCount = safeRows.length;
+      const averageWinRate = totals.matches ? (totals.wins / totals.matches) * 100 : 0;
+      const averageWins = dayCount ? totals.wins / dayCount : 0;
+      const averageFc = dayCount ? totals.fc / dayCount : 0;
+
+      document.getElementById('recent14AverageWinRate').innerText = `${averageWinRate.toFixed(1)}%`;
+      document.getElementById('recent14AverageWins').innerText = `${averageWins.toFixed(1)}승`;
+      document.getElementById('recent14TotalFc').innerText = `${Math.round(totals.fc).toLocaleString('ko-KR')} FC`;
+      document.getElementById('recent14AverageFc').innerText = `하루 평균 ${Math.round(averageFc).toLocaleString('ko-KR')} FC`;
+    }
+
     async function loadRecent() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentList');
@@ -7579,6 +7669,7 @@ h2::before{
       const recentTier = profileRes.data?.[0]?.current_tier || profileRes.data?.[0]?.tier || '-';
       if (historyRes.error && sessionRows.length === 0) {
         const message = historyRes.error.message;
+        renderRecent14Summary([], recentTier);
         tbody.innerHTML = `<tr><td colspan="5">오류: ${message}</td></tr>`;
         return;
       }
@@ -7591,6 +7682,8 @@ h2::before{
       }));
       // 최근 14일은 캐시를 쓰지 않고 DB의 정상 판정 경기만 기준으로 표시합니다.
       // result가 null인 미판정 경기는 loadUserHistory 단계에서 제외됩니다.
+
+      renderRecent14Summary(rows, recentTier);
 
       tbody.innerHTML = rows.map(row => `
         <tr>
