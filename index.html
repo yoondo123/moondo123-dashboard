@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MOONDO FC온라인 전적</title>
+  <title>면상들 FC온라인 전적</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -10222,9 +10222,6 @@ h2::before{
   }
 </script>
 
-</body>
-</html>
-
 <style id="waggu-hide-lifetime-section">
 #lifetimeRecord { display: none !important; }
 #lifetimeRecord.closest-hide-placeholder { display: none !important; }
@@ -10243,3 +10240,133 @@ h2::before{
   else removeLifetimeSection();
 })();
 </script>
+
+<!-- === 와꾸대장 주차 축하 팝업 START === -->
+<style id="waggu-parking-congratulations-style">
+  #wagguParkingOverlay {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483647 !important;
+    display: none;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 18px !important;
+    background: rgba(0,0,0,.82) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  #wagguParkingOverlay.waggu-open { display: flex !important; }
+  #wagguParkingPopup {
+    width: min(460px, calc(100vw - 36px)) !important;
+    max-height: calc(100vh - 36px) !important;
+    overflow: auto !important;
+    box-sizing: border-box !important;
+    padding: 30px 26px 22px !important;
+    border: 1px solid rgba(128,230,196,.55) !important;
+    border-radius: 24px !important;
+    background: radial-gradient(circle at 50% 0%,rgba(128,230,196,.20),transparent 42%),linear-gradient(180deg,#171d25 0%,#0e1319 100%) !important;
+    color: #f4f6f8 !important;
+    text-align: center !important;
+    box-shadow: 0 30px 100px rgba(0,0,0,.78),inset 0 1px 0 rgba(255,255,255,.06) !important;
+    font-family: "Pretendard","Noto Sans KR",Arial,sans-serif !important;
+  }
+  #wagguParkingPopup .waggu-title,
+  #wagguParkingPopup .waggu-bottom {
+    margin: 0 !important;
+    color: #ffd36e !important;
+    font-size: 29px !important;
+    line-height: 1.2 !important;
+    font-weight: 950 !important;
+    letter-spacing: .38em !important;
+    text-indent: .38em !important;
+  }
+  #wagguParkingPopup .waggu-names {
+    margin: 24px 0 18px !important;
+    color: #fff !important;
+    font-size: 24px !important;
+    line-height: 1.75 !important;
+    font-weight: 950 !important;
+  }
+  #wagguParkingPopup .waggu-message {
+    margin: 0 !important;
+    color: #80e6c4 !important;
+    font-size: 21px !important;
+    line-height: 1.4 !important;
+    font-weight: 950 !important;
+  }
+  #wagguParkingPopup .waggu-line {
+    width: 76px !important;
+    height: 2px !important;
+    margin: 22px auto 20px !important;
+    background: linear-gradient(90deg,transparent,#80e6c4,transparent) !important;
+  }
+  #wagguParkingPopup .waggu-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-top: 28px !important;
+  }
+  #wagguParkingPopup .waggu-actions button {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 48px !important;
+    padding: 0 12px !important;
+    border-radius: 13px !important;
+    font: inherit !important;
+    font-size: 14px !important;
+    font-weight: 950 !important;
+    cursor: pointer !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  #wagguParkingDismiss { border: 1px solid rgba(255,255,255,.18) !important; background: rgba(255,255,255,.07) !important; color: #e1e7ea !important; }
+  #wagguParkingClose { border: 1px solid #80e6c4 !important; background: #80e6c4 !important; color: #092018 !important; }
+  @media (max-width:480px) {
+    #wagguParkingPopup { padding: 26px 18px 18px !important; }
+    #wagguParkingPopup .waggu-title,#wagguParkingPopup .waggu-bottom { font-size: 25px !important; }
+    #wagguParkingPopup .waggu-names { font-size: 21px !important; }
+    #wagguParkingPopup .waggu-message { font-size: 18px !important; }
+  }
+</style>
+
+<div id="wagguParkingOverlay" role="dialog" aria-modal="true" aria-labelledby="wagguParkingTitle">
+  <div id="wagguParkingPopup">
+    <div id="wagguParkingTitle" class="waggu-title">경 축</div>
+    <div class="waggu-names">와꾸대장파머<br>와꾸대장코롱<br>와꾸대장엘지</div>
+    <div class="waggu-message">주차 축하드립니다</div>
+    <div class="waggu-line"></div>
+    <div class="waggu-bottom">축 하</div>
+    <div class="waggu-actions">
+      <button type="button" id="wagguParkingDismiss">다시 보지 않기</button>
+      <button type="button" id="wagguParkingClose">확인</button>
+    </div>
+  </div>
+</div>
+
+<script id="waggu-parking-congratulations-script">
+(function () {
+  var STORAGE_KEY = 'waggu_parking_congratulations_FIXED_v3';
+  var overlay = document.getElementById('wagguParkingOverlay');
+  var closeButton = document.getElementById('wagguParkingClose');
+  var dismissButton = document.getElementById('wagguParkingDismiss');
+  if (!overlay || !closeButton || !dismissButton) {
+    console.error('[MOONDO] parking popup element missing');
+    return;
+  }
+  function hidePopup(){ overlay.classList.remove('waggu-open'); }
+  function showPopup(){
+    var hidden=false;
+    try { hidden = localStorage.getItem(STORAGE_KEY) === '1'; } catch(e) {}
+    if (!hidden) overlay.classList.add('waggu-open');
+  }
+  closeButton.addEventListener('click', hidePopup);
+  dismissButton.addEventListener('click', function(){
+    try { localStorage.setItem(STORAGE_KEY,'1'); } catch(e) {}
+    hidePopup();
+  });
+  showPopup();
+})();
+</script>
+<!-- === 와꾸대장 주차 축하 팝업 END === -->
+</body>
+</html>
