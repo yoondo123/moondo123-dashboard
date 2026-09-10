@@ -6125,9 +6125,9 @@ h2::before{
           <small id="todayPeakTier">오늘 최고티어 -</small>
         </div>
         <div class="stat compact">
-          <span class="muted">현재 점수</span>
+          <span class="muted" id="todayScoreLabel">현재 점수</span>
           <strong id="todayScore">0</strong>
-          <small>실시간 기준</small>
+          <small id="todayScoreMeta">실시간 기준</small>
         </div>
         <div class="stat compact">
           <span class="muted">현재 등수</span>
@@ -6422,9 +6422,9 @@ h2::before{
               <small>실시간 기준</small>
             </div>
             <div class="stat compact">
-              <span class="muted">현재 점수</span>
+              <span class="muted" id="searchCurrentScoreLabel">현재 점수</span>
               <strong id="searchCurrentScore">0</strong>
-              <small>실시간 기준</small>
+              <small id="searchCurrentScoreMeta">실시간 기준</small>
             </div>
             <div class="stat compact">
               <span class="muted">현재 등수</span>
@@ -6912,9 +6912,11 @@ h2::before{
         const tier = firstValidTier(meta.tier);
         const score = firstValidNumber(meta.score);
         const rank = firstValidRank(meta.rank);
+        const leagueProgress = String(meta.leagueProgress || '').trim();
         if (tier) next.tier = tier;
         if (score) next.score = score;
         if (rank) next.rank = rank;
+        if (leagueProgress) next.leagueProgress = leagueProgress;
         localStorage.setItem(currentMetaCacheKey(username), JSON.stringify(next));
       } catch (_) {}
     }
@@ -6946,7 +6948,12 @@ h2::before{
         ) || '-',
         rank,
       );
-      const meta = { tier, score, rank: rank ?? '-' };
+      const leagueProgress = [
+        live?.league_progress,
+        profile?.league_progress,
+        cached?.leagueProgress,
+      ].find(value => typeof value === 'string' && value.trim()) || '';
+      const meta = { tier, score, rank: rank ?? '-', leagueProgress };
       saveCurrentMetaCache(username, meta);
       return meta;
     }
@@ -6958,6 +6965,55 @@ h2::before{
         .trim();
     }
 
+    function isChampionsOrAbove(tier) {
+      const name = normalizeTierName(tier);
+      return name.includes('슈퍼챔피언스') ||
+             name.includes('슈퍼챔피언') ||
+             name.includes('챔피언스') ||
+             name.includes('챔피언');
+    }
+
+    function parseLeagueProgress(value) {
+      const text = typeof value === 'string' ? value : '';
+      if (!text.trim()) return { pointsLeft: null, currentPoints: null, gamesLeft: null };
+
+      const pointsLeftMatch = text.match(/승급까지\s*(\d+)\s*점/);
+      const currentPointsMatch = text.match(/승점\s*(\d+)\s*점/);
+      const gamesLeftMatch = text.match(/잔여\s*(\d+)\s*경기/);
+
+      return {
+        pointsLeft: pointsLeftMatch ? Number(pointsLeftMatch[1]) : null,
+        currentPoints: currentPointsMatch ? Number(currentPointsMatch[1]) : null,
+        gamesLeft: gamesLeftMatch ? Number(gamesLeftMatch[1]) : null,
+      };
+    }
+
+    function renderScoreOrPromotion(labelId, valueId, metaId, tier, score, leagueProgress) {
+      const labelEl = document.getElementById(labelId);
+      const valueEl = document.getElementById(valueId);
+      const metaEl = document.getElementById(metaId);
+      if (!labelEl || !valueEl || !metaEl) return;
+
+      const progress = parseLeagueProgress(leagueProgress);
+
+      // 챔피언스 미만은 매크로가 올린 league_progress의 '승급까지 N점'을 우선 표시
+      if (!isChampionsOrAbove(tier) && progress.pointsLeft !== null) {
+        labelEl.innerText = '승급까지';
+        valueEl.innerText = `${progress.pointsLeft.toLocaleString('ko-KR')}점`;
+
+        const details = [];
+        if (progress.currentPoints !== null) details.push(`현재 승점 ${progress.currentPoints}`);
+        if (progress.gamesLeft !== null) details.push(`잔여 ${progress.gamesLeft}경기`);
+        metaEl.innerText = details.length ? details.join(' · ') : '실시간 기준';
+        return;
+      }
+
+      // 챔피언스 / 슈퍼챔피언스는 기존 레이팅 점수 표시
+      labelEl.innerText = '현재 점수';
+      valueEl.innerText = Number(score || 0).toLocaleString('ko-KR');
+      metaEl.innerText = '실시간 기준';
+    }
+
     function tierPower(tier) {
       const name = normalizeTierName(tier);
       if (!name || name === '-') return 0;
@@ -6966,6 +7022,7 @@ h2::before{
       if (name.includes('챔피언스') || name.includes('챔피언')) return 800;
       if (name.includes('슈퍼챌린저') || name.includes('슈퍼챌')) return 700;
       if (name.includes('챌린저') || name.includes('챌린')) return 600;
+      if (name.includes('마스터')) return 550;
       if (name.includes('월드클래스') || name.includes('월클')) return 500;
       if (name.includes('프로')) return 400;
       if (name.includes('세미프로')) return 300;
@@ -7007,6 +7064,7 @@ h2::before{
       else if (name.includes('챔피언스') || name.includes('챔피언')) base = 800;
       else if (name.includes('슈퍼챌린저') || name.includes('슈퍼챌린지') || name.includes('슈퍼챌')) base = 700;
       else if (name.includes('챌린저') || name.includes('챌린지') || name.includes('챌린')) base = 600;
+      else if (name.includes('마스터')) base = 550;
       else if (name.includes('월드클래스') || name.includes('월클')) base = 500;
       else if (name.includes('세미프로')) base = 300;
       else if (name.includes('프로')) base = 400;
@@ -7538,7 +7596,7 @@ h2::before{
     async function loadPlayerStatsMap() {
       const { data, error } = await supabaseClient
         .from('player_stats')
-        .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at, is_running, game_status, status, last_seen_at')
+        .select('username, current_score, score, current_rank, rank, current_tier, tier, league_progress, today_peak_tier, today_peak_updated, updated_at, is_running, game_status, status, last_seen_at')
         .order('updated_at', { ascending: false });
       if (error) throw error;
       const rows = data || [];
@@ -7602,7 +7660,7 @@ h2::before{
         loadUserSessions(currentUser.username, weekStart),
         supabaseClient
           .from('player_stats')
-          .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, league_progress, today_peak_tier, today_peak_updated, updated_at')
           .eq('username', currentUser.username)
           .order('updated_at', { ascending: false })
           .limit(1),
@@ -7652,7 +7710,14 @@ h2::before{
       document.getElementById('todayFc').innerText = fcFromWins(today.wins, meta.tier);
       document.getElementById('todayTier').innerText = meta.tier;
       document.getElementById('todayPeakTier').innerText = `오늘 최고티어 ${displayTierName(todayPeakTierValue || meta.tier || '-')}`;
-      document.getElementById('todayScore').innerText = meta.score;
+      renderScoreOrPromotion(
+        'todayScoreLabel',
+        'todayScore',
+        'todayScoreMeta',
+        meta.tier,
+        meta.score,
+        meta.leagueProgress,
+      );
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
       renderTodayExtremes(todayExtremes);
@@ -9129,7 +9194,7 @@ h2::before{
           .limit(25),
         supabaseClient
           .from('player_stats')
-          .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, league_progress, today_peak_tier, today_peak_updated, updated_at')
           .eq('username', nickname)
           .order('updated_at', { ascending: false })
           .limit(1),
@@ -9192,7 +9257,14 @@ h2::before{
       setText('searchTodayFc', todayFc);
       setText('searchTodayFcMeta', `오늘 채굴 ${todayFc} FC`);
       setText('searchCurrentTier', currentTier || '-');
-      setText('searchCurrentScore', currentScore ?? 0);
+      renderScoreOrPromotion(
+        'searchCurrentScoreLabel',
+        'searchCurrentScore',
+        'searchCurrentScoreMeta',
+        currentTier,
+        currentScore,
+        profile.league_progress || '',
+      );
       setText('searchCurrentRank', currentRank === null || currentRank === undefined ? '-' : currentRank);
       renderSearchTodayExtremes(searchExtremes);
       renderSearchForm(recentResults);
