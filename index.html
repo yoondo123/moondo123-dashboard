@@ -10265,57 +10265,182 @@ h2::before{
   #todayRankingToggle:hover { background: #304238 !important; }
   #todayRankingToggle:focus-visible { outline: 2px solid #80e6c4; outline-offset: 3px; }
 </style>
-<style id="waggu-parking-congratulations-style">
-  #wagguParkingCongratulations {
-    box-sizing: border-box;
-    width: min(420px, calc(100vw - 32px));
-    max-height: calc(100dvh - 32px);
-    margin: auto;
-    padding: 28px 24px 20px;
-    border: 1px solid #487365;
-    border-radius: 8px;
-    background: #11151b;
-    color: #f4f6f8;
-    box-shadow: 0 20px 70px #0008;
-    text-align: center;
+<style id="waggu-daily-awards-style">
+  #dailyAwardsDialog {
+    box-sizing: border-box; width: min(480px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px); margin: auto; overflow-y: auto;
+    padding: 24px; border: 1px solid #4c6359; border-radius: 8px;
+    background: #11151b; color: #f4f6f8; box-shadow: 0 20px 70px #0008;
     letter-spacing: 0;
   }
-  #wagguParkingCongratulations::backdrop { background: #000b; }
-  #wagguParkingCongratulations h2 { margin: 0 0 20px; font-size: 23px; color: #80e6c4; }
-  #wagguParkingCongratulations p { margin: 0; font-size: 18px; line-height: 1.9; overflow-wrap: anywhere; }
-  #wagguParkingCongratulations .parking-actions { display: flex; gap: 10px; margin-top: 24px; }
-  #wagguParkingCongratulations button {
-    flex: 1; min-width: 0; min-height: 44px; padding: 10px 8px;
-    border: 1px solid #454b56; border-radius: 6px;
-    background: #242a33; color: #f4f6f8; font: inherit; cursor: pointer;
+  #dailyAwardsDialog::backdrop { background: #000b; }
+  #dailyAwardsDialog #dailyAwardsTitle { margin: 0 0 6px !important; font-size: 22px !important; }
+  #dailyAwardsDialog #dailyAwardsDate { margin: 0 0 14px; color: #a9b7b0; font-size: 12px; }
+  #dailyAwardsDialog .daily-award-row { padding: 15px 0; border-top: 1px solid #30363d; }
+  #dailyAwardsDialog .daily-award-label { color: #b8c2cf; font-size: 12px; }
+  #dailyAwardsDialog .daily-award-result { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; margin-top: 6px; }
+  #dailyAwardsDialog .daily-award-names { min-width: 0; overflow-wrap: anywhere; font-size: 16px; line-height: 1.5; }
+  #dailyAwardsDialog .daily-award-value { flex-shrink: 0; font-size: 22px; color: #80e6c4; }
+  #dailyAwardsDialog .daily-award-row:nth-child(4) .daily-award-value { color: #f0adba; }
+  #dailyAwardsDialog .daily-awards-note { font-size: 11px; color: #9aa7b6; margin: 10px 0 0; }
+  #dailyAwardsDialog .daily-awards-actions { display: flex; gap: 10px; margin-top: 20px; }
+  #dailyAwardsDialog button {
+    width: auto !important; min-width: 0; min-height: 42px; padding: 9px 12px !important;
+    margin: 0 !important; border: 1px solid #46574f !important; border-radius: 6px !important;
+    background: #252d29 !important; color: #e3e9e5 !important; font: inherit; font-size: 13px; cursor: pointer;
   }
-  #wagguParkingCongratulations button:last-child { background: #80e6c4; color: #10271f; border-color: #80e6c4; }
-  #wagguParkingCongratulations button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  #dailyAwardsDialog .daily-awards-actions button { flex: 1; }
+  #dailyAwardsDialog #dailyAwardsClose { background: #80e6c4 !important; color: #14251e !important; }
+  #dailyAwardsDialog button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  @media (max-width: 420px) {
+    #dailyAwardsDialog { padding: 18px; }
+    #dailyAwardsDialog .daily-award-names { font-size: 14px; }
+    #dailyAwardsDialog .daily-award-value { font-size: 20px; }
+  }
 </style>
-<dialog id="wagguParkingCongratulations" aria-labelledby="wagguParkingTitle" aria-describedby="wagguParkingNames">
-  <h2 id="wagguParkingTitle">주차 축하드립니다!</h2>
-  <p id="wagguParkingNames">와꾸대장코롱님<br>와꾸대장파머님<br>와꾸대장엘지님</p>
-  <div class="parking-actions">
-    <button type="button" id="wagguParkingDismiss">다시 보지 않기</button>
-    <button type="button" id="wagguParkingClose" autofocus>닫기</button>
+<dialog id="dailyAwardsDialog" aria-labelledby="dailyAwardsTitle" aria-describedby="dailyAwardsDate">
+  <h2 id="dailyAwardsTitle">어제의 기록</h2>
+  <p id="dailyAwardsDate"></p>
+  <div id="dailyAwardsContent" aria-live="polite"></div>
+  <button type="button" id="dailyAwardsRetry" hidden>다시 불러오기</button>
+  <div class="daily-awards-actions">
+    <button type="button" id="dailyAwardsDismiss">오늘 하루 보지 않기</button>
+    <button type="button" id="dailyAwardsClose" autofocus>닫기</button>
   </div>
 </dialog>
-<script id="waggu-parking-congratulations-script">
-(function () {
-  const key = 'waggu_parking_congratulations_20260909_dismissed';
-  const popup = document.getElementById('wagguParkingCongratulations');
-  document.getElementById('wagguParkingClose').addEventListener('click', () => popup.close());
-  document.getElementById('wagguParkingDismiss').addEventListener('click', () => {
-    try { localStorage.setItem(key, '1'); } catch (_) {}
-    popup.close();
-  });
-  function showAnnouncement() {
-    try { if (localStorage.getItem(key) === '1') return; } catch (_) {}
-    if (!popup.open) popup.showModal();
+<script id="waggu-daily-awards-script">
+  function dailyAwardPeriod(now = Date.now()) {
+    const dayMs = 86400000;
+    const today = new Date(Number(now) + 9 * 3600000).toISOString().slice(0, 10);
+    const end = new Date(today + 'T00:00:00+09:00').getTime();
+    const start = end - dayMs;
+    return { today, day: new Date(start + 9 * 3600000).toISOString().slice(0, 10),
+      start: new Date(start).toISOString(), end: new Date(end).toISOString(), next: end + dayMs };
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showAnnouncement);
-  else showAnnouncement();
-})();
+
+  function computeDailyAwards(history, sessions, day) {
+    const grouped = new Map();
+    function player(name) {
+      if (!grouped.has(name)) grouped.set(name, { username: name, history: emptyStats(), sessions: emptyStats(), lossesInRow: 0, maxLoss: 0 });
+      return grouped.get(name);
+    }
+    const start = new Date(day + 'T00:00:00+09:00').getTime();
+    const rows = dedupeMatchDetails(history || [], Infinity)
+      .filter(row => row.username && row.username !== '-' && new Date(row.created_at).getTime() >= start && new Date(row.created_at).getTime() < start + 86400000)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    rows.forEach(row => {
+      const result = normalizeResult(row.result);
+      if (!['win', 'draw', 'loss'].includes(result)) return;
+      const p = player(row.username);
+      p.history[result === 'win' ? 'wins' : result === 'draw' ? 'draws' : 'losses']++;
+      p.history.matches++;
+      p.lossesInRow = result === 'loss' ? p.lossesInRow + 1 : 0;
+      p.maxLoss = Math.max(p.maxLoss, p.lossesInRow);
+    });
+    (sessions || []).forEach(row => {
+      if (!row.username || row.username === '-' || row.session_date !== day) return;
+      const p = player(row.username);
+      ['wins', 'draws', 'losses'].forEach(key => {
+        const n = Number(row[key]);
+        if (Number.isFinite(n) && n > 0) p.sessions[key] += Math.floor(n);
+      });
+      p.sessions.matches = p.sessions.wins + p.sessions.draws + p.sessions.losses;
+    });
+    const players = [...grouped.values()].map(p => ({ ...choosePeriodStats(p.history, p.sessions), username: p.username, maxLoss: p.maxLoss }))
+      .filter(p => p.matches > 0);
+    players.forEach(p => { p.rate = p.wins / p.matches; });
+    function winners(key) {
+      const value = Math.max(0, ...players.map(p => p[key]));
+      return { value, names: value > 0 ? players.filter(p => Math.abs(p[key] - value) < 1e-10).map(p => p.username).sort((a,b) => a.localeCompare(b, 'ko')) : [] };
+    }
+    return { day, playerCount: players.length, rate: winners('rate'), wins: winners('wins'), matches: winners('matches'), maxLoss: winners('maxLoss') };
+  }
+
+  async function fetchDailyAwardRows(table, select, period) {
+    const rows = [];
+    for (let offset = 0; ; offset += 1000) {
+      let query = supabaseClient.from(table).select(select);
+      query = table === 'game_history'
+        ? query.gte('created_at', period.start).lt('created_at', period.end).in('result', ['win', 'draw', 'loss']).order('created_at', { ascending: true }).order('id', { ascending: true })
+        : query.eq('session_date', period.day).order('id', { ascending: true });
+      const { data, error } = await query.range(offset, offset + 999);
+      if (error) throw error;
+      rows.push(...(data || []));
+      if (!data || data.length < 1000) return rows;
+    }
+  }
+
+  async function loadDailyAwards(period) {
+    try {
+      const cached = JSON.parse(localStorage.getItem('waggu_daily_awards_cache_v1') || 'null');
+      if (cached?.day === period.day && cached.expires > Date.now()) return cached.data;
+    } catch (_) {}
+    const [history, sessions] = await Promise.all([
+      fetchDailyAwardRows('game_history', 'id,username,result,created_at,opponent_nickname,score_change', period),
+      fetchDailyAwardRows('daily_sessions', 'id,username,session_date,wins,draws,losses', period),
+    ]);
+    const awards = computeDailyAwards(history, sessions, period.day);
+    try { localStorage.setItem('waggu_daily_awards_cache_v1', JSON.stringify({ day: period.day, expires: Date.now() + 600000, data: awards })); } catch (_) {}
+    return awards;
+  }
+
+  function renderDailyAwards(awards) {
+    const content = document.getElementById('dailyAwardsContent');
+    if (!awards.playerCount) { content.textContent = '전날 저장된 경기 기록이 없습니다.'; return; }
+    const categories = [['rate', '오늘의 승률왕', value => (value * 100).toFixed(1) + '%'],
+      ['wins', '오늘의 승리왕', value => value + '승'], ['matches', '오늘의 판수왕', value => value + '판'],
+      ['maxLoss', '🔥💣 오늘의 연패왕 💣🔥', value => value + '연패']];
+    content.innerHTML = categories.map(([key, label, format]) => {
+      const award = awards[key];
+      return `<div class="daily-award-row"><div class="daily-award-label">${label}${award.names.length > 1 ? ' · 공동' : ''}</div><div class="daily-award-result"><div class="daily-award-names">${award.names.length ? award.names.map(name => escapeHtml(name) + '님').join('<br>') : '해당 없음'}</div><strong class="daily-award-value">${award.names.length ? format(award.value) : '-'}</strong></div></div>`;
+    }).join('') + '<p class="daily-awards-note">전날 저장 기록 기준 · 연패는 해당 날짜 내 연속 패배</p>';
+  }
+
+  (function () {
+    const popup = document.getElementById('dailyAwardsDialog');
+    const dismissKey = 'waggu_daily_awards_hidden_day';
+    let shownDay = null;
+    let busyDay = null;
+    let timer;
+    document.getElementById('dailyAwardsClose').addEventListener('click', () => popup.close());
+    document.getElementById('dailyAwardsDismiss').addEventListener('click', () => {
+      try { localStorage.setItem(dismissKey, popup.dataset.displayDay); } catch (_) {}
+      popup.close();
+    });
+    document.getElementById('dailyAwardsRetry').addEventListener('click', () => { shownDay = null; check(); });
+    async function check() {
+      const period = dailyAwardPeriod();
+      clearTimeout(timer);
+      timer = setTimeout(check, Math.max(1000, period.next - Date.now() + 100));
+      if (shownDay === period.today || busyDay === period.today) return;
+      try {
+        if (localStorage.getItem(dismissKey) === period.today) {
+          if (popup.open) popup.close();
+          return;
+        }
+      } catch (_) {}
+      busyDay = period.today;
+      shownDay = period.today;
+      popup.dataset.displayDay = period.today;
+      document.getElementById('dailyAwardsDate').textContent = period.day.replaceAll('-', '.') + ' 전적 · 한국시간 00:00–24:00';
+      document.getElementById('dailyAwardsContent').textContent = '전날 기록을 불러오는 중입니다.';
+      document.getElementById('dailyAwardsRetry').hidden = true;
+      if (!popup.open) popup.showModal();
+      try {
+        const awards = await loadDailyAwards(period);
+        if (popup.dataset.displayDay === period.today) renderDailyAwards(awards);
+      } catch (error) {
+        if (popup.dataset.displayDay === period.today) {
+          document.getElementById('dailyAwardsContent').textContent = '전날 기록을 불러오지 못했습니다.';
+          document.getElementById('dailyAwardsRetry').hidden = false;
+        }
+        console.warn('[Daily awards] Load failed', error);
+      } finally { if (busyDay === period.today) busyDay = null; }
+    }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', check);
+    else check();
+  })();
 </script>
 </body>
 </html>
