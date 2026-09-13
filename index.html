@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>면상들 FC온라인 전적</title>
+  <title>MOONDO FC온라인 전적</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -6125,9 +6125,9 @@ h2::before{
           <small id="todayPeakTier">오늘 최고티어 -</small>
         </div>
         <div class="stat compact">
-          <span class="muted" id="todayScoreLabel">현재 점수</span>
+          <span class="muted">현재 점수</span>
           <strong id="todayScore">0</strong>
-          <small id="todayScoreMeta">실시간 기준</small>
+          <small>실시간 기준</small>
         </div>
         <div class="stat compact">
           <span class="muted">현재 등수</span>
@@ -6210,7 +6210,7 @@ h2::before{
         </div>
       </div>
 
-      <h2>오늘 승률 랭킹</h2>
+      <h2 id="todayRankingHeading"><span id="todayRankingTitle">오늘 승률 랭킹</span><button type="button" id="todayRankingToggle" aria-controls="rankingList" aria-pressed="false" onclick="toggleTodayRanking()">오늘 승리 랭킹</button></h2>
       <div class="table-wrap">
         <table>
           <thead>
@@ -6422,9 +6422,9 @@ h2::before{
               <small>실시간 기준</small>
             </div>
             <div class="stat compact">
-              <span class="muted" id="searchCurrentScoreLabel">현재 점수</span>
+              <span class="muted">현재 점수</span>
               <strong id="searchCurrentScore">0</strong>
-              <small id="searchCurrentScoreMeta">실시간 기준</small>
+              <small>실시간 기준</small>
             </div>
             <div class="stat compact">
               <span class="muted">현재 등수</span>
@@ -6912,11 +6912,9 @@ h2::before{
         const tier = firstValidTier(meta.tier);
         const score = firstValidNumber(meta.score);
         const rank = firstValidRank(meta.rank);
-        const leagueProgress = String(meta.leagueProgress || '').trim();
         if (tier) next.tier = tier;
         if (score) next.score = score;
         if (rank) next.rank = rank;
-        if (leagueProgress) next.leagueProgress = leagueProgress;
         localStorage.setItem(currentMetaCacheKey(username), JSON.stringify(next));
       } catch (_) {}
     }
@@ -6948,12 +6946,7 @@ h2::before{
         ) || '-',
         rank,
       );
-      const leagueProgress = [
-        live?.league_progress,
-        profile?.league_progress,
-        cached?.leagueProgress,
-      ].find(value => typeof value === 'string' && value.trim()) || '';
-      const meta = { tier, score, rank: rank ?? '-', leagueProgress };
+      const meta = { tier, score, rank: rank ?? '-' };
       saveCurrentMetaCache(username, meta);
       return meta;
     }
@@ -6963,55 +6956,6 @@ h2::before{
         .replace(/\s+/g, '')
         .replace(/[? ]/g, '')
         .trim();
-    }
-
-    function isChampionsOrAbove(tier) {
-      const name = normalizeTierName(tier);
-      return name.includes('슈퍼챔피언스') ||
-             name.includes('슈퍼챔피언') ||
-             name.includes('챔피언스') ||
-             name.includes('챔피언');
-    }
-
-    function parseLeagueProgress(value) {
-      const text = typeof value === 'string' ? value : '';
-      if (!text.trim()) return { pointsLeft: null, currentPoints: null, gamesLeft: null };
-
-      const pointsLeftMatch = text.match(/승급까지\s*(\d+)\s*점/);
-      const currentPointsMatch = text.match(/승점\s*(\d+)\s*점/);
-      const gamesLeftMatch = text.match(/잔여\s*(\d+)\s*경기/);
-
-      return {
-        pointsLeft: pointsLeftMatch ? Number(pointsLeftMatch[1]) : null,
-        currentPoints: currentPointsMatch ? Number(currentPointsMatch[1]) : null,
-        gamesLeft: gamesLeftMatch ? Number(gamesLeftMatch[1]) : null,
-      };
-    }
-
-    function renderScoreOrPromotion(labelId, valueId, metaId, tier, score, leagueProgress) {
-      const labelEl = document.getElementById(labelId);
-      const valueEl = document.getElementById(valueId);
-      const metaEl = document.getElementById(metaId);
-      if (!labelEl || !valueEl || !metaEl) return;
-
-      const progress = parseLeagueProgress(leagueProgress);
-
-      // 챔피언스 미만은 매크로가 올린 league_progress의 '승급까지 N점'을 우선 표시
-      if (!isChampionsOrAbove(tier) && progress.pointsLeft !== null) {
-        labelEl.innerText = '승급까지';
-        valueEl.innerText = `${progress.pointsLeft.toLocaleString('ko-KR')}점`;
-
-        const details = [];
-        if (progress.currentPoints !== null) details.push(`현재 승점 ${progress.currentPoints}`);
-        if (progress.gamesLeft !== null) details.push(`잔여 ${progress.gamesLeft}경기`);
-        metaEl.innerText = details.length ? details.join(' · ') : '실시간 기준';
-        return;
-      }
-
-      // 챔피언스 / 슈퍼챔피언스는 기존 레이팅 점수 표시
-      labelEl.innerText = '현재 점수';
-      valueEl.innerText = Number(score || 0).toLocaleString('ko-KR');
-      metaEl.innerText = '실시간 기준';
     }
 
     function tierPower(tier) {
@@ -7039,6 +6983,10 @@ h2::before{
       const raw = String(tier || '').trim();
       const name = normalizeTierName(raw);
       if (!name || name === '-') return '-';
+      if (name.includes('마스터')) {
+        const division = name.match(/([123])부/);
+        return division ? `마스터 ${division[1]}부 감독` : '마스터 감독';
+      }
       if (tierPower(raw) >= 900) return '슈퍼챔피언스 감독';
       return raw;
     }
@@ -7051,6 +6999,7 @@ h2::before{
     }
 
     function tierWithRank(tier, rank) {
+      if (normalizeTierName(tier).includes('마스터')) return displayTierName(tier);
       if (isSuperChampionsRank(rank)) return '슈퍼챔피언스 감독';
       return displayTierName(tier || '-');
     }
@@ -7596,7 +7545,7 @@ h2::before{
     async function loadPlayerStatsMap() {
       const { data, error } = await supabaseClient
         .from('player_stats')
-        .select('username, current_score, score, current_rank, rank, current_tier, tier, league_progress, today_peak_tier, today_peak_updated, updated_at, is_running, game_status, status, last_seen_at')
+        .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at, is_running, game_status, status, last_seen_at')
         .order('updated_at', { ascending: false });
       if (error) throw error;
       const rows = data || [];
@@ -7660,7 +7609,7 @@ h2::before{
         loadUserSessions(currentUser.username, weekStart),
         supabaseClient
           .from('player_stats')
-          .select('username, current_score, score, current_rank, rank, current_tier, tier, league_progress, today_peak_tier, today_peak_updated, updated_at')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at')
           .eq('username', currentUser.username)
           .order('updated_at', { ascending: false })
           .limit(1),
@@ -7710,14 +7659,7 @@ h2::before{
       document.getElementById('todayFc').innerText = fcFromWins(today.wins, meta.tier);
       document.getElementById('todayTier').innerText = meta.tier;
       document.getElementById('todayPeakTier').innerText = `오늘 최고티어 ${displayTierName(todayPeakTierValue || meta.tier || '-')}`;
-      renderScoreOrPromotion(
-        'todayScoreLabel',
-        'todayScore',
-        'todayScoreMeta',
-        meta.tier,
-        meta.score,
-        meta.leagueProgress,
-      );
+      document.getElementById('todayScore').innerText = meta.score;
       document.getElementById('todayRank').innerText = meta.rank;
       document.getElementById('todayWinRate').innerText = `승률 ${winRate(today)}%`;
       renderTodayExtremes(todayExtremes);
@@ -7999,6 +7941,24 @@ h2::before{
       return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" target="_blank" rel="noopener noreferrer" title="FC INFO에서 ${safeUsername} 보기">${safeUsername}</a>${showDashboardExtras ? recordButton : ''}${streakBadge}`;
     }
 
+    let todayRankingMode = 'rate';
+    let renderTodayRanking = null;
+
+    function compareTodayRanking(a, b) {
+      const primary = todayRankingMode === 'wins' ? b.wins - a.wins : b.rate - a.rate;
+      const secondary = todayRankingMode === 'wins' ? b.rate - a.rate : b.wins - a.wins;
+      return primary || secondary || b.matches - a.matches || b.score - a.score || a.username.localeCompare(b.username, 'ko');
+    }
+
+    function toggleTodayRanking() {
+      todayRankingMode = todayRankingMode === 'rate' ? 'wins' : 'rate';
+      document.getElementById('todayRankingTitle').textContent = todayRankingMode === 'wins' ? '오늘 승리 랭킹' : '오늘 승률 랭킹';
+      const button = document.getElementById('todayRankingToggle');
+      button.textContent = todayRankingMode === 'wins' ? '오늘 승률 랭킹' : '오늘 승리 랭킹';
+      button.setAttribute('aria-pressed', String(todayRankingMode === 'wins'));
+      if (renderTodayRanking) renderTodayRanking();
+    }
+
     async function loadRanking(statsMap, options = {}) {
       const {
         tbodyId = 'rankingList',
@@ -8168,11 +8128,14 @@ h2::before{
       if (ranking.length) saveStatsCache('__ranking__', rankingScope, ranking);
 
       if (displayRanking.length === 0) {
+        if (tbodyId === 'rankingList') renderTodayRanking = null;
         tbody.innerHTML = `<tr><td colspan="${colCount}">${emptyMessage}</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = displayRanking.map((row, i) => `
+      const renderRankingRows = () => {
+      const orderedRows = tbodyId === 'rankingList' ? displayRanking.slice().sort(compareTodayRanking) : displayRanking;
+      tbody.innerHTML = orderedRows.map((row, i) => `
         <tr>
           <td data-rank="${i + 1}">${i + 1}</td>
           <td class="ranking-name-cell">${rankingNameHtml(row, tbodyId === 'rankingList')}</td>
@@ -8188,6 +8151,9 @@ h2::before{
           ${showPeakTier ? `<td>${row.peakTier || '-'}</td>` : ''}
         </tr>
       `).join('');
+      };
+      if (tbodyId === 'rankingList') renderTodayRanking = renderRankingRows;
+      renderRankingRows();
     }
 
     async function refreshAll() {
@@ -9194,7 +9160,7 @@ h2::before{
           .limit(25),
         supabaseClient
           .from('player_stats')
-          .select('username, current_score, score, current_rank, rank, current_tier, tier, league_progress, today_peak_tier, today_peak_updated, updated_at')
+          .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at')
           .eq('username', nickname)
           .order('updated_at', { ascending: false })
           .limit(1),
@@ -9257,14 +9223,7 @@ h2::before{
       setText('searchTodayFc', todayFc);
       setText('searchTodayFcMeta', `오늘 채굴 ${todayFc} FC`);
       setText('searchCurrentTier', currentTier || '-');
-      renderScoreOrPromotion(
-        'searchCurrentScoreLabel',
-        'searchCurrentScore',
-        'searchCurrentScoreMeta',
-        currentTier,
-        currentScore,
-        profile.league_progress || '',
-      );
+      setText('searchCurrentScore', currentScore ?? 0);
       setText('searchCurrentRank', currentRank === null || currentRank === undefined ? '-' : currentRank);
       renderSearchTodayExtremes(searchExtremes);
       renderSearchForm(recentResults);
@@ -10294,155 +10253,70 @@ h2::before{
   }
 </script>
 
-
-<!-- === 와꾸대장 주차 축하 팝업 START === -->
-<style id="waggu-parking-popup-final-style">
-  #wagguParkingOverlay {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 2147483647 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 18px !important;
-    background: rgba(0, 0, 0, .82) !important;
-    backdrop-filter: blur(7px) !important;
-    -webkit-backdrop-filter: blur(7px) !important;
+<style id="waggu-today-ranking-toggle-style">
+  #todayRankingHeading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  #todayRankingToggle {
+    width: auto !important; min-height: 32px; margin: 0 0 0 6px !important;
+    padding: 5px 10px !important; border: 1px solid #53695d !important;
+    border-radius: 6px !important; background: #202b26 !important;
+    color: #c4ecdb !important; font-size: 12px !important; line-height: 1.4;
+    letter-spacing: 0; white-space: nowrap; cursor: pointer;
   }
-  #wagguParkingOverlay.waggu-hidden {
-    display: none !important;
-  }
-  #wagguParkingPopup {
-    position: relative !important;
-    width: min(460px, calc(100vw - 36px)) !important;
-    max-height: calc(100dvh - 36px) !important;
-    overflow: auto !important;
-    box-sizing: border-box !important;
-    padding: 34px 24px 22px !important;
-    border: 1px solid rgba(112, 242, 210, .55) !important;
-    border-radius: 22px !important;
-    background: linear-gradient(180deg, #171d25 0%, #0d1218 100%) !important;
-    color: #f7f8fb !important;
-    text-align: center !important;
-    box-shadow: 0 30px 100px rgba(0, 0, 0, .78), inset 0 1px 0 rgba(255,255,255,.06) !important;
-    font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif !important;
-  }
-  #wagguParkingPopup .waggu-top,
-  #wagguParkingPopup .waggu-bottom {
-    margin: 0 !important;
-    color: #70f2d2 !important;
-    font-size: 30px !important;
-    line-height: 1.1 !important;
-    font-weight: 950 !important;
-    letter-spacing: .18em !important;
-  }
-  #wagguParkingPopup .waggu-names {
-    margin: 25px 0 20px !important;
-    color: #fff !important;
-    font-size: 24px !important;
-    line-height: 1.65 !important;
-    font-weight: 900 !important;
-    letter-spacing: -.02em !important;
-  }
-  #wagguParkingPopup .waggu-message {
-    margin: 0 0 18px !important;
-    color: #ffd36e !important;
-    font-size: 19px !important;
-    line-height: 1.4 !important;
-    font-weight: 900 !important;
-  }
-  #wagguParkingPopup .waggu-bottom {
-    margin-top: 4px !important;
-    color: #ffd36e !important;
-  }
-  #wagguParkingPopup .waggu-actions {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
-    margin-top: 28px !important;
-  }
-  #wagguParkingPopup .waggu-actions button {
-    width: 100% !important;
-    min-width: 0 !important;
-    height: 48px !important;
-    margin: 0 !important;
-    padding: 0 12px !important;
-    border-radius: 12px !important;
-    border: 1px solid rgba(255,255,255,.16) !important;
-    background: #252c35 !important;
-    color: #f7f8fb !important;
-    font: inherit !important;
-    font-size: 14px !important;
-    font-weight: 900 !important;
-    box-shadow: none !important;
-    cursor: pointer !important;
-    transform: none !important;
-  }
-  #wagguParkingPopup #wagguParkingClose {
-    border-color: #70f2d2 !important;
-    background: #70f2d2 !important;
-    color: #06110e !important;
-  }
-  @media (max-width: 420px) {
-    #wagguParkingPopup { padding: 28px 18px 18px !important; border-radius: 18px !important; }
-    #wagguParkingPopup .waggu-top,
-    #wagguParkingPopup .waggu-bottom { font-size: 26px !important; }
-    #wagguParkingPopup .waggu-names { font-size: 21px !important; }
-    #wagguParkingPopup .waggu-actions { grid-template-columns: 1fr !important; }
-  }
+  #todayRankingToggle:hover { background: #304238 !important; }
+  #todayRankingToggle:focus-visible { outline: 2px solid #80e6c4; outline-offset: 3px; }
 </style>
-
-<div id="wagguParkingOverlay" role="dialog" aria-modal="true" aria-labelledby="wagguParkingTitle">
-  <div id="wagguParkingPopup">
-    <div class="waggu-top" id="wagguParkingTitle">경 축</div>
-
-    <div class="waggu-names">
-      와꾸대장파머<br>
-      와꾸대장코롱<br>
-      와꾸대장엘지
-    </div>
-
-    <div class="waggu-message">주차 축하드립니다</div>
-    <div class="waggu-bottom">축 하</div>
-
-    <div class="waggu-actions">
-      <button type="button" id="wagguParkingDismiss">다시 보지 않기</button>
-      <button type="button" id="wagguParkingClose">확인</button>
-    </div>
+<style id="waggu-parking-congratulations-style">
+  #wagguParkingCongratulations {
+    box-sizing: border-box;
+    width: min(420px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 28px 24px 20px;
+    border: 1px solid #487365;
+    border-radius: 8px;
+    background: #11151b;
+    color: #f4f6f8;
+    box-shadow: 0 20px 70px #0008;
+    text-align: center;
+    letter-spacing: 0;
+  }
+  #wagguParkingCongratulations::backdrop { background: #000b; }
+  #wagguParkingCongratulations h2 { margin: 0 0 20px; font-size: 23px; color: #80e6c4; }
+  #wagguParkingCongratulations p { margin: 0; font-size: 18px; line-height: 1.9; overflow-wrap: anywhere; }
+  #wagguParkingCongratulations .parking-actions { display: flex; gap: 10px; margin-top: 24px; }
+  #wagguParkingCongratulations button {
+    flex: 1; min-width: 0; min-height: 44px; padding: 10px 8px;
+    border: 1px solid #454b56; border-radius: 6px;
+    background: #242a33; color: #f4f6f8; font: inherit; cursor: pointer;
+  }
+  #wagguParkingCongratulations button:last-child { background: #80e6c4; color: #10271f; border-color: #80e6c4; }
+  #wagguParkingCongratulations button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+</style>
+<dialog id="wagguParkingCongratulations" aria-labelledby="wagguParkingTitle" aria-describedby="wagguParkingNames">
+  <h2 id="wagguParkingTitle">주차 축하드립니다!</h2>
+  <p id="wagguParkingNames">와꾸대장코롱님<br>와꾸대장파머님<br>와꾸대장엘지님</p>
+  <div class="parking-actions">
+    <button type="button" id="wagguParkingDismiss">다시 보지 않기</button>
+    <button type="button" id="wagguParkingClose" autofocus>닫기</button>
   </div>
-</div>
-
-<script id="waggu-parking-popup-final-script">
+</dialog>
+<script id="waggu-parking-congratulations-script">
 (function () {
-  var STORAGE_KEY = 'waggu_parking_popup_final_20260909';
-  var overlay = document.getElementById('wagguParkingOverlay');
-  var dismissBtn = document.getElementById('wagguParkingDismiss');
-  var closeBtn = document.getElementById('wagguParkingClose');
-
-  if (!overlay) return;
-
-  try {
-    if (localStorage.getItem(STORAGE_KEY) === '1') {
-      overlay.classList.add('waggu-hidden');
-    }
-  } catch (e) {}
-
-  if (closeBtn) {
-    closeBtn.addEventListener('click', function () {
-      overlay.classList.add('waggu-hidden');
-    });
+  const key = 'waggu_parking_congratulations_20260909_dismissed';
+  const popup = document.getElementById('wagguParkingCongratulations');
+  document.getElementById('wagguParkingClose').addEventListener('click', () => popup.close());
+  document.getElementById('wagguParkingDismiss').addEventListener('click', () => {
+    try { localStorage.setItem(key, '1'); } catch (_) {}
+    popup.close();
+  });
+  function showAnnouncement() {
+    try { if (localStorage.getItem(key) === '1') return; } catch (_) {}
+    if (!popup.open) popup.showModal();
   }
-
-  if (dismissBtn) {
-    dismissBtn.addEventListener('click', function () {
-      try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
-      overlay.classList.add('waggu-hidden');
-    });
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showAnnouncement);
+  else showAnnouncement();
 })();
 </script>
-<!-- === 와꾸대장 주차 축하 팝업 END === -->
-
 </body>
 </html>
 
