@@ -10388,8 +10388,8 @@ h2::before{
     const content = document.getElementById('dailyAwardsContent');
     if (!awards.playerCount) { content.textContent = '전날 저장된 경기 기록이 없습니다.'; return; }
     const categories = [['rate', '오늘의 승률왕', value => (value * 100).toFixed(1) + '%'],
-      ['wins', '오늘의 승리왕', value => value + '승'], ['matches', '오늘의 판수왕', value => value + '판'],
-      ['maxLoss', '🔥💣 오늘의 연패왕 💣🔥', value => value + '연패']];
+      ['wins', '오늘의 다승왕', value => value + '승'], ['matches', '오늘의 판수왕', value => value + '판'],
+      ['maxLoss', '🔥💣 오늘의 연패대마왕 💣🔥', value => value + '연패']];
     content.innerHTML = categories.map(([key, label, format]) => {
       const award = awards[key];
       return `<div class="daily-award-row"><div class="daily-award-label">${label}${award.names.length > 1 ? ' · 공동' : ''}</div><div class="daily-award-result"><div class="daily-award-names">${award.names.length ? award.names.map(name => escapeHtml(name) + '님').join('<br>') : '해당 없음'}</div><strong class="daily-award-value">${award.names.length ? format(award.value) : '-'}</strong></div></div>`;
