@@ -10283,6 +10283,8 @@ h2::before{
   #dailyAwardsDialog .daily-award-value { flex-shrink: 0; font-size: 22px; color: #80e6c4; }
   #dailyAwardsDialog .daily-award-row:nth-child(4) .daily-award-value { color: #f0adba; }
   #dailyAwardsDialog .daily-awards-note { font-size: 11px; color: #9aa7b6; margin: 10px 0 0; }
+  #dailyAwardsDialog .daily-award-message { font-size: 12px; line-height: 1.6; color: #80e6c4; margin: 8px 0 0; overflow-wrap: anywhere; }
+  #dailyAwardsDialog .daily-award-row:nth-child(4) .daily-award-message { color: #f0adba; }
   #dailyAwardsDialog .daily-awards-actions { display: flex; gap: 10px; margin-top: 20px; }
   #dailyAwardsDialog button {
     width: auto !important; min-width: 0; min-height: 42px; padding: 9px 12px !important;
@@ -10370,17 +10372,47 @@ h2::before{
     }
   }
 
-  async function loadDailyAwards(period) {
+  function dailyAwardRepeatMessages(awards, previousDays) {
+    const messages = {};
+    for (const [key, threshold] of [['rate', 3], ['wins', 3], ['maxLoss', 2]]) {
+      const names = awards[key].names.filter(name => {
+        for (let offset = 1; offset < threshold; offset++) {
+          const expectedDay = new Date(Date.parse(awards.day + 'T00:00:00Z') - offset * 86400000).toISOString().slice(0, 10);
+          const previous = previousDays[offset - 1];
+          if (previous?.day !== expectedDay || !previous[key].names.includes(name)) return false;
+        }
+        return true;
+      });
+      messages[key] = names.map(name => key === 'maxLoss'
+        ? `${name} 님, 이틀연속 연패왕!ㅠㅠㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ 위로의 한마디 부탁드립니다 ㅠㅠ`
+        : `${name}님, ${threshold}일 이상 연속 ${key === 'rate' ? '승률왕' : '다승왕'}! 축하의 한마디 부탁합니다.`);
+    }
+    return messages;
+  }
+
+  async function loadDailyAwards(period, includeRepeats = true) {
     try {
-      const cached = JSON.parse(localStorage.getItem('waggu_daily_awards_cache_v1') || 'null');
-      if (cached?.day === period.day && cached.expires > Date.now()) return cached.data;
+      const cached = JSON.parse(localStorage.getItem('waggu_daily_awards_cache_v2_' + period.day) || 'null');
+      if (cached?.day === period.day && cached.expires > Date.now() && (!includeRepeats || cached.data.repeatMessages)) return cached.data;
     } catch (_) {}
     const [history, sessions] = await Promise.all([
       fetchDailyAwardRows('game_history', 'id,username,result,created_at,opponent_nickname,score_change', period),
       fetchDailyAwardRows('daily_sessions', 'id,username,session_date,wins,draws,losses', period),
     ]);
     const awards = computeDailyAwards(history, sessions, period.day);
-    try { localStorage.setItem('waggu_daily_awards_cache_v1', JSON.stringify({ day: period.day, expires: Date.now() + 600000, data: awards })); } catch (_) {}
+    if (includeRepeats && awards.playerCount) {
+      // Compare calendar days, not popup visits; missing days break the streak.
+      const previousDays = await Promise.all([1, 2].map(offset =>
+        loadDailyAwards(dailyAwardPeriod(Date.parse(period.end) - offset * 86400000), false)));
+      awards.repeatMessages = dailyAwardRepeatMessages(awards, previousDays);
+    }
+    try {
+      const prefix = 'waggu_daily_awards_cache_v2_';
+      const oldest = dailyAwardPeriod().day;
+      const cutoff = new Date(Date.parse(oldest + 'T00:00:00Z') - 2 * 86400000).toISOString().slice(0, 10);
+      for (const key of Object.keys(localStorage)) if (key.startsWith(prefix) && key.slice(prefix.length) < cutoff) localStorage.removeItem(key);
+      localStorage.setItem(prefix + period.day, JSON.stringify({ day: period.day, expires: Date.now() + 600000, data: awards }));
+    } catch (_) {}
     return awards;
   }
 
@@ -10392,7 +10424,8 @@ h2::before{
       ['maxLoss', '🔥💣 오늘의 연패대마왕 💣🔥', value => value + '연패']];
     content.innerHTML = categories.map(([key, label, format]) => {
       const award = awards[key];
-      return `<div class="daily-award-row"><div class="daily-award-label">${label}${award.names.length > 1 ? ' · 공동' : ''}</div><div class="daily-award-result"><div class="daily-award-names">${award.names.length ? award.names.map(name => escapeHtml(name) + '님').join('<br>') : '해당 없음'}</div><strong class="daily-award-value">${award.names.length ? format(award.value) : '-'}</strong></div></div>`;
+      const messages = (awards.repeatMessages?.[key] || []).map(message => `<p class="daily-award-message">${escapeHtml(message)}</p>`).join('');
+      return `<div class="daily-award-row"><div class="daily-award-label">${label}${award.names.length > 1 ? ' · 공동' : ''}</div><div class="daily-award-result"><div class="daily-award-names">${award.names.length ? award.names.map(name => escapeHtml(name) + '님').join('<br>') : '해당 없음'}</div><strong class="daily-award-value">${award.names.length ? format(award.value) : '-'}</strong></div>${messages}</div>`;
     }).join('') + '<p class="daily-awards-note">전날 저장 기록 기준 · 연패는 해당 날짜 내 연속 패배</p>';
   }
 
