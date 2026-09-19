@@ -1905,6 +1905,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <div class="live-name" id="liveOpponent">상대 OCR 대기</div>
           <div class="live-time" id="liveTime">시간 OCR 대기</div>
         </div>
+        <div id="liveGoals" aria-live="polite"></div>
       </div>
 
       <h2>오늘 전적</h2>
@@ -3373,28 +3374,56 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       return map;
     }
 
+    function readLiveGoals(timeline) {
+      try { if (typeof timeline === 'string') timeline = JSON.parse(timeline); } catch (_) { return []; }
+      if (!Array.isArray(timeline)) return [];
+      const events = new Map();
+      for (const sample of timeline) {
+        if (!Array.isArray(sample?.goal_events)) continue;
+        for (const goal of sample.goal_events) {
+          if (!goal || !['mine', 'opponent'].includes(goal.side) || typeof goal.id !== 'string' ||
+              typeof goal.player !== 'string' || !/^\d{1,3}(\+\d{1,2})?$/.test(String(goal.minute))) continue;
+          events.set(goal.id, goal);
+        }
+      }
+      return [...events.values()].sort((a,b) => String(a.minute).split('+').reduce((s,n)=>s+Number(n),0) - String(b.minute).split('+').reduce((s,n)=>s+Number(n),0));
+    }
+
+    function renderLiveGoals(timeline) {
+      const goals = readLiveGoals(timeline);
+      document.getElementById('liveGoals').innerHTML = ['mine','opponent'].map(side => {
+        const rows = goals.filter(goal => goal.side === side);
+        return `<section class="live-goal-column ${side}"><h3>${side === 'mine' ? '내 팀 득점' : '상대 팀 득점'}</h3>${rows.length
+          ? '<ul>' + rows.map(goal => `<li><span aria-hidden="true">⚽</span><time>${escapeHtml(String(goal.minute))}′</time><span>${escapeHtml(goal.player)}</span></li>`).join('') + '</ul>'
+          : '<p>인식된 득점 기록 없음</p>'}</section>`;
+      }).join('');
+    }
+
     async function loadLiveStatus() {
       if (!currentUser) return;
 
       // 프로그램이 업로드하는 실제 테이블(player_stats)을 기준으로 실시간 화면을 갱신합니다.
       const { data, error } = await supabaseClient
         .from('player_stats')
-        .select('username, ingame_left_score, ingame_right_score, ingame_opponent_nickname, opponent_nickname, ingame_match_time, updated_at')
+        .select('username, ingame_left_score, ingame_right_score, ingame_opponent_nickname, opponent_nickname, ingame_match_time, match_timeline, updated_at')
         .eq('username', currentUser.username)
         .order('updated_at', { ascending: false })
         .limit(1);
 
       const state = document.getElementById('liveState');
       if (error) {
+        document.getElementById('liveGoals').replaceChildren();
         state.innerText = '실시간 데이터 오류: ' + error.message;
         return;
       }
       if (!data || data.length === 0) {
+        document.getElementById('liveGoals').replaceChildren();
         state.innerText = '아직 프로그램에서 올라온 실시간 데이터가 없습니다.';
         return;
       }
 
       const live = data[0];
+      renderLiveGoals(live.match_timeline);
       const leftScore = live.ingame_left_score ?? '-';
       const rightScore = live.ingame_right_score ?? '-';
       const opponent = live.ingame_opponent_nickname || live.opponent_nickname || '상대 OCR 대기';
@@ -5395,6 +5424,15 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 </script>
 
 <style id="waggu-today-ranking-toggle-style">
+#liveGoals { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; margin-top: 16px; }
+#liveGoals:empty { display: none; }
+#liveGoals .live-goal-column { min-width: 0; padding-top: 10px; border-top: 1px solid #354039; }
+#liveGoals h3 { margin: 0 0 10px; font-size: 14px; letter-spacing: 0; color: #80e6c4; }
+#liveGoals .opponent h3 { color: #f0adba; }
+#liveGoals ul { list-style: none; padding: 0; margin: 0; }
+#liveGoals li { display: grid; grid-template-columns: 20px 44px minmax(0,1fr); gap: 6px; padding: 6px 0; font-size: 13px; overflow-wrap: anywhere; }
+#liveGoals p { color: #9aa7b6; font-size: 12px; }
+@media(max-width: 420px) { #liveGoals { gap: 10px; } #liveGoals li { grid-template-columns: 16px 32px minmax(0,1fr); gap: 3px; font-size: 12px; } }
 #todayRankingHeading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 #todayRankingToggle { width: auto !important; min-height: 32px; margin: 0 0 0 6px !important; padding: 5px 10px !important; border: 1px solid #53695d !important; border-radius: 6px !important; background: #202b26 !important; color: #c4ecdb !important; font-size: 12px !important; line-height: 1.4; letter-spacing: 0; white-space: nowrap; cursor: pointer; }
 #todayRankingToggle:hover { background: #304238 !important; }
