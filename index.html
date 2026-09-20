@@ -1860,17 +1860,6 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 }
 </style>
 
-
-<style>
-#recentMatchDetailList .match-mine-goals {
-  text-align: left !important;
-  white-space: normal !important;
-  line-height: 1.55 !important;
-  color: #e7eee9 !important;
-  font-weight: 850 !important;
-}
-</style>
-
 </head>
 <body>
   <main>
@@ -2068,7 +2057,6 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
               <th>시간</th>
               <th>상대</th>
               <th>결과</th>
-              <th>우리 팀 득점</th>
               <th>점수변동</th>
             </tr>
           </thead>
@@ -3653,61 +3641,6 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       return output;
     }
 
-
-    function storedMineGoals(row) {
-      const candidates = [
-        row?.goal_events,
-        row?.match_timeline,
-        row?.timeline,
-        row?.goals
-      ];
-
-      const collected = new Map();
-
-      function addGoal(goal) {
-        if (!goal || String(goal.side || '').toLowerCase() !== 'mine') return;
-        const player = String(goal.player || goal.scorer || goal.name || '').trim();
-        const minute = String(goal.minute ?? goal.time ?? '').replace(/[′']/g, '').trim();
-        if (!player) return;
-        const key = String(goal.id || `${minute}|${player}`);
-        collected.set(key, { player, minute });
-      }
-
-      for (let value of candidates) {
-        if (!value) continue;
-        try {
-          if (typeof value === 'string') value = JSON.parse(value);
-        } catch (_) {
-          continue;
-        }
-
-        if (!Array.isArray(value)) continue;
-
-        for (const item of value) {
-          if (Array.isArray(item?.goal_events)) {
-            item.goal_events.forEach(addGoal);
-          } else {
-            addGoal(item);
-          }
-        }
-      }
-
-      const goals = [...collected.values()].sort((a, b) => {
-        const toNum = v => {
-          const m = String(v || '').match(/\d+/);
-          return m ? Number(m[0]) : 999;
-        };
-        return toNum(a.minute) - toNum(b.minute);
-      });
-
-      if (!goals.length) return '<span class="muted">-</span>';
-
-      return goals.map(goal => {
-        const minute = goal.minute ? ` ${escapeHtml(goal.minute)}′` : '';
-        return `⚽ ${escapeHtml(goal.player)}${minute}`;
-      }).join('<br>');
-    }
-
     async function loadRecentMatchDetails() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentMatchDetailList');
@@ -3715,20 +3648,20 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
       const { data, error } = await supabaseClient
         .from('game_history')
-        .select('*')
+        .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
         .eq('username', currentUser.username)
         .in('result', ['win', 'draw', 'loss'])
         .order('created_at', { ascending: false })
         .limit(25);
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="5">오류: ${escapeHtml(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4">오류: ${escapeHtml(error.message)}</td></tr>`;
         return;
       }
 
       const rows = dedupeMatchDetails(data || [], 10);
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="5">최근 경기 상세 기록이 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
       }
 
@@ -3739,7 +3672,6 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
             <td>${matchDetailDate(row.created_at)}</td>
             <td>${escapeHtml(opponent)}</td>
             <td>${resultLabel(row.result)}</td>
-            <td class="match-mine-goals">${storedMineGoals(row)}</td>
             <td>${scoreChangeText(row.score_change)}</td>
           </tr>
         `;
