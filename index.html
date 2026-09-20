@@ -1860,16 +1860,6 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 }
 </style>
 
-
-<style id="waggu-match-score-goals">
-#recentMatchDetailList .match-final-score { font-weight: 950; color: var(--mo-strong, #fff) !important; }
-#recentMatchDetailList .match-mine-goals { white-space: normal !important; min-width: 250px; text-align: left !important; }
-.goal-chip { display: inline-block; margin: 2px 5px 2px 0; color: #dffdf5; font-weight: 850; }
-.goal-chip b { color: var(--mo-gold, #d9b96f); font-weight: 950; }
-@media (max-width: 640px) {
-  #recentMatchDetailList .match-mine-goals { min-width: 0; }
-}
-</style>
 </head>
 <body>
   <main>
@@ -2067,8 +2057,6 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
               <th>시간</th>
               <th>상대</th>
               <th>결과</th>
-              <th>스코어</th>
-              <th>우리 팀 득점</th>
               <th>점수변동</th>
             </tr>
           </thead>
@@ -3653,57 +3641,6 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       return output;
     }
 
-    function matchFinalScore(row) {
-      const mine = row?.my_score ?? row?.mine_score ?? row?.final_my_score ?? row?.left_score ?? row?.ingame_left_score;
-      const opp = row?.opponent_score ?? row?.opp_score ?? row?.final_opponent_score ?? row?.right_score ?? row?.ingame_right_score;
-      if (mine !== null && mine !== undefined && mine !== '' && opp !== null && opp !== undefined && opp !== '') {
-        return `${mine} : ${opp}`;
-      }
-      const text = row?.final_score ?? row?.match_score ?? row?.scoreline;
-      return text ? String(text) : '-';
-    }
-
-    function normalizeStoredGoals(value) {
-      if (!value) return [];
-      let parsed = value;
-      if (typeof parsed === 'string') {
-        try { parsed = JSON.parse(parsed); } catch (_) { return []; }
-      }
-      if (Array.isArray(parsed)) {
-        // goal_events / my_goals가 바로 배열인 경우
-        if (parsed.some(item => item && (item.player || item.scorer))) return parsed;
-        // match_timeline처럼 sample 안에 goal_events가 있는 경우
-        const merged = new Map();
-        for (const sample of parsed) {
-          for (const goal of (Array.isArray(sample?.goal_events) ? sample.goal_events : [])) {
-            const id = goal?.id || `${goal?.side}|${goal?.minute}|${goal?.player}`;
-            if (goal) merged.set(id, goal);
-          }
-        }
-        return [...merged.values()];
-      }
-      return [];
-    }
-
-    function matchMineGoals(row) {
-      const source = row?.my_goals ?? row?.mine_goals ?? row?.goal_events ?? row?.match_timeline;
-      const goals = normalizeStoredGoals(source)
-        .filter(goal => !goal?.side || goal.side === 'mine')
-        .filter(goal => (goal?.player || goal?.scorer) && goal?.minute !== undefined && goal?.minute !== null);
-      if (!goals.length) return '<span class="muted">-</span>';
-
-      const byPlayer = new Map();
-      for (const goal of goals) {
-        const player = String(goal.player || goal.scorer).trim();
-        const minute = String(goal.minute).replace(/[′']/g, '');
-        if (!byPlayer.has(player)) byPlayer.set(player, []);
-        if (!byPlayer.get(player).includes(minute)) byPlayer.get(player).push(minute);
-      }
-      return [...byPlayer.entries()].map(([player, minutes]) =>
-        `<span class="goal-chip">⚽ ${escapeHtml(player)} <b>${minutes.map(m => `${escapeHtml(m)}′`).join(', ')}</b></span>`
-      ).join(' ');
-    }
-
     async function loadRecentMatchDetails() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentMatchDetailList');
@@ -3711,34 +3648,30 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
       const { data, error } = await supabaseClient
         .from('game_history')
-        .select('*')
+        .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
         .eq('username', currentUser.username)
         .in('result', ['win', 'draw', 'loss'])
         .order('created_at', { ascending: false })
         .limit(25);
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="6">오류: ${escapeHtml(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4">오류: ${escapeHtml(error.message)}</td></tr>`;
         return;
       }
 
       const rows = dedupeMatchDetails(data || [], 10);
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="6">최근 경기 상세 기록이 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
       }
 
       tbody.innerHTML = rows.map(row => {
         const opponent = row.opponent_nickname || '상대 미확인';
-        const score = matchFinalScore(row);
-        const goals = matchMineGoals(row);
         return `
           <tr>
             <td>${matchDetailDate(row.created_at)}</td>
             <td>${escapeHtml(opponent)}</td>
             <td>${resultLabel(row.result)}</td>
-            <td class="match-final-score">${escapeHtml(score)}</td>
-            <td class="match-mine-goals">${goals}</td>
             <td>${scoreChangeText(row.score_change)}</td>
           </tr>
         `;
@@ -4761,7 +4694,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           .order('created_at', { ascending: false }),
         supabaseClient
           .from('game_history')
-          .select('*')
+          .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
           .eq('username', nickname)
           .in('result', ['win', 'draw', 'loss'])
           .order('created_at', { ascending: false })
