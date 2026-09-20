@@ -5638,42 +5638,6 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     else check();
   })();
 </script>
-<style id="waggu-ui-redesign">
-:root{--app-bg:#090b11;--panel:#171b26;--panel2:#1d2230;--line:rgba(255,255,255,.085);--txt:#f5f6fa;--muted:#929bad;--purple:#7565dd;--purple2:#9a76ef;--green:#6ed9a7;--red:#ff7187}
-body{background:radial-gradient(circle at 50% -10%,rgba(117,101,221,.16),transparent 34%),var(--app-bg)!important;color:var(--txt)!important}
-#dashboard{max-width:1180px!important;margin:auto!important;padding:16px 18px 70px!important}
-#dashboard>.topbar{background:transparent!important;border:0!important;box-shadow:none!important}
-#moondoTabs{position:sticky;top:7px;z-index:90;display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:7px!important;padding:7px!important;margin:8px 0 22px!important;border:1px solid var(--line)!important;border-radius:18px!important;background:rgba(15,18,26,.9)!important;backdrop-filter:blur(16px)}
-#moondoTabs .moondo-tab{min-height:43px!important;border:0!important;border-radius:12px!important;background:transparent!important;color:#9299a9!important;font-weight:900!important}
-#moondoTabs .moondo-tab.active{background:linear-gradient(135deg,#7668d5,#5f4a9b)!important;color:#fff!important;box-shadow:inset 0 1px rgba(255,255,255,.16),0 8px 22px rgba(74,54,150,.2)!important}
-#dashboard h2{margin:25px 2px 12px!important;font-size:18px!important;color:#f5f6fa!important;letter-spacing:-.03em!important}
-#dashboard h2:before,.wg-title:before{content:"";display:inline-block;width:5px;height:18px;margin-right:9px;vertical-align:-3px;border-radius:8px;background:linear-gradient(#9b76ef,#86adff)}
-.wg-hero{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin:0 0 22px}
-.wg-hero-card{min-height:112px;padding:19px;border:1px solid rgba(255,255,255,.09);border-radius:19px;background:linear-gradient(145deg,#7165d7,#62489e);box-shadow:inset 0 1px rgba(255,255,255,.15),0 15px 32px rgba(70,48,150,.18)}
-.wg-label{font-size:12px;color:rgba(255,255,255,.72);font-weight:850}.wg-value{margin-top:13px;font-size:29px;line-height:1.05;color:white;font-weight:950;letter-spacing:-.04em}
-.wg-title{margin:25px 2px 11px;font-size:18px;font-weight:950}
-.wg-records{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:20px}.wg-record{padding:17px;min-height:82px;border:1px solid var(--line);border-radius:17px;background:linear-gradient(145deg,#1c2130,#151923)}.wg-record span{display:block;color:var(--muted);font-size:12px;font-weight:850}.wg-record strong{display:block;margin-top:8px;font-size:20px;color:#f6f7fb}
-#dashboard .card,#dashboard .panel,#dashboard .live-card,#dashboard .ranking-wrap,#dashboard .table-wrap{background:linear-gradient(145deg,rgba(29,34,47,.97),rgba(20,24,34,.97))!important;border:1px solid var(--line)!important;border-radius:18px!important;box-shadow:0 12px 28px rgba(0,0,0,.15)!important}
-#liveGoals{grid-template-columns:1fr!important}#liveGoals .opponent{display:none!important}#liveGoals .live-goal-column{border-top:1px solid var(--line)!important}
-#recentMatchDetailList .match-mine-goals{color:#e8e2ff!important}
-#rankingList tr:hover,#weeklyRankingList tr:hover{background:rgba(117,101,221,.08)!important}
-@media(max-width:760px){#dashboard{padding:9px 9px 76px!important}#moondoTabs{top:4px;margin-bottom:16px!important;border-radius:15px!important}#moondoTabs .moondo-tab{font-size:10.5px!important;min-height:39px!important;padding:0 3px!important}.wg-hero{gap:7px}.wg-hero-card{min-height:92px;padding:13px 8px;text-align:center;border-radius:15px}.wg-label{font-size:10.5px}.wg-value{font-size:20px;margin-top:10px}.wg-records{gap:7px}.wg-record{padding:12px 7px;min-height:70px;text-align:center;border-radius:14px}.wg-record strong{font-size:16px}#dashboard h2,.wg-title{font-size:16px!important}}
-</style>
-<script id="waggu-ui-redesign-script">
-(function(){
- function ready(f){document.readyState==='loading'?document.addEventListener('DOMContentLoaded',f):f()}
- function get(ids,f='-'){for(const id of ids){const e=document.getElementById(id);if(e&&e.textContent.trim()&&!/^[-–—]+$/.test(e.textContent.trim()))return e.textContent.trim()}return f}
- function sync(){const m=[['wgScore',['currentScore','liveScore','scoreValue','score']],['wgRank',['currentRank','liveRank','rankValue','rank']],['wgTier',['currentTier','liveTier','tierValue','tier']],['wgBestScore',['peakScore','bestScore','highestScore']],['wgBestRank',['peakRank','bestRank','highestRank']],['wgBestTier',['peakTier','bestTier','highestTier']]];m.forEach(([a,b])=>{const e=document.getElementById(a);if(e)e.textContent=get(b,e.textContent||'-')})}
- function init(){
-  const d=document.getElementById('dashboard'),tabs=document.getElementById('moondoTabs');if(!d||!tabs)return;
-  if(!tabs.querySelector('[data-tab="search"]')){const b=document.createElement('button');b.type='button';b.className='moondo-tab';b.dataset.tab='search';b.textContent='전적 검색';tabs.appendChild(b)}
-  if(!document.getElementById('wgHero')){const h=document.createElement('section');h.id='wgHero';h.className='wg-hero';h.innerHTML='<div class="wg-hero-card"><div class="wg-label">현재 점수</div><div class="wg-value" id="wgScore">-</div></div><div class="wg-hero-card"><div class="wg-label">현재 순위</div><div class="wg-value" id="wgRank">-</div></div><div class="wg-hero-card"><div class="wg-label">현재 등급</div><div class="wg-value" id="wgTier">-</div></div>';tabs.after(h);const t=document.createElement('div');t.id='wgBestTitle';t.className='wg-title';t.textContent='최고 기록';h.after(t);const r=document.createElement('section');r.id='wgBest';r.className='wg-records';r.innerHTML='<div class="wg-record"><span>최고 점수</span><strong id="wgBestScore">-</strong></div><div class="wg-record"><span>최고 순위</span><strong id="wgBestRank">-</strong></div><div class="wg-record"><span>최고 등급</span><strong id="wgBestTier">-</strong></div>';t.after(r)}
-  let g='home';[...d.children].forEach(e=>{if(e.id==='moondoTabs'||e.classList.contains('topbar')||e.classList.contains('footer-actions'))return;if(['wgHero','wgBestTitle','wgBest'].includes(e.id)){e.dataset.wg='home';return}if(e.tagName==='H2'){const s=e.textContent.trim();g=/검색/.test(s)?'search':(/랭킹|통계|주간|승률/.test(s)?'stats':'home')}e.dataset.wg=g});
-  function show(g){tabs.querySelectorAll('.moondo-tab').forEach(b=>b.classList.toggle('active',(b.dataset.tab||'home')===g));d.querySelectorAll(':scope>[data-wg]').forEach(e=>e.style.display=e.dataset.wg===g?'':'none');d.querySelectorAll(':scope>[data-tab-group]').forEach(e=>{if(e.dataset.tabGroup!=='always'&&['home','stats','search'].includes(e.dataset.tabGroup))e.style.display=e.dataset.tabGroup===g?'':'none'})}
-  tabs.addEventListener('click',e=>{const b=e.target.closest('.moondo-tab');if(b)show(b.dataset.tab||'home')});show('home');sync();setInterval(sync,1500)
- } ready(init)
-})();
-</script>
 </body>
 </html>
 
