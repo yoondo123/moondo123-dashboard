@@ -2058,6 +2058,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
               <th>상대</th>
               <th>결과</th>
               <th>점수변동</th>
+              <th>스코어 (나 : 상대)</th>
+              <th>우리 팀 득점</th>
             </tr>
           </thead>
           <tbody id="recentMatchDetailList"></tbody>
@@ -2312,6 +2314,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
                     <th>상대</th>
                     <th>결과</th>
                     <th>점수변동</th>
+                    <th>스코어 (나 : 상대)</th>
+                    <th>우리 팀 득점</th>
                   </tr>
                 </thead>
                 <tbody id="searchRecentMatchDetailList"></tbody>
@@ -3641,6 +3645,45 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       return output;
     }
 
+    function matchHistoryExtraCells(row) {
+      let detail = row.match_details;
+      if (typeof detail === 'string') {
+        try { detail = JSON.parse(detail); } catch (_) { detail = null; }
+      }
+      const number = value => Number.isInteger(value) && value >= 0 && value <= 30;
+      const score = detail?.score_source === 'end_screen' && number(detail?.score?.mine) && number(detail?.score?.opponent)
+        ? detail.score : null;
+      let scoreText = score ? `${score.mine} : ${score.opponent}` : '미기록';
+      let decision = '';
+      if (detail?.decision === 'shootout') {
+        const pk = detail.penalty;
+        const valid = score && score.mine === score.opponent && number(pk?.mine) && number(pk?.opponent) && pk.mine !== pk.opponent;
+        decision = valid ? `승부차기 ${pk.mine} : ${pk.opponent} ${pk.mine > pk.opponent ? '승' : '패'}` : '승부차기 · 점수 미확인';
+      } else if (detail?.decision === 'forfeit_loss') decision = '몰수패';
+      else if (detail?.decision === 'forfeit_win') decision = '몰수승';
+      const seen = new Set();
+      let goals = (Array.isArray(detail?.goals) ? detail.goals : []).filter(goal => {
+        if (!goal || goal.side !== 'mine' || typeof goal.player !== 'string' || !/[가-힣A-Za-z]/.test(goal.player) || goal.player.length > 50
+          || !/^\d{1,3}(?:\+\d{1,2})?$/.test(String(goal.minute))) return false;
+        const key = `${goal.player}|${goal.minute}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      if (score && goals.length > score.mine) goals = [];
+      goals.sort((a, b) => {
+        const minute = g => String(g.minute).split('+').reduce((sum, value) => sum + Number(value), 0);
+        return minute(a) - minute(b);
+      });
+      let goalText = score?.mine === 0 ? '득점 없음' : '인식된 득점 기록 없음';
+      if (goals.length) {
+        goalText = goals.map(g => `<span class="match-goal">${escapeHtml(g.player)} ${escapeHtml(String(g.minute))}′</span>`).join('');
+        if (score && goals.length < score.mine) goalText += `<small>미인식 ${score.mine - goals.length}골</small>`;
+      }
+      return `<td class="match-final-score"><span class="match-cell-caption">나 : 상대</span><strong>${scoreText}</strong>${decision ? `<small>${decision}</small>` : ''}</td>
+        <td class="match-own-goals"><span class="match-cell-caption">우리 팀 득점</span>${goalText}</td>`;
+    }
+
     async function loadRecentMatchDetails() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentMatchDetailList');
@@ -3648,20 +3691,20 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
       const { data, error } = await supabaseClient
         .from('game_history')
-        .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
+        .select('*')
         .eq('username', currentUser.username)
         .in('result', ['win', 'draw', 'loss'])
         .order('created_at', { ascending: false })
         .limit(25);
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="4">오류: ${escapeHtml(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6">오류: ${escapeHtml(error.message)}</td></tr>`;
         return;
       }
 
       const rows = dedupeMatchDetails(data || [], 10);
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="4">최근 경기 상세 기록이 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
       }
 
@@ -3673,6 +3716,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
             <td>${escapeHtml(opponent)}</td>
             <td>${resultLabel(row.result)}</td>
             <td>${scoreChangeText(row.score_change)}</td>
+            ${matchHistoryExtraCells(row)}
           </tr>
         `;
       }).join('');
@@ -4638,7 +4682,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       ? dedupeMatchDetails(rows || [], 10)
       : (rows || []).slice(0, 10);
     if (!detailRows.length) {
-      tbody.innerHTML = '<tr><td colspan="4">최근 경기 상세 기록이 없습니다.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6">최근 경기 상세 기록이 없습니다.</td></tr>';
       return;
     }
 
@@ -4654,6 +4698,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <td>${typeof escapeHtml === 'function' ? escapeHtml(opponent) : opponent}</td>
           <td>${result}</td>
           <td>${delta}</td>
+          ${matchHistoryExtraCells(row)}
         </tr>
       `;
     }).join('');
@@ -4694,7 +4739,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           .order('created_at', { ascending: false }),
         supabaseClient
           .from('game_history')
-          .select('result, created_at, opponent_nickname, score_change, score_after, rank_after, tier')
+          .select('*')
           .eq('username', nickname)
           .in('result', ['win', 'draw', 'loss'])
           .order('created_at', { ascending: false })
@@ -4926,6 +4971,12 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 </style>
 
 <style id="waggu-recent-match-compact-mobile">
+.match-final-score, .match-own-goals { white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
+.match-final-score { min-width: 120px; }
+.match-own-goals { min-width: 160px; max-width: 310px; }
+.match-final-score small, .match-own-goals small, .match-goal { display: block; }
+.match-final-score small, .match-own-goals small { color: #abb5be; font-weight: 500; }
+.match-cell-caption { display: none; }
 @media (max-width: 760px) {
   #dashboard h2:has(+ .table-wrap #recentMatchDetailList) { margin: 14px 0 6px !important; font-size: 14px !important; line-height: 1.1 !important; }
   #dashboard h2:has(+ .table-wrap #recentMatchDetailList)::before { width: 4px !important; height: 15px !important; }
@@ -4963,6 +5014,14 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
   #recentMatchDetailList td[colspan]:nth-child(n),
   #searchRecentMatchDetailList td[colspan],
   #searchRecentMatchDetailList td[colspan]:nth-child(n) { grid-column: 1 / -1 !important; text-align: center !important; padding: 6px !important; }
+  #recentMatchDetailList td.match-final-score, #searchRecentMatchDetailList td.match-final-score,
+  #recentMatchDetailList td.match-own-goals, #searchRecentMatchDetailList td.match-own-goals {
+    grid-column: 1 / -1 !important; white-space: normal !important; overflow: visible !important;
+    max-width: none !important; line-height: 1.6 !important; font-size: 12px !important;
+    padding-top: 5px !important; text-align: left !important; font-weight: 500 !important;
+  }
+  .match-cell-caption { display: inline-block; color: #abb5be; margin-right: 10px; font-size: 11px; }
+  .match-final-score small { display: inline; margin-left: 10px; }
 }
 </style>
 
