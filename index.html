@@ -2537,7 +2537,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       back.style.cssText = 'display:inline-block;padding:10px 0;color:#80e6c4;font-size:13px';
       toolbar?.appendChild(back);
       // Apply after the existing tab initializers, without changing login identity.
-      queueMicrotask(() => document.querySelector('[data-tab="home"]')?.click());
+      requestAnimationFrame(() => document.querySelector('[data-tab="home"]')?.click());
     });
 
     const KST_TIME_ZONE = 'Asia/Seoul';
@@ -3978,8 +3978,16 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     function recentRankMovement(currentRow) {
-      const after = gameRankAfter(currentRow);
-      const before = firstValidRank(currentRow?.rank_before);
+      let detail = currentRow?.match_details;
+      if (typeof detail === 'string') {
+        try { detail = JSON.parse(detail); } catch (_) { detail = null; }
+      }
+      const pair = detail?.rank_observation;
+      const verified = pair?.source === 'match_lobby_ocr' &&
+        Number.isFinite(pair.before_at) && Number.isFinite(pair.after_at) &&
+        pair.after_at > pair.before_at && pair.after_at - pair.before_at <= 7200;
+      const after = verified ? firstValidRank(pair.after) : gameRankAfter(currentRow);
+      const before = verified ? firstValidRank(pair.before) : firstValidRank(currentRow?.rank_before);
       // Adjacent history rows may contain cached ranks from different times.
       // Only compare the before/after pair recorded for this match itself.
       if (!Number.isInteger(after) || !Number.isInteger(before)) {
@@ -4146,7 +4154,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       const streakBadge = showDashboardExtras ? getRankingStreak(row) : '';
       const fcInfoUrl = `https://fc-info.com/coach/${encodeURIComponent(username)}#director`;
       const recordButton = `<button type="button" class="ranking-record-button" data-username="${safeUsername}" title="${safeUsername} 전적 보기" onclick="event.preventDefault();event.stopPropagation();window.openPlayerRecord(this.dataset.username)">전적</button>`;
-      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" target="_blank" rel="noopener noreferrer" title="FC INFO에서 ${safeUsername} 보기">${safeUsername}</a>${showDashboardExtras ? recordButton : ''}${streakBadge}`;
+      return `${liveDot}<a class="ranking-username ranking-username-link" href="${fcInfoUrl}" target="_blank" rel="noopener noreferrer" title="FC INFO에서 ${safeUsername} 보기">${safeUsername}</a>${recordButton}${streakBadge}`;
     }
 
     let todayRankingMode = 'rate';
@@ -4666,6 +4674,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     groupByAnchor('#formDots', 'home');
     groupByAnchor('#rankingList', 'stats');
     groupByAnchor('#recentMatchDetailList', 'home');
+    setGroup(dashboard.querySelector('.dashboard-performance-grid'), 'home');
     groupByAnchor('#weekMatches', 'stats');
     groupByAnchor('#weeklyRankingList', 'stats');
     groupByAnchor('#recentList', 'stats');
