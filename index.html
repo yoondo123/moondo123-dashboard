@@ -3651,15 +3651,15 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         try { detail = JSON.parse(detail); } catch (_) { detail = null; }
       }
       const number = value => Number.isInteger(value) && value >= 0 && value <= 30;
-      const score = detail?.score_source === 'end_screen' && number(detail?.score?.mine) && number(detail?.score?.opponent)
+      const score = ['end_screen', 'live_timeline', 'live_history'].includes(detail?.score_source) && number(detail?.score?.mine) && number(detail?.score?.opponent)
         ? detail.score : null;
+      const resultOnly = ['shootout', 'result_only'].includes(detail?.decision);
+      const outcome = { win: '승', draw: '무', loss: '패' }[row.result || detail?.outcome] || '결과 미확인';
       let scoreText = score ? `${score.mine} : ${score.opponent}` : '미기록';
       let decision = '';
-      if (detail?.decision === 'shootout') {
-        const pk = detail.penalty;
-        const valid = score && score.mine === score.opponent && number(pk?.mine) && number(pk?.opponent) && pk.mine !== pk.opponent;
-        decision = valid ? `승부차기 ${pk.mine} : ${pk.opponent} ${pk.mine > pk.opponent ? '승' : '패'}` : '승부차기 · 점수 미확인';
-      } else if (detail?.decision === 'forfeit_loss') decision = '몰수패';
+      if (resultOnly) scoreText = outcome;
+      else if (score && detail.score_source !== 'end_screen') decision = '마지막 인식 점수';
+      else if (detail?.decision === 'forfeit_loss') decision = '몰수패';
       else if (detail?.decision === 'forfeit_win') decision = '몰수승';
       const seen = new Set();
       let goals = (Array.isArray(detail?.goals) ? detail.goals : []).filter(goal => {
@@ -3670,17 +3670,17 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         seen.add(key);
         return true;
       });
-      if (score && goals.length > score.mine) goals = [];
+      if (score && detail?.score_source === 'end_screen' && !resultOnly && goals.length > score.mine) goals = [];
       goals.sort((a, b) => {
         const minute = g => String(g.minute).split('+').reduce((sum, value) => sum + Number(value), 0);
         return minute(a) - minute(b);
       });
-      let goalText = score?.mine === 0 ? '득점 없음' : '인식된 득점 기록 없음';
+      let goalText = score?.mine === 0 && !resultOnly ? '득점 없음' : '인식된 득점 기록 없음';
       if (goals.length) {
         goalText = goals.map(g => `<span class="match-goal">${escapeHtml(g.player)} ${escapeHtml(String(g.minute))}′</span>`).join('');
-        if (score && goals.length < score.mine) goalText += `<small>미인식 ${score.mine - goals.length}골</small>`;
+        if (score && !resultOnly && goals.length < score.mine) goalText += `<small>미인식 ${score.mine - goals.length}골</small>`;
       }
-      return `<td class="match-final-score"><span class="match-cell-caption">나 : 상대</span><strong>${scoreText}</strong>${decision ? `<small>${decision}</small>` : ''}</td>
+      return `<td class="match-final-score"><span class="match-cell-caption">${resultOnly ? '결과' : '나 : 상대'}</span><strong>${scoreText}</strong>${decision ? `<small>${decision}</small>` : ''}</td>
         <td class="match-own-goals"><span class="match-cell-caption">우리 팀 득점</span>${goalText}</td>`;
     }
 
