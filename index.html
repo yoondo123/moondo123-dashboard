@@ -6389,3 +6389,232 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
   else removeLifetimeSection();
 })();
 </script>
+
+
+<style id="waggu-mobile-today-summary-v2">
+@media (max-width: 640px) {
+  #dashboard .dashboard-today-block .today-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat {
+    grid-column: auto !important;
+    min-height: 82px !important;
+    padding: 11px 11px 10px !important;
+    border-radius: 14px !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(2),
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(3),
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(4),
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(5) {
+    display: none !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(1) {
+    min-height: 98px !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(1) .muted,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) .muted,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(7) .muted,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(8) .muted {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(1) strong {
+    margin-top: 6px !important;
+    font-size: 32px !important;
+    line-height: 1 !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) strong,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(7) strong,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(8) strong {
+    margin-top: 7px !important;
+    font-size: 24px !important;
+    line-height: 1.04 !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(7) strong,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(8) strong {
+    font-size: 22px !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) strong {
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+    word-break: keep-all !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(1) small,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) small,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(7) small,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(8) small {
+    margin-top: 4px !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    color: #9eafb8 !important;
+  }
+  #dashboard .today-mobile-record-box {
+    margin-top: 6px !important;
+    display: grid !important;
+    gap: 6px !important;
+  }
+  #dashboard .today-mobile-record-line {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+  }
+  #dashboard .today-mobile-record-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 34px !important;
+    height: 22px !important;
+    padding: 0 8px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255,255,255,.09) !important;
+    background: rgba(255,255,255,.04) !important;
+    color: #edf5f7 !important;
+    font-size: 10px !important;
+    font-weight: 950 !important;
+    line-height: 1 !important;
+  }
+  #dashboard .today-mobile-record-pill.win { color: #7fffe8 !important; border-color: rgba(57,244,211,.22) !important; background: rgba(57,244,211,.10) !important; }
+  #dashboard .today-mobile-record-pill.draw { color: #dbe5ea !important; border-color: rgba(177,188,194,.18) !important; background: rgba(177,188,194,.10) !important; }
+  #dashboard .today-mobile-record-pill.loss { color: #ff98a1 !important; border-color: rgba(226,93,104,.20) !important; background: rgba(226,93,104,.10) !important; }
+  #dashboard .today-mobile-record-meta {
+    color: #b8c6cd !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+  }
+  #dashboard .today-mobile-tier-meta {
+    display: block !important;
+    margin-top: 4px !important;
+    color: #ffd77f !important;
+    font-size: 10px !important;
+    font-weight: 850 !important;
+    line-height: 1.2 !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) small {
+    display: none !important;
+  }
+
+  /* recent 10 cards more compact */
+  #dashboard #recentMatchDetailList {
+    gap: 7px !important;
+  }
+  #dashboard #recentMatchDetailList tr {
+    padding: 10px !important;
+    gap: 6px 6px !important;
+    border-radius: 14px !important;
+  }
+  #dashboard #recentMatchDetailList .recent-opponent {
+    font-size: 13px !important;
+    line-height: 1.18 !important;
+  }
+  #dashboard #recentMatchDetailList .recent-time {
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+  #dashboard .result-pill {
+    min-width: 30px !important;
+    height: 24px !important;
+    padding: 0 8px !important;
+    font-size: 10px !important;
+  }
+  #dashboard .score-delta {
+    min-width: 42px !important;
+    height: 24px !important;
+    padding: 0 7px !important;
+    font-size: 10px !important;
+  }
+  #dashboard .match-cell-caption {
+    min-width: 46px !important;
+    font-size: 9px !important;
+  }
+  #dashboard .match-final-score strong {
+    min-width: 40px !important;
+    padding: 3px 7px !important;
+    font-size: 12px !important;
+  }
+  #dashboard .match-final-score small {
+    font-size: 9px !important;
+  }
+  #dashboard .match-goal-list {
+    gap: 5px !important;
+  }
+  #dashboard .match-goal {
+    padding: 4px 7px !important;
+    font-size: 9.5px !important;
+    line-height: 1 !important;
+  }
+  #dashboard .match-goal-empty {
+    min-height: 24px !important;
+    padding: 0 8px !important;
+    font-size: 9.5px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(1) strong {
+    font-size: 28px !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) strong,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(7) strong,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(8) strong {
+    font-size: 20px !important;
+  }
+  #dashboard #recentMatchDetailList tr {
+    padding: 9px !important;
+  }
+}
+</style>
+<script id="waggu-mobile-today-summary-script-v2">
+(function () {
+  function textOf(id) {
+    var el = document.getElementById(id);
+    return el ? (el.textContent || '').trim() : '';
+  }
+  function syncMobileTodaySummary() {
+    var grid = document.querySelector('#dashboard .dashboard-today-block .today-grid');
+    if (!grid) return;
+    var cards = grid.querySelectorAll('.stat');
+    if (cards.length < 8) return;
+    var matchesCard = cards[0];
+    var tierCard = cards[5];
+
+    var box = matchesCard.querySelector('.today-mobile-record-box');
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'today-mobile-record-box';
+      matchesCard.appendChild(box);
+    }
+    box.innerHTML = '' +
+      '<div class="today-mobile-record-line">' +
+        '<span class="today-mobile-record-pill win">승 ' + (textOf('todayWins') || '0') + '</span>' +
+        '<span class="today-mobile-record-pill draw">무 ' + (textOf('todayDraws') || '0') + '</span>' +
+        '<span class="today-mobile-record-pill loss">패 ' + (textOf('todayLosses') || '0') + '</span>' +
+      '</div>' +
+      '<div class="today-mobile-record-meta">' + (textOf('todayWinRate') || '') + '</div>';
+
+    var tierMeta = tierCard.querySelector('.today-mobile-tier-meta');
+    if (!tierMeta) {
+      tierMeta = document.createElement('div');
+      tierMeta.className = 'today-mobile-tier-meta';
+      tierCard.appendChild(tierMeta);
+    }
+    tierMeta.textContent = 'FC 채굴량 ' + (textOf('todayFc') || '0');
+  }
+
+  function init() {
+    syncMobileTodaySummary();
+    ['todayWins','todayDraws','todayLosses','todayWinRate','todayFc','todayTier','todayMatches'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (!el) return;
+      new MutationObserver(syncMobileTodaySummary).observe(el, { childList: true, characterData: true, subtree: true });
+    });
+    setInterval(syncMobileTodaySummary, 3000);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
