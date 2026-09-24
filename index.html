@@ -1895,61 +1895,67 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         </div>
       </div>
 
-      <h2>실시간 경기</h2>
-      <div class="panel">
-        <p id="liveState" class="muted" style="margin-bottom:12px;"></p>
-        <div class="live-card">
-          <div class="live-name" id="liveUsername">-</div>
-          <div class="live-score" id="liveScore">-</div>
-          <div class="live-score" id="liveOppScore">-</div>
-          <div class="live-name" id="liveOpponent">상대 OCR 대기</div>
-          <div class="live-time" id="liveTime">시간 OCR 대기</div>
-        </div>
-        <div id="liveGoals" aria-live="polite"></div>
-      </div>
+      <div class="dashboard-top-grid" data-tab-group="home">
+        <section class="dashboard-live-block">
+          <h2>실시간 경기</h2>
+          <div class="panel dashboard-live-panel">
+            <p id="liveState" class="muted" style="margin-bottom:12px;"></p>
+            <div class="live-card">
+              <div class="live-name" id="liveUsername">-</div>
+              <div class="live-score" id="liveScore">-</div>
+              <div class="live-score" id="liveOppScore">-</div>
+              <div class="live-name" id="liveOpponent">상대 OCR 대기</div>
+              <div class="live-time" id="liveTime">시간 OCR 대기</div>
+            </div>
+            <div id="liveGoals" aria-live="polite"></div>
+          </div>
+        </section>
 
-      <h2>오늘 전적</h2>
-      <div class="today-grid">
-        <div class="stat compact">
-          <span class="muted">오늘 경기 총 수</span>
-          <strong id="todayMatches">0</strong>
-          <small id="todayWinRate">승률 0.0%</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">승</span>
-          <strong id="todayWins">0</strong>
-          <small>오늘 승리</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">무</span>
-          <strong id="todayDraws">0</strong>
-          <small>오늘 무승부</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">패</span>
-          <strong id="todayLosses">0</strong>
-          <small>오늘 패배</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">FC 채굴량</span>
-          <strong id="todayFc">0</strong>
-          <small>챔피언스 15 / 슈챔 20 FC</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">현재 티어</span>
-          <strong id="todayTier">-</strong>
-          <small id="todayPeakTier">오늘 최고티어 -</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">현재 점수</span>
-          <strong id="todayScore">0</strong>
-          <small>실시간 기준</small>
-        </div>
-        <div class="stat compact">
-          <span class="muted">현재 등수</span>
-          <strong id="todayRank">-</strong>
-          <small>실시간 기준</small>
-        </div>
+        <section class="dashboard-today-block">
+          <h2>오늘 전적</h2>
+          <div class="today-grid">
+            <div class="stat compact">
+              <span class="muted">오늘 경기 총 수</span>
+              <strong id="todayMatches">0</strong>
+              <small id="todayWinRate">승률 0.0%</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">승</span>
+              <strong id="todayWins">0</strong>
+              <small>오늘 승리</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">무</span>
+              <strong id="todayDraws">0</strong>
+              <small>오늘 무승부</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">패</span>
+              <strong id="todayLosses">0</strong>
+              <small>오늘 패배</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">FC 채굴량</span>
+              <strong id="todayFc">0</strong>
+              <small>챔피언스 15 / 슈챔 20 FC</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">현재 티어</span>
+              <strong id="todayTier">-</strong>
+              <small id="todayPeakTier">오늘 최고티어 -</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">현재 점수</span>
+              <strong id="todayScore">0</strong>
+              <small>실시간 기준</small>
+            </div>
+            <div class="stat compact">
+              <span class="muted">현재 등수</span>
+              <strong id="todayRank">-</strong>
+              <small>실시간 기준</small>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div class="today-extremes">
@@ -2025,6 +2031,37 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <span class="form-dot">-</span>
         </div>
       </div>
+
+      <section class="team-scorer-section" data-tab-group="home" aria-label="내 팀 득점 순위">
+        <div class="team-scorer-card">
+          <div class="team-scorer-head">
+            <div>
+              <h3>최근 10경기 팀 득점 TOP 5</h3>
+              <p>최근 10경기 · 인식된 내 팀 득점 기준</p>
+            </div>
+          </div>
+          <div class="team-scorer-table-head" aria-hidden="true">
+            <span>순위</span><span>선수명</span><span>득점</span><span>득점 비율</span>
+          </div>
+          <div class="team-scorer-list" id="scorer10List">
+            <div class="team-scorer-empty">득점 기록을 불러오는 중입니다.</div>
+          </div>
+        </div>
+        <div class="team-scorer-card">
+          <div class="team-scorer-head">
+            <div>
+              <h3>최근 100경기 팀 득점 TOP 5</h3>
+              <p>최근 100경기 · 인식된 내 팀 득점 기준</p>
+            </div>
+          </div>
+          <div class="team-scorer-table-head" aria-hidden="true">
+            <span>순위</span><span>선수명</span><span>득점</span><span>득점 비율</span>
+          </div>
+          <div class="team-scorer-list" id="scorer100List">
+            <div class="team-scorer-empty">득점 기록을 불러오는 중입니다.</div>
+          </div>
+        </div>
+      </section>
 
       <h2 id="todayRankingHeading"><span id="todayRankingTitle">오늘 승률 랭킹</span><button type="button" id="todayRankingToggle" aria-controls="rankingList" aria-pressed="false" onclick="toggleTodayRanking()">오늘 승리 랭킹</button></h2>
       <div class="table-wrap">
@@ -3684,6 +3721,103 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         <td class="match-own-goals"><span class="match-cell-caption">우리 팀 득점</span>${goalText}</td>`;
     }
 
+    function scorerGoalsFromHistoryRow(row) {
+      let detail = row?.match_details;
+      if (typeof detail === 'string') {
+        try { detail = JSON.parse(detail); } catch (_) { detail = null; }
+      }
+      if (!detail || !Array.isArray(detail.goals)) return [];
+
+      const validScoreNumber = value => Number.isInteger(value) && value >= 0 && value <= 30;
+      const score = ['end_screen', 'live_timeline', 'live_history'].includes(detail?.score_source)
+        && validScoreNumber(detail?.score?.mine)
+        && validScoreNumber(detail?.score?.opponent)
+        ? detail.score : null;
+      const resultOnly = ['shootout', 'result_only'].includes(detail?.decision);
+      const seen = new Set();
+      const goals = detail.goals.filter(goal => {
+        if (!goal || goal.side !== 'mine' || typeof goal.player !== 'string') return false;
+        const player = goal.player.trim();
+        if (!player || !/[가-힣A-Za-z]/.test(player) || player.length > 50) return false;
+        if (!/^\d{1,3}(?:\+\d{1,2})?$/.test(String(goal.minute))) return false;
+        const key = `${player}|${goal.minute}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      // End-screen final score보다 OCR goal event가 더 많은 비정상 케이스는 집계에서 제외합니다.
+      if (score && detail?.score_source === 'end_screen' && !resultOnly && goals.length > score.mine) return [];
+      return goals.map(goal => ({ player: goal.player.trim(), minute: String(goal.minute) }));
+    }
+
+    function aggregateTeamScorers(rows, matchLimit) {
+      const matches = dedupeMatchDetails(rows || [], matchLimit);
+      const counts = new Map();
+      matches.forEach(row => {
+        scorerGoalsFromHistoryRow(row).forEach(goal => {
+          counts.set(goal.player, (counts.get(goal.player) || 0) + 1);
+        });
+      });
+      const totalRecognizedGoals = [...counts.values()].reduce((sum, value) => sum + value, 0);
+      const ranking = [...counts.entries()]
+        .map(([player, goals]) => ({
+          player,
+          goals,
+          share: totalRecognizedGoals ? goals / totalRecognizedGoals : 0,
+        }))
+        .sort((a, b) => b.goals - a.goals || a.player.localeCompare(b.player, 'ko'))
+        .slice(0, 5);
+      return { matches: matches.length, totalRecognizedGoals, ranking };
+    }
+
+    function renderTeamScorerList(targetId, summary) {
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      const rows = summary?.ranking || [];
+      if (!rows.length) {
+        target.innerHTML = '<div class="team-scorer-empty">인식된 내 팀 득점 기록이 없습니다.</div>';
+        return;
+      }
+      const maxGoals = Math.max(...rows.map(row => row.goals), 1);
+      target.innerHTML = rows.map((row, index) => {
+        const width = Math.max(8, Math.round((row.goals / maxGoals) * 100));
+        return `<div class="team-scorer-row">
+          <span class="team-scorer-rank rank-${index + 1}">${index + 1}</span>
+          <strong class="team-scorer-name">${escapeHtml(row.player)}</strong>
+          <strong class="team-scorer-goals">${row.goals}</strong>
+          <div class="team-scorer-share"><span class="team-scorer-bar"><i style="width:${width}%"></i></span><em>${(row.share * 100).toFixed(1)}%</em></div>
+        </div>`;
+      }).join('');
+    }
+
+    async function loadTeamScorerStats() {
+      if (!currentUser) return;
+      const list10 = document.getElementById('scorer10List');
+      const list100 = document.getElementById('scorer100List');
+      if (!list10 && !list100) return;
+
+      let query = supabaseClient
+        .from('game_history')
+        .select('username, result, created_at, opponent_nickname, score_change, match_details')
+        .in('result', ['win', 'draw', 'loss']);
+      query = applyCurrentAccountFilter(query, currentUser.username);
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .limit(240);
+
+      if (error) {
+        const message = `<div class="team-scorer-empty">득점 기록 조회 오류: ${escapeHtml(error.message)}</div>`;
+        if (list10) list10.innerHTML = message;
+        if (list100) list100.innerHTML = message;
+        return;
+      }
+
+      const rows = data || [];
+      renderTeamScorerList('scorer10List', aggregateTeamScorers(rows, 10));
+      renderTeamScorerList('scorer100List', aggregateTeamScorers(rows, 100));
+    }
+
     async function loadRecentMatchDetails() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentMatchDetailList');
@@ -4073,6 +4207,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           loadRecent(),
           loadRecentMatchDetails(),
           loadRecentForm(),
+          loadTeamScorerStats(),
         ]);
         document.getElementById('lastUpdated').innerText = '마지막 갱신: ' + new Date().toLocaleString();
       }
@@ -5697,6 +5832,205 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     else check();
   })();
 </script>
+
+<style id="moondo-dashboard-personal-v3">
+/* Dashboard-only redesign. 통계/랭킹 UI는 기존 스타일/로직을 그대로 둡니다. */
+#dashboard .dashboard-top-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.18fr) minmax(420px,.92fr);
+  gap:12px;
+  align-items:stretch;
+  margin-top:14px;
+}
+#dashboard .dashboard-top-grid h2{
+  margin:0 0 9px!important;
+  font-size:16px!important;
+}
+#dashboard .dashboard-live-block,
+#dashboard .dashboard-today-block{min-width:0;display:flex;flex-direction:column;}
+#dashboard .dashboard-live-panel{flex:1;padding:13px!important;border-radius:12px!important;box-shadow:none!important;}
+#dashboard .dashboard-live-panel .live-card{
+  grid-template-columns:minmax(115px,1fr) 55px 55px minmax(95px,.8fr) 76px!important;
+  min-height:56px!important;
+  border-radius:9px!important;
+}
+#dashboard .dashboard-live-panel .live-name{padding:0 10px!important;font-size:13px!important;}
+#dashboard .dashboard-live-panel .live-score{height:56px!important;font-size:24px!important;}
+#dashboard .dashboard-live-panel .live-time{padding:0 10px!important;font-size:14px!important;}
+#dashboard .dashboard-live-panel #liveState{min-height:22px!important;margin-bottom:7px!important;padding:0 8px!important;font-size:10px!important;}
+#dashboard .dashboard-live-panel #liveGoals{margin-top:9px!important;}
+#dashboard .dashboard-live-panel .live-goal-column{padding:8px 9px!important;}
+#dashboard .dashboard-live-panel .live-goal-column h3{font-size:11px!important;}
+#dashboard .dashboard-live-panel .live-goal-column li,
+#dashboard .dashboard-live-panel .live-goal-column p{font-size:10px!important;}
+
+#dashboard .dashboard-today-block > .today-grid{
+  flex:1;
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:7px!important;
+}
+#dashboard .dashboard-today-block > .today-grid .stat,
+#dashboard .dashboard-today-block > .today-grid .stat.compact{
+  min-width:0!important;
+  min-height:76px!important;
+  height:auto!important;
+  padding:10px 10px 9px!important;
+  border-radius:10px!important;
+  box-shadow:none!important;
+}
+#dashboard .dashboard-today-block > .today-grid .stat::before{width:2px!important;}
+#dashboard .dashboard-today-block > .today-grid .stat .muted{font-size:9px!important;line-height:1.2!important;text-transform:none!important;}
+#dashboard .dashboard-today-block > .today-grid .stat strong,
+#dashboard .dashboard-today-block > .today-grid .stat.compact strong{margin-top:6px!important;font-size:20px!important;line-height:1.05!important;}
+#dashboard .dashboard-today-block > .today-grid .stat small{margin-top:5px!important;font-size:9px!important;line-height:1.2!important;color:#95a4ad!important;}
+#dashboard .dashboard-today-block #todayTier{font-size:14px!important;}
+#dashboard .dashboard-today-block #todayWins{color:#62edc8!important;}
+#dashboard .dashboard-today-block #todayDraws{color:#a8bdd5!important;}
+#dashboard .dashboard-today-block #todayLosses{color:#ff8292!important;}
+#dashboard .dashboard-today-block #todayFc{color:#ffd166!important;}
+
+/* 오늘 최고/최저는 티어·점수·등수 3개만 시각적으로 표시 */
+#dashboard > .today-extremes{margin:12px 0 0!important;gap:10px!important;}
+#dashboard > .today-extremes .today-extreme-card{padding:13px 15px!important;border-radius:11px!important;}
+#dashboard > .today-extremes .today-extreme-values{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+#dashboard > .today-extremes .today-extreme-value:nth-child(4){display:none!important;}
+#dashboard > .today-extremes .today-extreme-value{padding:0 12px!important;}
+#dashboard > .today-extremes .today-extreme-value:first-child{padding-left:0!important;}
+#dashboard > .today-extremes .today-extreme-value:nth-child(3){padding-right:0!important;}
+#dashboard > .today-extremes .today-extreme-value strong{font-size:15px!important;}
+
+/* 최근 20판은 칸 정렬을 고정해 흔들리지 않게 */
+#dashboard > .form-strip{margin:10px 0 12px!important;padding:11px 12px!important;border-radius:11px!important;}
+#dashboard > .form-strip .form-head{margin-bottom:7px!important;}
+#dashboard > .form-strip .form-title{font-size:12px!important;}
+#dashboard > .form-strip .form-summary{font-size:10px!important;}
+#dashboard > .form-strip .form-dots{display:grid!important;grid-template-columns:repeat(20,minmax(0,1fr))!important;gap:5px!important;}
+#dashboard > .form-strip .form-dot{width:100%!important;min-width:0!important;min-height:25px!important;height:25px!important;border-radius:6px!important;font-size:9px!important;}
+
+/* 개인 득점 TOP 5 */
+#dashboard .team-scorer-section{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 14px;
+}
+#dashboard .team-scorer-card{
+  min-width:0;
+  overflow:hidden;
+  border:1px solid rgba(0,224,194,.24);
+  border-radius:11px;
+  background:linear-gradient(180deg,rgba(255,255,255,.028),transparent),#0d141b;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+#dashboard .team-scorer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px 9px;border-bottom:1px solid rgba(255,255,255,.07);}
+#dashboard .team-scorer-head h3{margin:0;color:#f5faf7;font-size:14px;font-weight:950;letter-spacing:-.035em;}
+#dashboard .team-scorer-head p{margin:4px 0 0;color:#7f9099;font-size:9px;font-weight:700;}
+#dashboard .team-scorer-table-head,
+#dashboard .team-scorer-row{display:grid;grid-template-columns:44px minmax(80px,1fr) 48px minmax(150px,1.65fr);align-items:center;gap:8px;}
+#dashboard .team-scorer-table-head{padding:7px 12px;color:#71838c;font-size:9px;font-weight:850;border-bottom:1px solid rgba(255,255,255,.055);}
+#dashboard .team-scorer-table-head span:nth-child(1),
+#dashboard .team-scorer-table-head span:nth-child(3){text-align:center;}
+#dashboard .team-scorer-row{min-height:38px;padding:5px 12px;border-bottom:1px solid rgba(255,255,255,.055);}
+#dashboard .team-scorer-row:last-child{border-bottom:0;}
+#dashboard .team-scorer-rank{display:grid;place-items:center;width:25px;height:25px;margin:auto;border-radius:8px;background:#1b2731;color:#c7d2d9;font-size:10px;font-weight:950;}
+#dashboard .team-scorer-rank.rank-1{background:linear-gradient(180deg,#ffe37b,#b67e13);color:#3b2905;}
+#dashboard .team-scorer-rank.rank-2{background:linear-gradient(180deg,#f0f4f7,#7f8e99);color:#182128;}
+#dashboard .team-scorer-rank.rank-3{background:linear-gradient(180deg,#efb17f,#985629);color:#2d1608;}
+#dashboard .team-scorer-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#eef5f2;font-size:11px;font-weight:900;}
+#dashboard .team-scorer-goals{text-align:center;color:#ffffff;font-size:12px;font-weight:950;}
+#dashboard .team-scorer-share{display:grid;grid-template-columns:minmax(60px,1fr) 42px;align-items:center;gap:8px;min-width:0;}
+#dashboard .team-scorer-share em{color:#b7c7cf;font-size:10px;font-style:normal;font-weight:850;text-align:right;}
+#dashboard .team-scorer-bar{display:block;height:7px;overflow:hidden;border-radius:999px;background:#1a2a34;}
+#dashboard .team-scorer-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#00d8b6,#64f2d1);box-shadow:0 0 10px rgba(0,224,194,.24);}
+#dashboard .team-scorer-empty{padding:24px 14px;color:#83949d;font-size:11px;text-align:center;}
+
+@media (max-width: 900px){
+  #dashboard .dashboard-top-grid{grid-template-columns:1fr!important;}
+}
+
+@media (max-width: 640px){
+  #dashboard .dashboard-top-grid{display:block!important;margin-top:8px!important;}
+  #dashboard .dashboard-top-grid h2{margin:17px 0 8px!important;font-size:16px!important;}
+  #dashboard .dashboard-live-panel{padding:10px!important;}
+  #dashboard .dashboard-live-panel .live-card{
+    grid-template-columns:minmax(0,1fr) 45px 45px minmax(0,1fr)!important;
+    min-height:52px!important;
+  }
+  #dashboard .dashboard-live-panel .live-score{height:52px!important;font-size:23px!important;}
+  #dashboard .dashboard-live-panel .live-name{padding:0 7px!important;font-size:12px!important;overflow-wrap:anywhere;}
+  #dashboard .dashboard-live-panel .live-time{grid-column:1/-1!important;height:29px!important;display:grid!important;place-items:center end!important;border-top:1px solid rgba(255,255,255,.07)!important;font-size:12px!important;}
+
+  #dashboard .dashboard-today-block > .today-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-template-rows:none!important;
+    gap:7px!important;
+  }
+  #dashboard .dashboard-today-block > .today-grid .stat,
+  #dashboard .dashboard-today-block > .today-grid .stat.compact,
+  #dashboard .dashboard-today-block > .today-grid .stat:first-child,
+  #dashboard .dashboard-today-block > .today-grid .stat:nth-child(n){
+    grid-column:auto!important;
+    width:100%!important;
+    min-height:84px!important;
+    height:84px!important;
+    padding:11px 10px 9px!important;
+    border-radius:10px!important;
+    text-align:left!important;
+  }
+  #dashboard .dashboard-today-block > .today-grid .stat .muted{font-size:9.5px!important;white-space:normal!important;}
+  #dashboard .dashboard-today-block > .today-grid .stat strong,
+  #dashboard .dashboard-today-block > .today-grid .stat.compact strong,
+  #dashboard .dashboard-today-block > .today-grid .stat:first-child strong{margin-top:5px!important;font-size:22px!important;}
+  #dashboard .dashboard-today-block > .today-grid .stat small{font-size:9px!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;}
+  #dashboard .dashboard-today-block #todayTier{font-size:15px!important;line-height:1.15!important;}
+
+  #dashboard > .today-extremes{grid-template-columns:1fr!important;gap:7px!important;margin-top:10px!important;}
+  #dashboard > .today-extremes .today-extreme-card{padding:11px 12px!important;}
+  #dashboard > .today-extremes .today-extreme-values{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+  #dashboard > .today-extremes .today-extreme-value,
+  #dashboard > .today-extremes .today-extreme-value:nth-child(n){padding:0 8px!important;margin:0!important;border-top:0!important;}
+  #dashboard > .today-extremes .today-extreme-value:first-child{padding-left:0!important;}
+  #dashboard > .today-extremes .today-extreme-value:nth-child(3){padding-right:0!important;}
+  #dashboard > .today-extremes .today-extreme-value:nth-child(2),
+  #dashboard > .today-extremes .today-extreme-value:nth-child(3){border-left:1px solid rgba(255,255,255,.08)!important;}
+  #dashboard > .today-extremes .today-extreme-value span{font-size:9px!important;}
+  #dashboard > .today-extremes .today-extreme-value strong{font-size:12px!important;line-height:1.25!important;}
+
+  #dashboard > .form-strip{padding:10px!important;}
+  #dashboard > .form-strip .form-head{display:block!important;margin-bottom:8px!important;}
+  #dashboard > .form-strip .form-summary{display:block!important;margin-top:3px;max-width:none!important;text-align:left!important;font-size:9px!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;}
+  #dashboard > .form-strip .form-dots{grid-template-columns:repeat(10,minmax(0,1fr))!important;gap:5px!important;}
+  #dashboard > .form-strip .form-dot{height:24px!important;min-height:24px!important;font-size:9px!important;border-radius:5px!important;}
+
+  #dashboard .team-scorer-section{grid-template-columns:1fr!important;gap:8px!important;margin-bottom:12px!important;}
+  #dashboard .team-scorer-head{padding:10px 11px 8px;}
+  #dashboard .team-scorer-head h3{font-size:12px;}
+  #dashboard .team-scorer-head p{font-size:8.5px;}
+  #dashboard .team-scorer-table-head,
+  #dashboard .team-scorer-row{grid-template-columns:34px minmax(70px,1fr) 38px minmax(105px,1.35fr);gap:6px;}
+  #dashboard .team-scorer-table-head{padding:6px 9px;font-size:8px;}
+  #dashboard .team-scorer-row{min-height:34px;padding:4px 9px;}
+  #dashboard .team-scorer-rank{width:22px;height:22px;border-radius:7px;font-size:9px;}
+  #dashboard .team-scorer-name{font-size:10px;}
+  #dashboard .team-scorer-goals{font-size:11px;}
+  #dashboard .team-scorer-share{grid-template-columns:minmax(48px,1fr) 36px;gap:5px;}
+  #dashboard .team-scorer-share em{font-size:9px;}
+  #dashboard .team-scorer-bar{height:6px;}
+}
+
+@media (max-width: 360px){
+  #dashboard .dashboard-today-block > .today-grid .stat,
+  #dashboard .dashboard-today-block > .today-grid .stat.compact,
+  #dashboard .dashboard-today-block > .today-grid .stat:nth-child(n){height:80px!important;min-height:80px!important;padding:10px 8px 8px!important;}
+  #dashboard .dashboard-today-block > .today-grid .stat strong,
+  #dashboard .dashboard-today-block > .today-grid .stat.compact strong{font-size:20px!important;}
+  #dashboard .team-scorer-table-head,
+  #dashboard .team-scorer-row{grid-template-columns:30px minmax(62px,1fr) 34px minmax(88px,1.2fr);gap:4px;}
+}
+</style>
+
 </body>
 </html>
 
