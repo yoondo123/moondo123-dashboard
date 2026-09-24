@@ -2194,6 +2194,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
               <th>상대</th>
               <th>결과</th>
               <th>점수변동</th>
+              <th>순위변동</th>
               <th>스코어 (나 : 상대)</th>
               <th>우리 팀 득점</th>
             </tr>
@@ -3952,6 +3953,28 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       renderTeamScorerList('scorer100List', aggregateTeamScorers(rows, 100));
     }
 
+    function gameRankAfter(row) {
+      return firstValidRank(row?.rank_after);
+    }
+
+    function recentRankMovement(currentRow, previousRow) {
+      const after = gameRankAfter(currentRow);
+      const before = gameRankAfter(previousRow);
+      if (!Number.isFinite(after) || !Number.isFinite(before)) {
+        return { value: null, className: 'unknown', label: '-' };
+      }
+      const movement = before - after;
+      if (movement > 0) return { value: movement, className: 'up', label: `↑${movement}등` };
+      if (movement < 0) return { value: movement, className: 'down', label: `↓${Math.abs(movement)}등` };
+      return { value: 0, className: 'same', label: '변동없음' };
+    }
+
+    function compactRecentTime(value) {
+      const full = matchDetailDate(value);
+      const match = String(full).match(/(\d{2}:\d{2})$/);
+      return match ? match[1] : full;
+    }
+
     async function loadRecentMatchDetails() {
       if (!currentUser) return;
       const tbody = document.getElementById('recentMatchDetailList');
@@ -3963,30 +3986,36 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         .eq('username', currentUser.username)
         .in('result', ['win', 'draw', 'loss'])
         .order('created_at', { ascending: false })
-        .limit(25);
+        .limit(30);
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="6">오류: ${escapeHtml(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7">오류: ${escapeHtml(error.message)}</td></tr>`;
         return;
       }
 
-      const rows = dedupeMatchDetails(data || [], 10);
+      // 10개를 보여주되, 10번째 경기의 순위변동까지 계산하려고 한 경기를 더 보관한다.
+      const detailRows = dedupeMatchDetails(data || [], 12);
+      const rows = detailRows.slice(0, 10);
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="6">최근 경기 상세 기록이 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = rows.map(row => {
+      tbody.innerHTML = rows.map((row, index) => {
         const opponent = row.opponent_nickname || '상대 미확인';
         const result = normalizeResult(row.result);
         const delta = Number(row.score_change);
         const deltaClass = Number.isFinite(delta) ? (delta > 0 ? 'up' : (delta < 0 ? 'down' : 'same')) : 'same';
+        const rankMove = recentRankMovement(row, detailRows[index + 1]);
+        const fullTime = matchDetailDate(row.created_at);
+        const shortTime = compactRecentTime(row.created_at);
         return `
           <tr>
-            <td class="recent-time">${matchDetailDate(row.created_at)}</td>
+            <td class="recent-time"><span class="recent-time-full">${escapeHtml(fullTime)}</span><span class="recent-time-short">${escapeHtml(shortTime)}</span></td>
             <td class="recent-opponent">${escapeHtml(opponent)}</td>
             <td class="recent-result"><span class="result-pill ${escapeHtml(result || '')}">${resultLabel(row.result)}</span></td>
             <td class="recent-change"><span class="score-delta ${deltaClass}">${scoreChangeText(row.score_change)}</span></td>
+            <td class="recent-rank-change"><span class="rank-delta ${rankMove.className}">${escapeHtml(rankMove.label)}</span></td>
             ${matchHistoryExtraCells(row)}
           </tr>
         `;
@@ -6546,3 +6575,98 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 <style id="waggu-today-peak-hard-hide-v6">
 #dashboard #todayPeakTier.today-peak-hidden { display:none !important; }
 </style>
+
+
+<style id="waggu-recent-mobile-log-v7">
+/* Desktop recent detail now includes rank movement. */
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(1){width:13%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(2){width:15%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(3){width:8%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(4){width:10%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(5){width:10%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(6){width:14%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(7){width:30%!important;}
+.recent-time-short{display:none;}
+.rank-delta{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:52px;height:22px;padding:0 7px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.045);
+  color:#c5d0d5;font-size:9px;font-weight:950;white-space:nowrap;
+}
+.rank-delta.up{color:#72f4d5;border-color:rgba(57,244,211,.23);background:rgba(57,244,211,.10);}
+.rank-delta.down{color:#ff8794;border-color:rgba(226,93,104,.24);background:rgba(226,93,104,.10);}
+.rank-delta.same{color:#aebbc1;background:rgba(255,255,255,.04);}
+.rank-delta.unknown{color:#71828a;background:transparent;}
+
+@media(max-width:760px){
+  /* Mobile match-log: one compact info row + goals row. */
+  #dashboard .dashboard-recent-detail .recent-match-table-wrap{
+    padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important;
+  }
+  #dashboard .dashboard-recent-detail .recent-match-table,
+  #dashboard .dashboard-recent-detail .recent-match-table tbody,
+  #dashboard #recentMatchDetailList{
+    display:grid!important;width:100%!important;min-width:0!important;gap:5px!important;
+  }
+  #dashboard .dashboard-recent-detail .recent-match-table thead{display:none!important;}
+  #dashboard #recentMatchDetailList tr{
+    display:grid!important;
+    grid-template-columns:43px minmax(0,1fr) 27px 42px 50px!important;
+    grid-template-areas:
+      "time opponent result delta rank"
+      "goals goals goals goals goals"!important;
+    align-items:center!important;
+    column-gap:4px!important;row-gap:5px!important;
+    min-height:0!important;margin:0!important;padding:7px 8px!important;
+    border:1px solid rgba(126,255,236,.10)!important;border-radius:10px!important;
+    background:linear-gradient(90deg,rgba(57,244,211,.035),transparent 40%),rgba(10,15,21,.94)!important;
+    box-shadow:none!important;
+  }
+  #dashboard #recentMatchDetailList td,
+  #dashboard #recentMatchDetailList td:nth-child(n){
+    display:block!important;width:auto!important;min-width:0!important;min-height:0!important;
+    padding:0!important;border:0!important;background:transparent!important;
+    white-space:normal!important;overflow:visible!important;text-overflow:clip!important;
+    font-size:9px!important;line-height:1.05!important;text-align:left!important;
+  }
+  #dashboard #recentMatchDetailList td::before,
+  #dashboard #recentMatchDetailList td::after{content:none!important;display:none!important;}
+  #dashboard #recentMatchDetailList .recent-time{grid-area:time!important;color:#8ca0a8!important;font-size:8.5px!important;font-weight:900!important;white-space:nowrap!important;}
+  #dashboard #recentMatchDetailList .recent-time-full{display:none!important;}
+  #dashboard #recentMatchDetailList .recent-time-short{display:inline!important;color:#8ca0a8!important;}
+  #dashboard #recentMatchDetailList .recent-opponent{
+    grid-area:opponent!important;color:#fff!important;font-size:10px!important;font-weight:950!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  }
+  #dashboard #recentMatchDetailList .recent-result{grid-area:result!important;justify-self:end!important;}
+  #dashboard #recentMatchDetailList .recent-change{grid-area:delta!important;justify-self:end!important;}
+  #dashboard #recentMatchDetailList .recent-rank-change{grid-area:rank!important;justify-self:end!important;}
+  #dashboard #recentMatchDetailList .match-final-score{display:none!important;}
+  #dashboard #recentMatchDetailList .match-own-goals{
+    grid-area:goals!important;display:flex!important;align-items:center!important;gap:5px!important;
+    min-width:0!important;padding-top:1px!important;
+  }
+  #dashboard .result-pill{min-width:25px!important;height:19px!important;padding:0 5px!important;font-size:8px!important;}
+  #dashboard .score-delta{min-width:39px!important;height:19px!important;padding:0 5px!important;font-size:8px!important;}
+  #dashboard .rank-delta{min-width:47px!important;height:19px!important;padding:0 5px!important;font-size:7.8px!important;}
+  #dashboard .match-own-goals .match-cell-caption{
+    display:inline-flex!important;flex:0 0 auto!important;min-width:auto!important;margin:0!important;
+    color:#71878f!important;font-size:0!important;font-weight:900!important;
+  }
+  #dashboard .match-own-goals .match-cell-caption::after{content:"득점";font-size:8px!important;}
+  #dashboard .match-goal-list{display:flex!important;flex-wrap:wrap!important;gap:3px!important;min-width:0!important;}
+  #dashboard .match-goal{padding:3px 5px!important;border-radius:6px!important;gap:2px!important;font-size:8px!important;line-height:1!important;}
+  #dashboard .match-goal-minute{font-size:8px!important;}
+  #dashboard .match-goal-empty{min-height:19px!important;padding:0 6px!important;border-radius:6px!important;font-size:8px!important;}
+  #dashboard .match-goal-note{margin:0!important;font-size:7px!important;}
+}
+
+@media(max-width:380px){
+  #dashboard #recentMatchDetailList tr{
+    grid-template-columns:39px minmax(0,1fr) 25px 39px 46px!important;
+    padding:6px 7px!important;column-gap:3px!important;
+  }
+  #dashboard .rank-delta{min-width:44px!important;padding:0 4px!important;font-size:7.3px!important;}
+}
+</style>
+
