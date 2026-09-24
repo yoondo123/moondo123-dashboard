@@ -2165,8 +2165,9 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         </div>
       </div>
 
-      <section class="team-scorer-section" data-tab-group="home" aria-label="내 팀 득점 순위">
-        <div class="team-scorer-card">
+      <section class="dashboard-performance-grid" data-tab-group="home" aria-label="득점 순위와 최근 경기 상세">
+        <div class="dashboard-scorer-stack">
+          <div class="team-scorer-card">
           <div class="team-scorer-head">
             <div>
               <h3>최근 10경기 팀 득점 TOP 5</h3>
@@ -2180,7 +2181,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
             <div class="team-scorer-empty">득점 기록을 불러오는 중입니다.</div>
           </div>
         </div>
-        <div class="team-scorer-card">
+          <div class="team-scorer-card">
           <div class="team-scorer-head">
             <div>
               <h3>최근 100경기 팀 득점 TOP 5</h3>
@@ -2194,10 +2195,10 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
             <div class="team-scorer-empty">득점 기록을 불러오는 중입니다.</div>
           </div>
         </div>
-      </section>
-
-      <h2 data-tab-group="home">최근 10경기 상세</h2>
-      <div class="table-wrap recent-match-table-wrap" data-tab-group="home">
+        </div>
+        <section class="dashboard-recent-detail">
+          <h2>최근 10경기 상세</h2>
+          <div class="table-wrap recent-match-table-wrap">
         <table class="recent-match-table">
           <thead>
             <tr>
@@ -2212,6 +2213,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <tbody id="recentMatchDetailList"></tbody>
         </table>
       </div>
+        </section>
+      </section>
 
       <h2>주간 전적</h2>
       <div class="week-grid">
@@ -2242,27 +2245,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         </div>
       </div>
 
-      <h2>주간 승률 랭킹 TOP 10</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>순위</th>
-              <th>닉네임</th>
-              <th>티어</th>
-              <th>승</th>
-              <th>무</th>
-              <th>패</th>
-              <th>총 경기</th>
-              <th>승률</th>
-              <th>점수</th>
-              <th>실시간 순위</th>
-              <th>FC</th>
-            </tr>
-          </thead>
-          <tbody id="weeklyRankingList"></tbody>
-        </table>
-      </div>
+      
 
       
 
@@ -2289,9 +2272,31 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         </table>
       </div>
 
+      <h2 data-tab-group="stats">주간 승률 랭킹 TOP 10</h2>
+      <div class="table-wrap" data-tab-group="stats">
+        <table>
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>닉네임</th>
+              <th>티어</th>
+              <th>승</th>
+              <th>무</th>
+              <th>패</th>
+              <th>총 경기</th>
+              <th>승률</th>
+              <th>점수</th>
+              <th>실시간 순위</th>
+              <th>FC</th>
+            </tr>
+          </thead>
+          <tbody id="weeklyRankingList"></tbody>
+        </table>
+      </div>
 
-      <h2>최근 14일 경기</h2>
-      <div class="recent-14-summary" id="recent14Summary" aria-label="최근 14일 경기 요약">
+
+      <h2 data-tab-group="stats">최근 14일 경기</h2>
+      <div class="recent-14-summary" id="recent14Summary" data-tab-group="stats" aria-label="최근 14일 경기 요약">
         <div class="recent-14-summary-item">
           <span>평균 승률</span>
           <strong id="recent14AverageWinRate">0.0%</strong>
@@ -2308,8 +2313,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <small id="recent14AverageFc">하루 평균 0 FC</small>
         </div>
       </div>
-      <div class="recent-7-summary-title">최근 7일 요약</div>
-      <div class="recent-14-summary recent-7-summary" id="recent7Summary" aria-label="최근 7일 경기 요약">
+      <div class="recent-7-summary-title" data-tab-group="stats">최근 7일 요약</div>
+      <div class="recent-14-summary recent-7-summary" id="recent7Summary" data-tab-group="stats" aria-label="최근 7일 경기 요약">
         <div class="recent-14-summary-item">
           <span>평균 승률</span>
           <strong id="recent7AverageWinRate">0.0%</strong>
@@ -2326,7 +2331,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <small id="recent7AverageFc">하루 평균 0 FC</small>
         </div>
       </div>
-      <div class="table-wrap">
+      <div class="table-wrap" data-tab-group="stats">
         <table>
           <thead>
             <tr>
@@ -6177,6 +6182,194 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
 </body>
 </html>
+
+
+<style id="waggu-layout-final-v4">
+/* ===== Final dashboard layout: scorer stack left, recent matches right ===== */
+#dashboard .dashboard-performance-grid{
+  display:grid!important;
+  grid-template-columns:minmax(330px,.78fr) minmax(0,1.62fr)!important;
+  gap:12px!important;
+  align-items:stretch!important;
+  margin:12px 0 16px!important;
+}
+#dashboard .dashboard-scorer-stack{
+  display:grid!important;
+  grid-template-rows:1fr 1fr!important;
+  gap:10px!important;
+  min-width:0!important;
+}
+#dashboard .dashboard-scorer-stack .team-scorer-card{
+  min-width:0!important;
+  overflow:hidden!important;
+  border:1px solid rgba(126,255,236,.13)!important;
+  border-radius:14px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),transparent),rgba(8,14,18,.9)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+#dashboard .dashboard-scorer-stack .team-scorer-head{padding:9px 11px 7px!important;}
+#dashboard .dashboard-scorer-stack .team-scorer-head h3{font-size:12px!important;}
+#dashboard .dashboard-scorer-stack .team-scorer-head p{margin-top:2px!important;font-size:8px!important;}
+#dashboard .dashboard-scorer-stack .team-scorer-table-head,
+#dashboard .dashboard-scorer-stack .team-scorer-row{
+  grid-template-columns:30px minmax(70px,1fr) 34px minmax(82px,1.15fr)!important;
+  gap:5px!important;
+}
+#dashboard .dashboard-scorer-stack .team-scorer-table-head{padding:5px 8px!important;font-size:7.5px!important;}
+#dashboard .dashboard-scorer-stack .team-scorer-row{min-height:29px!important;padding:3px 8px!important;}
+#dashboard .dashboard-scorer-stack .team-scorer-rank{width:20px!important;height:20px!important;border-radius:6px!important;font-size:8px!important;}
+#dashboard .dashboard-scorer-stack .team-scorer-name{font-size:9.5px!important;}
+#dashboard .dashboard-scorer-stack .team-scorer-goals{font-size:10px!important;}
+#dashboard .dashboard-scorer-stack .team-scorer-share{grid-template-columns:minmax(40px,1fr) 31px!important;gap:4px!important;}
+#dashboard .dashboard-scorer-stack .team-scorer-share em{font-size:8px!important;}
+#dashboard .dashboard-scorer-stack .team-scorer-bar{height:5px!important;}
+
+#dashboard .dashboard-recent-detail{
+  display:flex!important;
+  flex-direction:column!important;
+  min-width:0!important;
+  height:100%!important;
+}
+#dashboard .dashboard-recent-detail > h2{
+  margin:0 0 8px!important;
+  font-size:14px!important;
+  line-height:1.15!important;
+}
+#dashboard .dashboard-recent-detail > h2::before{width:4px!important;height:16px!important;}
+#dashboard .dashboard-recent-detail .recent-match-table-wrap{
+  flex:1 1 auto!important;
+  margin:0!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  border-radius:14px!important;
+}
+#dashboard .dashboard-recent-detail .recent-match-table{height:100%!important;table-layout:fixed!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th{padding:8px 7px!important;font-size:9px!important;}
+#dashboard .dashboard-recent-detail .recent-match-table td{padding:7px 7px!important;font-size:9.5px!important;line-height:1.25!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(1){width:16%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(2){width:18%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(3){width:10%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(4){width:12%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(5){width:17%!important;}
+#dashboard .dashboard-recent-detail .recent-match-table th:nth-child(6){width:27%!important;}
+#dashboard .dashboard-recent-detail .result-pill{min-width:30px!important;height:22px!important;padding:0 7px!important;font-size:9px!important;}
+#dashboard .dashboard-recent-detail .score-delta{min-width:42px!important;height:22px!important;padding:0 7px!important;font-size:9px!important;}
+#dashboard .dashboard-recent-detail .match-final-score strong{min-width:42px!important;padding:3px 6px!important;font-size:12px!important;border-radius:7px!important;}
+#dashboard .dashboard-recent-detail .match-final-score small{margin-top:3px!important;font-size:8px!important;}
+#dashboard .dashboard-recent-detail .match-goal-list{gap:4px!important;}
+#dashboard .dashboard-recent-detail .match-goal{padding:3px 6px!important;font-size:8.5px!important;gap:3px!important;border-radius:7px!important;}
+#dashboard .dashboard-recent-detail .match-goal-empty{min-height:22px!important;padding:0 7px!important;font-size:8.5px!important;}
+
+/* Stats page order/summary polish */
+#todayRankingHeading{margin-top:22px!important;}
+#recent14Summary[data-tab-group="stats"],
+#recent7Summary[data-tab-group="stats"]{margin-bottom:8px!important;}
+
+/* ===== Mobile: clean compact cards, no overlaps ===== */
+@media(max-width:760px){
+  #dashboard .dashboard-performance-grid{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:10px!important;
+    margin:10px 0 14px!important;
+  }
+  #dashboard .dashboard-scorer-stack{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:8px!important;
+  }
+  #dashboard .dashboard-scorer-stack .team-scorer-card{border-radius:12px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-head{padding:8px 9px 6px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-head h3{font-size:11px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-head p{display:none!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-table-head,
+  #dashboard .dashboard-scorer-stack .team-scorer-row{
+    grid-template-columns:26px minmax(62px,1fr) 30px minmax(74px,1.05fr)!important;
+    gap:4px!important;
+  }
+  #dashboard .dashboard-scorer-stack .team-scorer-table-head{padding:4px 7px!important;font-size:7px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-row{min-height:27px!important;padding:3px 7px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-rank{width:18px!important;height:18px!important;font-size:7.5px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-name{font-size:9px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-goals{font-size:9.5px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-share{grid-template-columns:minmax(34px,1fr) 28px!important;gap:3px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-share em{font-size:7.5px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-bar{height:4px!important;}
+
+  #dashboard .dashboard-recent-detail > h2{margin:2px 0 7px!important;font-size:13px!important;}
+  #dashboard .dashboard-recent-detail .recent-match-table-wrap{
+    padding:0!important;
+    overflow:visible!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+  #dashboard .dashboard-recent-detail .recent-match-table,
+  #dashboard .dashboard-recent-detail .recent-match-table tbody,
+  #dashboard #recentMatchDetailList{
+    display:grid!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:6px!important;
+  }
+  #dashboard .dashboard-recent-detail .recent-match-table thead{display:none!important;}
+  #dashboard #recentMatchDetailList tr{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto auto!important;
+    grid-template-areas:
+      "opponent result delta"
+      "time time time"
+      "score score score"
+      "goals goals goals"!important;
+    gap:5px 6px!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:9px 10px!important;
+    border:1px solid rgba(126,255,236,.11)!important;
+    border-radius:12px!important;
+    background:linear-gradient(135deg,rgba(57,244,211,.055),transparent 45%),rgba(11,16,22,.94)!important;
+    box-shadow:none!important;
+  }
+  #dashboard #recentMatchDetailList td,
+  #dashboard #recentMatchDetailList td:nth-child(n){
+    display:block!important;
+    width:auto!important;
+    min-width:0!important;
+    min-height:0!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    font-size:10px!important;
+    line-height:1.2!important;
+    text-align:left!important;
+  }
+  #dashboard #recentMatchDetailList td::before,
+  #dashboard #recentMatchDetailList td::after{content:none!important;display:none!important;}
+  #dashboard #recentMatchDetailList .recent-opponent{grid-area:opponent!important;color:#fff!important;font-size:11px!important;font-weight:950!important;align-self:center!important;}
+  #dashboard #recentMatchDetailList .recent-result{grid-area:result!important;justify-self:end!important;align-self:center!important;}
+  #dashboard #recentMatchDetailList .recent-change{grid-area:delta!important;justify-self:end!important;align-self:center!important;}
+  #dashboard #recentMatchDetailList .recent-time{grid-area:time!important;color:#7f9299!important;font-size:8.5px!important;font-weight:800!important;}
+  #dashboard #recentMatchDetailList .match-final-score{grid-area:score!important;display:flex!important;align-items:center!important;gap:7px!important;padding-top:2px!important;}
+  #dashboard #recentMatchDetailList .match-own-goals{grid-area:goals!important;padding-top:2px!important;}
+  #dashboard .match-cell-caption{display:inline-flex!important;min-width:52px!important;margin:0!important;color:#80929b!important;font-size:8.5px!important;font-weight:900!important;}
+  #dashboard .result-pill{min-width:28px!important;height:22px!important;padding:0 7px!important;font-size:9px!important;}
+  #dashboard .score-delta{min-width:39px!important;height:22px!important;padding:0 6px!important;font-size:9px!important;}
+  #dashboard .match-final-score strong{min-width:38px!important;padding:3px 6px!important;font-size:11px!important;border-radius:7px!important;}
+  #dashboard .match-final-score small{display:inline!important;margin:0!important;color:#8a9aa2!important;font-size:8px!important;}
+  #dashboard .match-goal-list{display:flex!important;flex-wrap:wrap!important;gap:4px!important;}
+  #dashboard .match-goal{padding:3px 6px!important;border-radius:7px!important;font-size:8.5px!important;}
+  #dashboard .match-goal-empty{min-height:22px!important;padding:0 7px!important;font-size:8.5px!important;}
+}
+
+@media(max-width:360px){
+  #dashboard #recentMatchDetailList tr{padding:8px!important;gap:4px 5px!important;}
+  #dashboard .dashboard-scorer-stack .team-scorer-table-head,
+  #dashboard .dashboard-scorer-stack .team-scorer-row{grid-template-columns:24px minmax(56px,1fr) 28px minmax(66px,.95fr)!important;}
+}
+</style>
 
 <style id="waggu-hide-lifetime-section">
 #lifetimeRecord { display: none !important; }
