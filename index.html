@@ -1860,6 +1860,139 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 }
 </style>
 
+
+<style id="waggu-dashboard-refine-v3">
+/* move today's ranking to stats tab visually */
+#todayRankingHeading { margin-top: 30px !important; }
+#todayRankingHeading #todayRankingTitle { display: inline-flex; align-items: center; gap: 10px; }
+#todayRankingHeading #todayRankingTitle::before {
+  content: "📈";
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* recent 10 matches desktop polish */
+.recent-match-table-wrap {
+  overflow: hidden !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(126,255,236,.14) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.04), transparent), rgba(8,12,18,.92) !important;
+}
+.recent-match-table { min-width: 100% !important; table-layout: fixed !important; }
+.recent-match-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 13px 12px !important;
+  font-size: 12px !important;
+  letter-spacing: -.02em;
+}
+.recent-match-table td { padding: 14px 12px !important; vertical-align: middle; }
+#recentMatchDetailList tr { transition: transform .15s ease, background .15s ease; }
+#recentMatchDetailList tr:hover { transform: translateY(-1px); }
+#recentMatchDetailList td.recent-time { color: #d8fff5 !important; font-weight: 900 !important; font-variant-numeric: tabular-nums; }
+#recentMatchDetailList td.recent-opponent { color: #ffffff !important; font-weight: 900 !important; }
+#recentMatchDetailList td.recent-result,
+#recentMatchDetailList td.recent-change { text-align: center !important; }
+.result-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 40px; height: 30px; padding: 0 12px;
+  border-radius: 999px; border: 1px solid rgba(255,255,255,.08);
+  font-size: 13px; font-weight: 950; letter-spacing: -.02em;
+  background: rgba(255,255,255,.05); color: #e8f2f2;
+}
+.result-pill.win { background: rgba(57,244,211,.12); color: #7fffe8; border-color: rgba(57,244,211,.24); }
+.result-pill.draw { background: rgba(163,176,183,.12); color: #dbe6ea; border-color: rgba(163,176,183,.22); }
+.result-pill.loss { background: rgba(226,93,104,.12); color: #ff96a0; border-color: rgba(226,93,104,.22); }
+.score-delta {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 60px; height: 30px; padding: 0 10px;
+  border-radius: 999px; font-size: 13px; font-weight: 950; font-variant-numeric: tabular-nums;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+}
+.score-delta.up { color: #7fffe8; background: rgba(57,244,211,.10); border-color: rgba(57,244,211,.20); }
+.score-delta.down { color: #ff96a0; background: rgba(226,93,104,.10); border-color: rgba(226,93,104,.20); }
+.score-delta.same { color: #d5e0e4; }
+.match-final-score { min-width: 132px; }
+.match-final-score strong {
+  display: inline-block; min-width: 54px; padding: 4px 10px; border-radius: 10px;
+  background: rgba(255,255,255,.05); color: #ffffff; font-size: 16px; font-weight: 950;
+}
+.match-final-score small {
+  display: block; margin-top: 6px; color: #aab7c0; font-size: 11px; font-weight: 700;
+}
+.match-own-goals { min-width: 230px; max-width: none; }
+.match-goal-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.match-goal {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px;
+  border-radius: 999px; background: rgba(57,244,211,.08); border: 1px solid rgba(57,244,211,.14);
+  color: #efffff; font-size: 12px; font-weight: 800;
+}
+.match-goal-player { color: #ffffff; }
+.match-goal-minute { color: #ffd77f; font-weight: 900; }
+.match-goal-empty {
+  display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px;
+  border-radius: 999px; background: rgba(255,255,255,.045); color: #b9c4cb; font-size: 12px; font-weight: 800;
+}
+.match-goal-note { display: block; margin-top: 7px; color: #98a7ae; font-size: 11px; }
+.match-cell-caption { display: none; }
+
+@media (max-width: 760px) {
+  #todayRankingHeading { margin-top: 22px !important; }
+  #todayRankingHeading #todayRankingTitle::before { font-size: 15px; }
+
+  .recent-match-table-wrap {
+    padding: 8px !important;
+    border-radius: 18px !important;
+    background: rgba(7, 11, 16, .90) !important;
+  }
+  .recent-match-table,
+  .recent-match-table tbody,
+  #recentMatchDetailList { display: grid !important; width: 100% !important; min-width: 0 !important; gap: 8px !important; }
+  .recent-match-table thead { display: none !important; }
+  #recentMatchDetailList tr {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) auto auto;
+    grid-template-areas:
+      "time result delta"
+      "opponent opponent opponent"
+      "score score score"
+      "goals goals goals" !important;
+    gap: 8px 8px !important;
+    padding: 12px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(126,255,236,.12) !important;
+    background: linear-gradient(135deg, rgba(57,244,211,.08), transparent 42%), rgba(13,18,27,.95) !important;
+  }
+  #recentMatchDetailList td,
+  #recentMatchDetailList td:nth-child(n) {
+    width: 100% !important; min-width: 0 !important; padding: 0 !important; border: 0 !important;
+    white-space: normal !important; overflow: visible !important; text-overflow: clip !important; background: transparent !important;
+    text-align: left !important;
+  }
+  #recentMatchDetailList td::before,
+  #recentMatchDetailList td::after { content: none !important; display: none !important; }
+  #recentMatchDetailList td.recent-time { grid-area: time !important; font-size: 11px !important; color: #a9bbb9 !important; }
+  #recentMatchDetailList td.recent-opponent { grid-area: opponent !important; font-size: 15px !important; line-height: 1.25 !important; }
+  #recentMatchDetailList td.recent-result { grid-area: result !important; justify-self: end !important; }
+  #recentMatchDetailList td.recent-change { grid-area: delta !important; justify-self: end !important; }
+  #recentMatchDetailList td.match-final-score { grid-area: score !important; }
+  #recentMatchDetailList td.match-own-goals { grid-area: goals !important; }
+  .result-pill { min-width: 36px; height: 28px; padding: 0 10px; font-size: 12px; }
+  .score-delta { min-width: 54px; height: 28px; padding: 0 9px; font-size: 12px; }
+  .match-cell-caption {
+    display: inline-flex !important; align-items: center; margin-right: 8px; color: #94a5af;
+    font-size: 10px; font-weight: 900; letter-spacing: -.02em;
+  }
+  .match-final-score strong { font-size: 14px; min-width: 52px; padding: 4px 9px; }
+  .match-final-score small { margin-top: 4px; font-size: 10px; }
+  .match-goal-list { gap: 6px; }
+  .match-goal { padding: 5px 9px; font-size: 11px; }
+  .match-goal-empty { min-height: 28px; padding: 0 10px; font-size: 11px; }
+  .match-goal-note { font-size: 10px; }
+}
+</style>
+
 </head>
 <body>
   <main>
@@ -2063,32 +2196,9 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         </div>
       </section>
 
-      <h2 id="todayRankingHeading"><span id="todayRankingTitle">오늘 승률 랭킹</span><button type="button" id="todayRankingToggle" aria-controls="rankingList" aria-pressed="false" onclick="toggleTodayRanking()">오늘 승리 랭킹</button></h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>순위</th>
-              <th>닉네임</th>
-              <th>티어</th>
-              <th>승</th>
-              <th>무</th>
-              <th>패</th>
-              <th>총 경기</th>
-              <th>승률</th>
-              <th>점수</th>
-              <th>실시간 순위</th>
-              <th>FC</th>
-              <th>오늘 최고티어</th>
-            </tr>
-          </thead>
-          <tbody id="rankingList"></tbody>
-        </table>
-      </div>
-
-      <h2>최근 10경기 상세</h2>
-      <div class="table-wrap">
-        <table>
+      <h2 data-tab-group="home">최근 10경기 상세</h2>
+      <div class="table-wrap recent-match-table-wrap" data-tab-group="home">
+        <table class="recent-match-table">
           <thead>
             <tr>
               <th>시간</th>
@@ -2153,6 +2263,32 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <tbody id="weeklyRankingList"></tbody>
         </table>
       </div>
+
+      
+
+      <h2 id="todayRankingHeading" data-tab-group="stats"><span id="todayRankingTitle">오늘 승률 랭킹</span><button type="button" id="todayRankingToggle" aria-controls="rankingList" aria-pressed="false" onclick="toggleTodayRanking()">오늘 승리 랭킹</button></h2>
+      <div class="table-wrap" data-tab-group="stats">
+        <table>
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>닉네임</th>
+              <th>티어</th>
+              <th>승</th>
+              <th>무</th>
+              <th>패</th>
+              <th>총 경기</th>
+              <th>승률</th>
+              <th>점수</th>
+              <th>실시간 순위</th>
+              <th>FC</th>
+              <th>오늘 최고티어</th>
+            </tr>
+          </thead>
+          <tbody id="rankingList"></tbody>
+        </table>
+      </div>
+
 
       <h2>최근 14일 경기</h2>
       <div class="recent-14-summary" id="recent14Summary" aria-label="최근 14일 경기 요약">
@@ -3712,10 +3848,15 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         const minute = g => String(g.minute).split('+').reduce((sum, value) => sum + Number(value), 0);
         return minute(a) - minute(b);
       });
-      let goalText = score?.mine === 0 && !resultOnly ? '득점 없음' : '인식된 득점 기록 없음';
+      let goalText = score?.mine === 0 && !resultOnly
+        ? '<span class="match-goal-empty">득점 없음</span>'
+        : '<span class="match-goal-empty">인식된 득점 기록 없음</span>';
       if (goals.length) {
-        goalText = goals.map(g => `<span class="match-goal">${escapeHtml(g.player)} ${escapeHtml(String(g.minute))}′</span>`).join('');
-        if (score && !resultOnly && goals.length < score.mine) goalText += `<small>미인식 ${score.mine - goals.length}골</small>`;
+        const goalBadges = goals.map(g => `<span class="match-goal"><span class="match-goal-player">${escapeHtml(g.player)}</span><span class="match-goal-minute">${escapeHtml(String(g.minute))}′</span></span>`).join('');
+        goalText = `<div class="match-goal-list">${goalBadges}</div>`;
+        if (score && !resultOnly && goals.length < score.mine) {
+          goalText += `<small class="match-goal-note">미인식 ${score.mine - goals.length}골</small>`;
+        }
       }
       return `<td class="match-final-score"><span class="match-cell-caption">${resultOnly ? '결과' : '나 : 상대'}</span><strong>${scoreText}</strong>${decision ? `<small>${decision}</small>` : ''}</td>
         <td class="match-own-goals"><span class="match-cell-caption">우리 팀 득점</span>${goalText}</td>`;
@@ -3844,12 +3985,15 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
       tbody.innerHTML = rows.map(row => {
         const opponent = row.opponent_nickname || '상대 미확인';
+        const result = normalizeResult(row.result);
+        const delta = Number(row.score_change);
+        const deltaClass = Number.isFinite(delta) ? (delta > 0 ? 'up' : (delta < 0 ? 'down' : 'same')) : 'same';
         return `
           <tr>
-            <td>${matchDetailDate(row.created_at)}</td>
-            <td>${escapeHtml(opponent)}</td>
-            <td>${resultLabel(row.result)}</td>
-            <td>${scoreChangeText(row.score_change)}</td>
+            <td class="recent-time">${matchDetailDate(row.created_at)}</td>
+            <td class="recent-opponent">${escapeHtml(opponent)}</td>
+            <td class="recent-result"><span class="result-pill ${escapeHtml(result || '')}">${resultLabel(row.result)}</span></td>
+            <td class="recent-change"><span class="score-delta ${deltaClass}">${scoreChangeText(row.score_change)}</span></td>
             ${matchHistoryExtraCells(row)}
           </tr>
         `;
@@ -4478,7 +4622,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     groupByAnchor('#liveState', 'home');
     groupByAnchor('#todayMatches', 'home');
     groupByAnchor('#formDots', 'home');
-    groupByAnchor('#rankingList', 'home');
+    groupByAnchor('#rankingList', 'stats');
     groupByAnchor('#recentMatchDetailList', 'home');
     groupByAnchor('#weekMatches', 'stats');
     groupByAnchor('#weeklyRankingList', 'stats');
@@ -4491,13 +4635,13 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         title.includes('실시간경기') ||
         title.includes('오늘전적') ||
         title.includes('최근20판흐름') ||
-        title.includes('오늘승률랭킹') ||
         title.includes('최근10경기상세')
       ) {
         setGroup(h2, 'home');
       }
 
       if (
+        title.includes('오늘승률랭킹') ||
         title.includes('주간전적') ||
         title.includes('주간승률랭킹') ||
         title.includes('최근14일경기') ||
