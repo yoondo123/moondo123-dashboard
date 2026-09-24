@@ -2524,6 +2524,21 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     let currentUser = JSON.parse(localStorage.getItem('moondo_user') || 'null');
+    const requestedPlayer = new URLSearchParams(location.search).get('player')?.trim();
+    const viewedUser = requestedPlayer ? { username: requestedPlayer } : null;
+    const dashboardAccount = () => viewedUser || currentUser;
+    if (viewedUser) document.addEventListener('DOMContentLoaded', () => {
+      const toolbar = document.querySelector('#dashboard > .topbar');
+      const back = document.createElement('a');
+      const url = new URL(location.href);
+      url.searchParams.delete('player');
+      back.href = url.href;
+      back.textContent = '내 대시보드로 돌아가기';
+      back.style.cssText = 'display:inline-block;padding:10px 0;color:#80e6c4;font-size:13px';
+      toolbar?.appendChild(back);
+      // Apply after the existing tab initializers, without changing login identity.
+      queueMicrotask(() => document.querySelector('[data-tab="home"]')?.click());
+    });
 
     const KST_TIME_ZONE = 'Asia/Seoul';
     const KST_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
@@ -2782,7 +2797,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       saveStatsCache(username, 'recent7', cachedRows);
     }
 
-    function applyCurrentAccountFilter(query, username = currentUser?.username) {
+    function applyCurrentAccountFilter(query, username = dashboardAccount()?.username) {
       // 전적 테이블마다 user_id 컬럼 유무가 달라서 username 기준으로만 조회합니다.
       // user_id까지 OR로 묶으면 컬럼이 없을 때 오늘/주간/최근기록이 통째로 비어 보일 수 있습니다.
       return query.eq('username', username);
@@ -2878,11 +2893,11 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       return null;
     }
 
-    function currentMetaCacheKey(username = currentUser?.username) {
+    function currentMetaCacheKey(username = dashboardAccount()?.username) {
       return `waggu_current_meta:${String(username || '').trim().toLowerCase()}`;
     }
 
-    function loadCurrentMetaCache(username = currentUser?.username) {
+    function loadCurrentMetaCache(username = dashboardAccount()?.username) {
       if (!username) return {};
       try {
         return JSON.parse(localStorage.getItem(currentMetaCacheKey(username)) || '{}') || {};
@@ -2907,7 +2922,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     function currentMeta(profile, live) {
-      const username = live?.username || profile?.username || currentUser?.username;
+      const username = live?.username || profile?.username || dashboardAccount()?.username;
       const cached = loadCurrentMetaCache(username);
       const score = firstValidNumber(
         live?.current_score,
@@ -3129,6 +3144,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     async function ensureTodayPeakTier(profile = {}, meta = {}) {
+      if (viewedUser) return displayTierName(bestTierName(profile.today_peak_tier, meta.tier) || '-');
       if (!currentUser?.username) return profile.today_peak_tier || meta.tier || '-';
       const currentRank = firstValidRank(meta.rank, profile.current_rank, profile.rank);
       const currentTier = tierWithRank(
@@ -3271,6 +3287,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     async function sendRemoteCommand(command) {
+      if (viewedUser) return;
       const status = document.getElementById('remoteCommandStatus');
       if (status) {
         status.className = 'muted';
@@ -3367,12 +3384,14 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     function setLoginState() {
-      const loggedIn = !!currentUser;
+      const loggedIn = !!dashboardAccount();
       document.getElementById('loginPanel').classList.toggle('hidden', loggedIn);
       document.getElementById('dashboard').classList.toggle('hidden', !loggedIn);
-      if (loggedIn) document.getElementById('helloName').innerText = currentUser.username;
+      if (loggedIn) document.getElementById('helloName').innerText = dashboardAccount().username;
+      const remotePanel = document.getElementById('remoteControlPanel');
+      if (remotePanel && viewedUser) { remotePanel.hidden = true; remotePanel.style.setProperty('display', 'none', 'important'); }
       const remoteUser = document.getElementById('remoteCommandUser');
-      if (remoteUser) remoteUser.innerText = loggedIn ? currentUser.username : '-';
+      if (remoteUser) remoteUser.innerText = currentUser?.username || '-';
       if (!loggedIn) {
         const remoteStatus = document.getElementById('remoteCommandStatus');
         if (remoteStatus) remoteStatus.innerText = '';
@@ -3494,6 +3513,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     async function syncTodayPeakTierRow(row, observedTier = '') {
+      if (viewedUser) return row;
       if (!row || !row.username) return row;
       const todayKey = todayDate();
       const currentRank = firstValidRank(row.current_rank, row.rank);
@@ -3571,13 +3591,13 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     async function loadLiveStatus() {
-      if (!currentUser) return;
+      if (!dashboardAccount()) return;
 
       // 프로그램이 업로드하는 실제 테이블(player_stats)을 기준으로 실시간 화면을 갱신합니다.
       const { data, error } = await supabaseClient
         .from('player_stats')
         .select('username, ingame_left_score, ingame_right_score, ingame_opponent_nickname, opponent_nickname, ingame_match_time, match_timeline, updated_at')
-        .eq('username', currentUser.username)
+        .eq('username', dashboardAccount().username)
         .order('updated_at', { ascending: false })
         .limit(1);
 
@@ -3602,7 +3622,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
       const hasMatchData = leftScore !== '-' || rightScore !== '-' || opponent !== '상대 OCR 대기' || matchTime !== '시간 OCR 대기';
 
-      document.getElementById('liveUsername').innerText = live.username || currentUser.username;
+      document.getElementById('liveUsername').innerText = live.username || dashboardAccount().username;
       document.getElementById('liveScore').innerText = leftScore;
       document.getElementById('liveOppScore').innerText = rightScore;
       document.getElementById('liveOpponent').innerText = opponent;
@@ -3613,19 +3633,19 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     async function loadPeriodStats(statsMap) {
-      if (!currentUser) return;
+      if (!dashboardAccount()) return;
       const weekStart = weeklyResetDate();
-      const profile = statsMap[currentUser.username] || {};
+      const profile = statsMap[dashboardAccount().username] || {};
 
       const [todayHistoryRes, todaySessionRes, weekHistoryRes, weekSessionRes, liveRes] = await Promise.all([
-        loadUserHistory(currentUser.username, startOfTodayIso()),
-        loadUserSessions(currentUser.username, todayDate()),
-        loadUserHistory(currentUser.username, weeklyResetIso()),
-        loadUserSessions(currentUser.username, weekStart),
+        loadUserHistory(dashboardAccount().username, startOfTodayIso()),
+        loadUserSessions(dashboardAccount().username, todayDate()),
+        loadUserHistory(dashboardAccount().username, weeklyResetIso()),
+        loadUserSessions(dashboardAccount().username, weekStart),
         supabaseClient
           .from('player_stats')
           .select('username, current_score, score, current_rank, rank, current_tier, tier, today_peak_tier, today_peak_updated, updated_at')
-          .eq('username', currentUser.username)
+          .eq('username', dashboardAccount().username)
           .order('updated_at', { ascending: false })
           .limit(1),
       ]);
@@ -3653,9 +3673,9 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       const todayScope = `today:${todayDate()}`;
       const freshToday = choosePeriodStats(todayHistory, todaySessions);
       const today = (todayHistoryRes.error || todaySessionRes.error)
-        ? restoreStatsFromCache(currentUser.username, todayScope, freshToday)
+        ? restoreStatsFromCache(dashboardAccount().username, todayScope, freshToday)
         : freshToday;
-      cacheStatsIfUseful(currentUser.username, todayScope, today);
+      cacheStatsIfUseful(dashboardAccount().username, todayScope, today);
 
       // 주간 전적은 매주 목요일 00:00 이후 기록만 봅니다.
       const weekHistory = summarizeMatches(weekHistoryRes.data || []);
@@ -3663,9 +3683,9 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       const weekScope = `week:${weekStart}`;
       const freshWeek = choosePeriodStats(weekHistory, weekSessions);
       const week = (weekHistoryRes.error || weekSessionRes.error)
-        ? restoreStatsFromCache(currentUser.username, weekScope, freshWeek)
+        ? restoreStatsFromCache(dashboardAccount().username, weekScope, freshWeek)
         : freshWeek;
-      cacheStatsIfUseful(currentUser.username, weekScope, week);
+      cacheStatsIfUseful(dashboardAccount().username, weekScope, week);
 
       document.getElementById('todayMatches').innerText = today.matches;
       document.getElementById('todayWins').innerText = today.wins;
@@ -3719,15 +3739,15 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     async function loadRecent() {
-      if (!currentUser) return;
+      if (!dashboardAccount()) return;
       const tbody = document.getElementById('recentList');
       const [historyRes, sessionRes, profileRes] = await Promise.all([
-        loadUserHistory(currentUser.username, rolling14StartIso()),
-        loadUserSessions(currentUser.username, rolling14StartKey()),
+        loadUserHistory(dashboardAccount().username, rolling14StartIso()),
+        loadUserSessions(dashboardAccount().username, rolling14StartKey()),
         supabaseClient
           .from('player_stats')
           .select('current_tier, tier')
-          .eq('username', currentUser.username)
+          .eq('username', dashboardAccount().username)
           .order('updated_at', { ascending: false })
           .limit(1),
       ]);
@@ -3927,7 +3947,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     async function loadTeamScorerStats() {
-      if (!currentUser) return;
+      if (!dashboardAccount()) return;
       const list10 = document.getElementById('scorer10List');
       const list100 = document.getElementById('scorer100List');
       if (!list10 && !list100) return;
@@ -3936,7 +3956,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         .from('game_history')
         .select('username, result, created_at, opponent_nickname, score_change, match_details')
         .in('result', ['win', 'draw', 'loss']);
-      query = applyCurrentAccountFilter(query, currentUser.username);
+      query = applyCurrentAccountFilter(query, dashboardAccount().username);
       const { data, error } = await query
         .order('created_at', { ascending: false })
         .limit(400);
@@ -3959,14 +3979,18 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
     function recentRankMovement(currentRow, previousRow) {
       const after = gameRankAfter(currentRow);
-      const before = gameRankAfter(previousRow);
+      const explicitBefore = firstValidRank(currentRow?.rank_before);
+      const before = explicitBefore ?? gameRankAfter(previousRow);
       if (!Number.isFinite(after) || !Number.isFinite(before)) {
-        return { value: null, className: 'unknown', label: '-' };
+        return { value: null, className: 'unknown', label: '순위 미확인' };
       }
       const movement = before - after;
       if (movement > 0) return { value: movement, className: 'up', label: `↑${movement}등` };
       if (movement < 0) return { value: movement, className: 'down', label: `↓${Math.abs(movement)}등` };
-      return { value: 0, className: 'same', label: '변동없음' };
+      // Repeated legacy rank_after can be a cached daily best, not a fresh rank.
+      return Number.isFinite(explicitBefore)
+        ? { value: 0, className: 'same', label: '변동없음' }
+        : { value: null, className: 'unknown', label: '순위 확인 필요' };
     }
 
     function compactRecentTime(value) {
@@ -3976,14 +4000,14 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     async function loadRecentMatchDetails() {
-      if (!currentUser) return;
+      if (!dashboardAccount()) return;
       const tbody = document.getElementById('recentMatchDetailList');
       if (!tbody) return;
 
       const { data, error } = await supabaseClient
         .from('game_history')
         .select('*')
-        .eq('username', currentUser.username)
+        .eq('username', dashboardAccount().username)
         .in('result', ['win', 'draw', 'loss'])
         .order('created_at', { ascending: false })
         .limit(30);
@@ -4023,12 +4047,12 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }
 
     async function loadRecentForm() {
-      if (!currentUser) return;
+      if (!dashboardAccount()) return;
       let query = supabaseClient
         .from('game_history')
         .select('username, result, created_at, opponent_nickname, score_change')
         .in('result', ['win', 'draw', 'loss']);
-      query = applyCurrentAccountFilter(query, currentUser.username);
+      query = applyCurrentAccountFilter(query, dashboardAccount().username);
       const { data, error } = await query
         .order('created_at', { ascending: false })
         .limit(20);
@@ -4040,9 +4064,9 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
       const rows = data || [];
       const results = rows.map(row => normalizeResult(row.result)).filter(Boolean);
-      const cachedResults = loadStatsCache(currentUser.username, 'recentForm') || [];
+      const cachedResults = loadStatsCache(dashboardAccount().username, 'recentForm') || [];
       const displayResults = results.length ? results : cachedResults;
-      if (results.length) saveStatsCache(currentUser.username, 'recentForm', results);
+      if (results.length) saveStatsCache(dashboardAccount().username, 'recentForm', results);
       renderRecentForm(displayResults, '전체 최근 경기 순서');
     }
 
@@ -4366,7 +4390,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           showLiveRank: true,
         }),
       ]);
-      if (currentUser) {
+      if (dashboardAccount()) {
         await Promise.allSettled([
           loadLiveStatus(),
           loadPeriodStats(statsMap),
@@ -5131,17 +5155,12 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
   };
 
   window.openPlayerRecord = function openPlayerRecord(playerName) {
-    const input = document.getElementById('playerSearchInput');
-    if (input) input.value = playerName || '';
-
-    const searchTab = document.querySelector('#moondoTabs [data-tab="search"]');
-    if (searchTab) searchTab.click();
-
-    setTimeout(async function () {
-      await window.searchPlayerRecord();
-      const section = document.querySelector('[data-search-section]');
-      if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 0);
+    const username = String(playerName || '').trim();
+    if (!username) return;
+    const url = new URL(location.href);
+    url.searchParams.set('player', username);
+    url.hash = '';
+    location.assign(url.href);
   };
 
   function ready(fn) {
