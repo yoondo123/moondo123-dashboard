@@ -6329,3 +6329,198 @@ body{
   #moondoApp #todayTier{font-size:14px!important;}
 }
 </style>
+
+
+<style>
+/* ===== MOONDO UI polish v2 ===== */
+#moondoApp .today-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:14px!important;
+  grid-template-areas:
+    "matches wins score losses"
+    "fc draws tier rank"!important;
+}
+#moondoApp .today-grid > .stat:nth-child(1){grid-area:matches!important;}
+#moondoApp .today-grid > .stat:nth-child(2){grid-area:wins!important;}
+#moondoApp .today-grid > .stat:nth-child(3){grid-area:draws!important;}
+#moondoApp .today-grid > .stat:nth-child(4){grid-area:losses!important;}
+#moondoApp .today-grid > .stat:nth-child(5){grid-area:fc!important;}
+#moondoApp .today-grid > .stat:nth-child(6){grid-area:tier!important;}
+#moondoApp .today-grid > .stat:nth-child(7){grid-area:score!important;}
+#moondoApp .today-grid > .stat:nth-child(8){grid-area:rank!important;}
+#moondoApp .today-grid .stat,
+#moondoApp .today-grid .stat.compact{
+  min-height:132px!important;
+}
+#moondoApp .today-grid .stat .muted{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;}
+#moondoApp .today-grid .stat small{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;}
+#moondoApp #todayWins{color:#70f2d2!important;}
+#moondoApp #todayDraws{color:#b9c4cc!important;}
+#moondoApp #todayLosses{color:#ff8a9a!important;}
+#moondoApp #todayWinRate{color:#9fb6bf!important; font-weight:800!important;}
+#moondoApp #todayWinRate:after{display:none!important;}
+
+/* 최근 20판: 2줄 10칸으로 정렬 */
+#moondoApp .form-head{
+  align-items:flex-start!important;
+  gap:10px!important;
+}
+#moondoApp .form-summary{
+  max-width:none!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  text-align:right!important;
+  line-height:1.35!important;
+}
+#moondoApp .form-dots{
+  display:grid!important;
+  grid-template-columns:repeat(10,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+#moondoApp .form-dot{
+  width:100%!important;
+  min-width:0!important;
+  height:30px!important;
+  min-height:30px!important;
+  flex-basis:auto!important;
+  border-radius:8px!important;
+  font-size:11px!important;
+}
+
+/* 모바일에서 오늘 승률 랭킹 다시 노출 + 보기 쉽게 카드형 변환 */
+@media (max-width: 640px){
+  #moondoApp .today-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+    grid-template-areas:
+      "matches matches"
+      "wins losses"
+      "draws fc"
+      "score rank"
+      "tier tier"!important;
+  }
+  #moondoApp .today-grid .stat,
+  #moondoApp .today-grid .stat.compact,
+  #moondoApp .today-grid .stat:first-child,
+  #moondoApp .today-grid .stat:nth-child(n){
+    height:auto!important;
+    min-height:102px!important;
+    padding:14px 13px 12px!important;
+    border-radius:14px!important;
+    text-align:left!important;
+  }
+  #moondoApp .today-grid > .stat:nth-child(1){min-height:122px!important;}
+  #moondoApp .today-grid > .stat:nth-child(6){min-height:96px!important;}
+  #moondoApp .today-grid .stat .muted{
+    padding-right:0!important;
+    font-size:11px!important;
+    line-height:1.35!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+  }
+  #moondoApp .today-grid .stat strong,
+  #moondoApp .today-grid .stat.compact strong,
+  #moondoApp .today-grid .stat:first-child strong{
+    margin-top:8px!important;
+    font-size:28px!important;
+    line-height:1.06!important;
+  }
+  #moondoApp .today-grid .stat small,
+  #moondoApp .today-grid .stat.compact small{
+    display:block!important;
+    margin-top:8px!important;
+    font-size:11px!important;
+    line-height:1.35!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+  }
+  #moondoApp #todayTier{font-size:18px!important;line-height:1.2!important;max-width:100%!important;}
+  #moondoApp #todayRankingHeading,
+  #moondoApp #todayRankingHeading + .table-wrap{display:block!important;}
+  #moondoApp #todayRankingHeading{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    flex-wrap:wrap!important;
+  }
+  #moondoApp #todayRankingHeading #todayRankingTitle{flex:1 1 auto!important; min-width:0!important;}
+  #moondoApp #todayRankingToggle{
+    min-height:32px!important;
+    height:32px!important;
+    padding:0 12px!important;
+    border-radius:999px!important;
+    font-size:11px!important;
+  }
+  #moondoApp #todayRankingHeading + .table-wrap{
+    overflow:visible!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    margin-top:4px!important;
+  }
+  #moondoApp #todayRankingHeading + .table-wrap table,
+  #moondoApp #todayRankingHeading + .table-wrap thead,
+  #moondoApp #todayRankingHeading + .table-wrap tbody,
+  #moondoApp #todayRankingHeading + .table-wrap tr,
+  #moondoApp #todayRankingHeading + .table-wrap th,
+  #moondoApp #todayRankingHeading + .table-wrap td{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #moondoApp #todayRankingHeading + .table-wrap thead{display:none!important;}
+  #moondoApp #rankingList tr{
+    display:grid!important;
+    grid-template-columns:44px minmax(0,1fr) auto!important;
+    grid-template-areas:
+      "rank name rate"
+      "rank meta record"!important;
+    gap:4px 10px!important;
+    margin-bottom:8px!important;
+    padding:12px!important;
+    border:1px solid rgba(168,232,224,.11)!important;
+    border-radius:14px!important;
+    background:linear-gradient(135deg,rgba(0,224,194,.10),transparent 42%), rgba(18,23,35,.95)!important;
+  }
+  #moondoApp #rankingList td{padding:0!important; border:0!important; min-height:auto!important; text-align:left!important;}
+  #moondoApp #rankingList td:before{display:none!important;content:none!important;}
+  #moondoApp #rankingList td:nth-child(1){grid-area:rank!important; display:grid!important; place-items:center!important; width:44px!important; height:44px!important; border-radius:12px!important; background:rgba(0,224,194,.10)!important; color:#dffdf5!important; font-size:15px!important; font-weight:950!important;}
+  #moondoApp #rankingList td:nth-child(2){grid-area:name!important; color:#ffffff!important; font-size:14px!important; font-weight:950!important;}
+  #moondoApp #rankingList td:nth-child(3){grid-area:meta!important; color:#96a6b5!important; font-size:11px!important;}
+  #moondoApp #rankingList td:nth-child(8){grid-area:rate!important; justify-self:end!important; color:#ffd36e!important; font-size:14px!important; font-weight:950!important;}
+  #moondoApp #rankingList td:nth-child(4){grid-area:record!important; justify-self:end!important; color:#70f2d2!important; font-size:13px!important; font-weight:900!important;}
+  #moondoApp #rankingList td:nth-child(4)::after{content:'승 '!important; color:#70f2d2!important; margin-left:2px!important;}
+  #moondoApp #rankingList td:nth-child(5),
+  #moondoApp #rankingList td:nth-child(6){display:inline!important; color:#b8c5d0!important; font-size:13px!important; margin-left:6px!important;}
+  #moondoApp #rankingList td:nth-child(5)::before{content:'· '!important; color:#667887!important; display:inline!important;}
+  #moondoApp #rankingList td:nth-child(5)::after{content:'무'!important; margin-left:2px!important;}
+  #moondoApp #rankingList td:nth-child(6)::before{content:'· '!important; color:#667887!important; display:inline!important;}
+  #moondoApp #rankingList td:nth-child(6)::after{content:'패'!important; margin-left:2px!important;}
+  #moondoApp #rankingList td:nth-child(7),
+  #moondoApp #rankingList td:nth-child(9),
+  #moondoApp #rankingList td:nth-child(10),
+  #moondoApp #rankingList td:nth-child(11),
+  #moondoApp #rankingList td:nth-child(12){display:none!important;}
+
+  #moondoApp .form-head{display:block!important; margin-bottom:10px!important;}
+  #moondoApp .form-title{display:block!important; margin-bottom:4px!important; font-size:12px!important;}
+  #moondoApp .form-summary{display:block!important; text-align:left!important; font-size:10px!important;}
+  #moondoApp .form-dots{grid-template-columns:repeat(5,minmax(0,1fr))!important; gap:7px!important;}
+  #moondoApp .form-dot{height:28px!important; min-height:28px!important; font-size:10px!important; border-radius:7px!important;}
+}
+
+@media (max-width: 360px){
+  #moondoApp .today-grid .stat,
+  #moondoApp .today-grid .stat.compact,
+  #moondoApp .today-grid .stat:nth-child(n){min-height:96px!important; padding:12px 11px 11px!important;}
+  #moondoApp .today-grid .stat strong,
+  #moondoApp .today-grid .stat.compact strong{font-size:24px!important;}
+  #moondoApp #todayTier{font-size:16px!important;}
+  #moondoApp #rankingList tr{grid-template-columns:40px minmax(0,1fr) auto!important; padding:10px!important;}
+}
+</style>
