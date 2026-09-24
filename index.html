@@ -1861,12 +1861,12 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 </style>
 
 </head>
-<body>
+<body id="moondoApp">
   <main>
     <header>
       <div>
         <h1>MOONDO FC온라인 전적</h1>
-        <p class="muted">실시간 경기와 최근 기록을 10초마다 갱신합니다.</p>
+        <p class="muted">MATCH CENTER <span class="refresh-status">10초 갱신</span></p>
       </div>
     </header>
 
@@ -4245,11 +4245,11 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       '#liveState',
       '#todayMatches',
       '#formDots',
-      '#rankingList',
       '#recentMatchDetailList'
     ].forEach(selector => setSectionGroup(selector, 'home'));
 
     [
+      '#rankingList',
       '#weekMatches',
       '#weeklyRankingList',
       '#recentList',
@@ -4343,7 +4343,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     groupByAnchor('#liveState', 'home');
     groupByAnchor('#todayMatches', 'home');
     groupByAnchor('#formDots', 'home');
-    groupByAnchor('#rankingList', 'home');
+    groupByAnchor('#rankingList', 'stats');
     groupByAnchor('#recentMatchDetailList', 'home');
     groupByAnchor('#weekMatches', 'stats');
     groupByAnchor('#weeklyRankingList', 'stats');
@@ -4356,13 +4356,13 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         title.includes('실시간경기') ||
         title.includes('오늘전적') ||
         title.includes('최근20판흐름') ||
-        title.includes('오늘승률랭킹') ||
         title.includes('최근10경기상세')
       ) {
         setGroup(h2, 'home');
       }
 
       if (
+        title.includes('오늘승률랭킹') ||
         title.includes('주간전적') ||
         title.includes('주간승률랭킹') ||
         title.includes('최근14일경기') ||
@@ -5081,7 +5081,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     button.addEventListener('click', function () {
       refreshDashboard(button);
     });
-    document.body.appendChild(button);
+    const toolbar = document.querySelector('#dashboard > .topbar');
+    (toolbar || document.body).appendChild(button);
     syncVisibility(button);
     window.addEventListener('resize', function () { syncVisibility(button); });
     document.addEventListener('visibilitychange', function () { syncVisibility(button); });
@@ -5700,6 +5701,106 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 </body>
 </html>
 
+<style id="moondo-match-center-theme">
+/* Scoped presentation layer; data fields and upload logic are unchanged. */
+#moondoApp { zoom:1!important; margin:0!important; background:#0c0e10!important; color:#edf0f2!important; font-family:Pretendard,Arial,sans-serif!important; }
+#moondoApp header > div { width:100%; text-align:left!important; background:none!important; border:0!important; border-radius:0!important; padding:0!important; box-shadow:none!important; }
+#moondoApp header h1 { text-align:left!important; border:0!important; padding:0!important; box-shadow:none!important; }
+#moondoApp header h1 span { color:inherit!important; background:none!important; -webkit-text-fill-color:currentColor!important; }
+#moondoApp header p { display:block!important; }
+#moondoApp .topbar > div { text-align:left!important; }
+#moondoApp .stat:before,#moondoApp .stat:after { display:none!important; }
+#moondoApp .form-dot.win { background:#203e32!important; color:#9deac6!important; border:1px solid #355b49!important; }
+#moondoApp .form-dot.loss { background:#42272e!important; color:#f0acb8!important; border:1px solid #62404a!important; }
+#moondoApp .remote-control-actions button,#moondoApp .footer-actions button,#moondoApp .footer-actions a { background:#1c2428!important; border:1px solid #39464c!important; color:#c8d5dc!important; min-height:42px!important; border-radius:6px!important; padding:10px 16px!important; font-size:13px!important; }
+#moondoApp #remoteControlPanel { margin-top:30px!important; padding-top:20px!important; border-top:1px solid #30353a!important; }
+#moondoApp .footer-actions { margin-top:24px!important; }
+#moondoApp #wagguMobileRefreshBtn { position:static!important; flex:0 0 auto!important; width:auto!important; margin:12px 0 0!important; transform:none!important; }
+#moondoApp .topbar { flex-wrap:wrap!important; }
+#moondoApp .week-grid .stat:last-child { grid-column:auto; }
+#moondoApp * { box-sizing:border-box; letter-spacing:0!important; }
+#moondoApp main { width:100%!important; max-width:1320px!important; margin:auto!important; padding:28px 32px 80px!important; }
+#moondoApp header { padding:0 0 24px!important; margin:0!important; border:0!important; border-bottom:1px solid #2a2e33!important; border-radius:0!important; background:none!important; box-shadow:none!important; }
+#moondoApp h1 { font-size:25px!important; font-weight:800!important; line-height:1.4!important; background:none!important; color:#f6f8fa!important; -webkit-text-fill-color:currentColor!important; }
+#moondoApp header p { margin:8px 0 0!important; font-size:11px!important; color:#a5aeb6!important; }
+#moondoApp .refresh-status { margin-left:12px; color:#74dcb1; border-left:1px solid #41464b; padding-left:12px; }
+#moondoApp .topbar { background:none!important; border:0!important; border-radius:0!important; box-shadow:none!important; padding:24px 0 18px!important; margin:0!important; }
+#moondoApp .topbar h2 { font-size:22px!important; margin:0!important; padding:0!important; }
+#moondoApp h2:before,#moondoApp h2:after { display:none!important; }
+#moondoApp h2 { color:#e9eef1!important; font-size:17px!important; line-height:1.5!important; font-weight:700!important; margin:30px 0 14px!important; padding:0!important; }
+#moondoApp .muted,#moondoApp #lastUpdated { color:#9ba5ae!important; font-size:13px!important; line-height:1.6!important; }
+#moondoApp #lastUpdated { margin:6px 0 0!important; }
+#moondoApp .moondo-tabs { display:flex!important; gap:24px!important; padding:0!important; margin:0 0 28px!important; background:none!important; border:0!important; border-bottom:1px solid #30353a!important; border-radius:0!important; box-shadow:none!important; }
+#moondoApp .moondo-tab { flex:0 1 auto!important; width:auto!important; min-height:48px!important; padding:12px 4px!important; border:0!important; border-bottom:2px solid transparent!important; border-radius:0!important; background:none!important; color:#99a4ae!important; box-shadow:none!important; font-size:15px!important; font-weight:650!important; }
+#moondoApp .moondo-tab.active { color:#83e4bc!important; border-bottom-color:#83e4bc!important; }
+#moondoApp button { cursor:pointer; font:inherit; border-radius:6px!important; box-shadow:none!important; }
+#moondoApp button:focus-visible,#moondoApp a:focus-visible,#moondoApp input:focus-visible { outline:2px solid #83e4bc!important; outline-offset:4px; }
+#moondoApp input,#moondoApp select { background:#171b1f!important; color:#ecf0f2!important; border:1px solid #41474d!important; border-radius:6px!important; font-size:14px!important; min-height:42px; max-width:100%; }
+#moondoApp .panel { background:none!important; border:0!important; border-radius:0!important; box-shadow:none!important; padding:0!important; }
+#moondoApp .live-card { display:grid!important; grid-template-columns:minmax(0,1fr) 72px 72px minmax(0,1fr) 72px!important; align-items:center!important; gap:0!important; padding:16px!important; border:1px solid #343a40!important; border-radius:8px!important; background:#171b1f!important; box-shadow:none!important; }
+#moondoApp .live-name { padding:8px 14px!important; font-size:18px!important; white-space:normal!important; overflow-wrap:anywhere!important; text-align:left!important; color:#f2f5f7!important; }
+#moondoApp .live-score { display:flex!important; align-items:center!important; justify-content:center!important; height:68px!important; padding:0!important; font-size:36px!important; font-weight:750!important; background:none!important; border:0!important; color:#80e0b8!important; }
+#moondoApp #liveOppScore { color:#f5b7bf!important; border-left:1px solid #42484e!important; }
+#moondoApp .live-time { font-size:14px!important; padding:8px!important; color:#c1c8cf!important; text-align:right!important; background:none!important; border:0!important; }
+#moondoApp #liveGoals { margin-top:16px!important; }
+#moondoApp #liveGoals > * { border-radius:0!important; box-shadow:none!important; background:none!important; }
+#moondoApp .today-grid,#moondoApp .week-grid { display:grid!important; grid-template-columns:repeat(4,minmax(0,1fr))!important; gap:1px!important; background:#30353a!important; border:1px solid #30353a!important; border-radius:8px!important; overflow:hidden; }
+#moondoApp .week-grid { grid-template-columns:repeat(5,minmax(0,1fr))!important; }
+#moondoApp .stat,#moondoApp .stat.compact { padding:20px!important; min-height:128px!important; border:0!important; border-radius:0!important; background:#15191c!important; box-shadow:none!important; text-align:left!important; display:flex!important; flex-direction:column!important; justify-content:center!important; gap:7px!important; }
+#moondoApp .stat strong { display:block!important; font-size:29px!important; line-height:1.25!important; color:#f1f5f6!important; overflow-wrap:anywhere; }
+#moondoApp .stat small { color:#96a2ab!important; font-size:12px!important; line-height:1.5!important; }
+#moondoApp #todayTier { font-size:19px!important; }
+#moondoApp #todayWins { color:#80e0b8!important; }
+#moondoApp #todayDraws { color:#a9c9e8!important; }
+#moondoApp #todayLosses { color:#f3a4af!important; }
+#moondoApp #todayFc { color:#e8ca80!important; }
+#moondoApp .today-extremes { display:grid!important; grid-template-columns:1fr 1fr!important; gap:28px!important; margin:24px 0!important; }
+#moondoApp .today-extreme-card { padding:16px 0!important; border:0!important; border-top:1px solid #343a40!important; background:none!important; border-radius:0!important; box-shadow:none!important; }
+#moondoApp .today-extreme-title { font-size:14px!important; margin-bottom:16px!important; }
+#moondoApp .today-extreme-title:before { display:none!important; }
+#moondoApp .today-extreme-values { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:16px!important; }
+#moondoApp .today-extreme-value { border:0!important; padding:0!important; min-width:0; }
+#moondoApp .today-extreme-value span { font-size:12px!important; color:#94a0a9!important; }
+#moondoApp .today-extreme-value strong { font-size:16px!important; line-height:1.5!important; overflow-wrap:anywhere; }
+#moondoApp .form-strip { padding:18px 0!important; border:0!important; border-top:1px solid #30353a!important; border-bottom:1px solid #30353a!important; border-radius:0!important; background:none!important; box-shadow:none!important; }
+#moondoApp .form-title,#moondoApp .form-summary { font-size:13px!important; }
+#moondoApp .form-dots { display:flex!important; flex-wrap:wrap!important; gap:6px!important; }
+#moondoApp .form-dot { width:32px!important; height:30px!important; flex:0 0 32px!important; border-radius:4px!important; font-size:12px!important; box-shadow:none!important; }
+#moondoApp .table-wrap { border:1px solid #30353a!important; border-radius:8px!important; padding:0!important; background:#111518!important; overflow-x:auto!important; box-shadow:none!important; }
+#moondoApp table { width:100%!important; border-collapse:collapse!important; border-spacing:0!important; font-size:13px!important; }
+#moondoApp th { background:#1c2125!important; color:#a7b1b9!important; font-size:12px!important; padding:14px 12px!important; font-weight:600!important; }
+#moondoApp td { padding:14px 12px!important; font-size:13px!important; line-height:1.55!important; border:0!important; border-bottom:1px solid #292f34!important; background:none!important; box-shadow:none!important; }
+#moondoApp tbody tr { background:none!important; box-shadow:none!important; }
+#moondoApp tbody tr:hover { background:#1b2426!important; }
+#moondoApp #todayRankingToggle { background:#233a31!important; color:#9aefca!important; border:1px solid #3c6653!important; padding:8px 12px!important; font-size:13px!important; }
+#moondoApp #rankingList .ranking-streak-badge,#moondoApp #weeklyRankingList .ranking-streak-badge { box-shadow:none!important; border-radius:4px!important; }
+#moondoApp .match-final-score,#moondoApp .match-own-goals { white-space:normal!important; }
+#moondoApp #wagguMobileRefreshBtn { background:#203c30!important; border:1px solid #46705b!important; color:#a9f4d0!important; border-radius:8px!important; font-size:13px!important; padding:10px 14px!important; box-shadow:0 4px 16px #0005!important; }
+@media(max-width:760px) {
+ #moondoApp main { padding:20px 16px 88px!important; }
+ #moondoApp h1 { font-size:21px!important; }
+ #moondoApp .topbar h2 { font-size:20px!important; }
+ #moondoApp .moondo-tabs { gap:20px!important; }
+ #moondoApp .moondo-tab { font-size:14px!important; }
+ #moondoApp .live-card { grid-template-columns:minmax(0,1fr) 40px 40px minmax(0,1fr)!important; padding:12px 6px!important; }
+ #moondoApp .live-name { font-size:14px!important; padding:6px!important; }
+ #moondoApp .live-score { font-size:29px!important; height:52px!important; }
+ #moondoApp .live-time { grid-column:1/-1!important; margin-top:10px!important; border-top:1px solid #343a40!important; }
+ #moondoApp .today-grid,#moondoApp .week-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+ #moondoApp .week-grid .stat:last-child { grid-column:1/-1!important; }
+ #moondoApp #recentMatchDetailList td:first-child,#moondoApp #searchRecentMatchDetailList td:first-child { white-space:normal!important; overflow:visible!important; }
+ #moondoApp .stat,#moondoApp .stat.compact { padding:16px!important; min-height:116px!important; }
+ #moondoApp .stat strong { font-size:26px!important; }
+ #moondoApp .today-extremes { grid-template-columns:1fr!important; gap:0!important; }
+ #moondoApp .today-extreme-values { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+ #moondoApp #recentMatchDetailList tr,#moondoApp #searchRecentMatchDetailList tr { padding:14px 12px!important; margin:0!important; border-radius:0!important; border-bottom:1px solid #343a40!important; grid-template-columns:76px minmax(0,1fr) 34px 48px!important; gap:8px!important; }
+ #moondoApp #recentMatchDetailList td,#moondoApp #searchRecentMatchDetailList td { padding:0!important; font-size:12px!important; border:0!important; }
+ #moondoApp #recentMatchDetailList td.match-own-goals,#moondoApp #searchRecentMatchDetailList td.match-own-goals { font-size:13px!important; color:#b9c4cc!important; }
+ #moondoApp #rankingList tr,#moondoApp #weeklyRankingList tr { margin:0!important; border-radius:0!important; padding:14px!important; border:0!important; border-bottom:1px solid #343a40!important; }
+ #moondoApp #rankingList td,#moondoApp #weeklyRankingList td { font-size:12px!important; border:0!important; padding:4px!important; }
+ #moondoApp .login-row { display:flex!important; flex-direction:column!important; }
+}
+</style>
 <style id="waggu-hide-lifetime-section">
 #lifetimeRecord { display: none !important; }
 #lifetimeRecord.closest-hide-placeholder { display: none !important; }
