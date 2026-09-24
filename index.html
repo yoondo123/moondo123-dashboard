@@ -3950,7 +3950,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       query = applyCurrentAccountFilter(query, currentUser.username);
       const { data, error } = await query
         .order('created_at', { ascending: false })
-        .limit(240);
+        .limit(400);
 
       if (error) {
         const message = `<div class="team-scorer-empty">득점 기록 조회 오류: ${escapeHtml(error.message)}</div>`;
@@ -6615,6 +6615,125 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+</script>
+
+
+
+<style id="waggu-mobile-today-summary-v3">
+@media (max-width: 640px) {
+  #dashboard .dashboard-today-block .today-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    gap: 7px !important;
+    align-items: stretch !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat {
+    height: 88px !important;
+    min-height: 88px !important;
+    max-height: none !important;
+    padding: 10px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(1),
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) {
+    height: 96px !important;
+    min-height: 96px !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(2),
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(3),
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(4),
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(5) {
+    display:none !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat .muted {
+    font-size: 9px !important;
+    line-height: 1.05 !important;
+    margin: 0 !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat strong {
+    margin-top: 5px !important;
+    line-height: 1 !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(1) strong {
+    font-size: 29px !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) strong {
+    font-size: 15px !important;
+    line-height: 1.12 !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(7) strong,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(8) strong {
+    font-size: 21px !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(7) small,
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(8) small {
+    margin-top: 5px !important;
+    font-size: 8.5px !important;
+  }
+  #dashboard .today-mobile-record-box {
+    margin-top: 5px !important;
+    gap: 3px !important;
+    min-height: 0 !important;
+  }
+  #dashboard .today-mobile-record-line {
+    flex-wrap: nowrap !important;
+    gap: 3px !important;
+  }
+  #dashboard .today-mobile-record-pill {
+    min-width: 0 !important;
+    height: 19px !important;
+    padding: 0 6px !important;
+    font-size: 8.5px !important;
+    flex: 0 0 auto !important;
+  }
+  #dashboard .today-mobile-record-meta {
+    display:none !important;
+  }
+  #dashboard .today-mobile-tier-meta {
+    margin-top: 5px !important;
+    font-size: 8.5px !important;
+    line-height: 1.05 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) small { display:none !important; }
+}
+@media (max-width: 370px) {
+  #dashboard .dashboard-today-block .today-grid > .stat { height:84px !important; min-height:84px !important; padding:9px !important; }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(1),
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) { height:92px !important; min-height:92px !important; }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(1) strong { font-size:27px !important; }
+  #dashboard .dashboard-today-block .today-grid > .stat:nth-child(6) strong { font-size:14px !important; }
+  #dashboard .today-mobile-record-pill { padding:0 5px !important; font-size:8px !important; }
+}
+</style>
+<script id="waggu-mobile-today-summary-script-v3">
+(function(){
+  function t(id){var el=document.getElementById(id);return el?(el.textContent||'').trim():'';}
+  function sync(){
+    var grid=document.querySelector('#dashboard .dashboard-today-block .today-grid');
+    if(!grid)return;
+    var cards=grid.querySelectorAll('.stat');
+    if(cards.length<8)return;
+    var box=cards[0].querySelector('.today-mobile-record-box');
+    if(!box){box=document.createElement('div');box.className='today-mobile-record-box';cards[0].appendChild(box);}
+    box.innerHTML='<div class="today-mobile-record-line">'+
+      '<span class="today-mobile-record-pill win">승 '+(t('todayWins')||'0')+'</span>'+
+      '<span class="today-mobile-record-pill draw">무 '+(t('todayDraws')||'0')+'</span>'+
+      '<span class="today-mobile-record-pill loss">패 '+(t('todayLosses')||'0')+'</span>'+
+      '</div>';
+    var meta=cards[5].querySelector('.today-mobile-tier-meta');
+    if(!meta){meta=document.createElement('div');meta.className='today-mobile-tier-meta';cards[5].appendChild(meta);}
+    meta.textContent='FC '+(t('todayFc')||'0');
+  }
+  function init(){sync();['todayWins','todayDraws','todayLosses','todayFc','todayTier','todayMatches'].forEach(function(id){var el=document.getElementById(id);if(el)new MutationObserver(sync).observe(el,{childList:true,characterData:true,subtree:true});});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
 
