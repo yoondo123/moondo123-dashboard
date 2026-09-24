@@ -3977,20 +3977,18 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       return firstValidRank(row?.rank_after);
     }
 
-    function recentRankMovement(currentRow, previousRow) {
+    function recentRankMovement(currentRow) {
       const after = gameRankAfter(currentRow);
-      const explicitBefore = firstValidRank(currentRow?.rank_before);
-      const before = explicitBefore ?? gameRankAfter(previousRow);
-      if (!Number.isFinite(after) || !Number.isFinite(before)) {
+      const before = firstValidRank(currentRow?.rank_before);
+      // Adjacent history rows may contain cached ranks from different times.
+      // Only compare the before/after pair recorded for this match itself.
+      if (!Number.isInteger(after) || !Number.isInteger(before)) {
         return { value: null, className: 'unknown', label: '순위 미확인' };
       }
       const movement = before - after;
       if (movement > 0) return { value: movement, className: 'up', label: `↑${movement}등` };
       if (movement < 0) return { value: movement, className: 'down', label: `↓${Math.abs(movement)}등` };
-      // Repeated legacy rank_after can be a cached daily best, not a fresh rank.
-      return Number.isFinite(explicitBefore)
-        ? { value: 0, className: 'same', label: '변동없음' }
-        : { value: null, className: 'unknown', label: '순위 확인 필요' };
+      return { value: 0, className: 'same', label: '변동없음' };
     }
 
     function compactRecentTime(value) {
@@ -4017,20 +4015,18 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         return;
       }
 
-      // 10개를 보여주되, 10번째 경기의 순위변동까지 계산하려고 한 경기를 더 보관한다.
-      const detailRows = dedupeMatchDetails(data || [], 12);
-      const rows = detailRows.slice(0, 10);
+      const rows = dedupeMatchDetails(data || [], 10);
       if (!rows.length) {
         tbody.innerHTML = '<tr><td colspan="7">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = rows.map((row, index) => {
+      tbody.innerHTML = rows.map(row => {
         const opponent = row.opponent_nickname || '상대 미확인';
         const result = normalizeResult(row.result);
         const delta = Number(row.score_change);
         const deltaClass = Number.isFinite(delta) ? (delta > 0 ? 'up' : (delta < 0 ? 'down' : 'same')) : 'same';
-        const rankMove = recentRankMovement(row, detailRows[index + 1]);
+        const rankMove = recentRankMovement(row);
         const fullTime = matchDetailDate(row.created_at);
         const shortTime = compactRecentTime(row.created_at);
         return `
