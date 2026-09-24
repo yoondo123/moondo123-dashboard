@@ -5819,3 +5819,513 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
   else removeLifetimeSection();
 })();
 </script>
+
+
+<!-- ===== GPT UI REDESIGN 2026-09-24 : desktop + mobile ===== -->
+<style id="moondo-ui-redesign-v2">
+:root{
+  --ui-bg:#080c10;
+  --ui-panel:#10161b;
+  --ui-panel-2:#141b21;
+  --ui-panel-3:#182128;
+  --ui-line:#27323a;
+  --ui-line-soft:rgba(255,255,255,.075);
+  --ui-text:#f4f7f8;
+  --ui-muted:#8f9ba5;
+  --ui-green:#58e0b0;
+  --ui-green-dim:#17392e;
+  --ui-red:#f07f92;
+  --ui-blue:#9bb9dd;
+  --ui-gold:#f0cb6c;
+  --ui-purple:#b69cff;
+  --ui-shadow:0 18px 54px rgba(0,0,0,.28);
+}
+
+html,body{background:var(--ui-bg)!important;}
+body{
+  background:
+    radial-gradient(circle at 82% -10%,rgba(88,224,176,.10),transparent 28%),
+    radial-gradient(circle at 8% 0%,rgba(88,224,176,.06),transparent 24%),
+    #080c10!important;
+}
+
+#moondoApp{background:transparent!important;color:var(--ui-text)!important;}
+#moondoApp main{max-width:1280px!important;padding:24px 28px 64px!important;}
+
+/* HEADER */
+#moondoApp header{
+  position:relative!important;
+  min-height:116px!important;
+  padding:24px 26px!important;
+  border:1px solid var(--ui-line)!important;
+  border-radius:20px!important;
+  overflow:hidden!important;
+  background:
+    linear-gradient(100deg,rgba(88,224,176,.09),transparent 36%),
+    linear-gradient(180deg,#111820,#0d1217)!important;
+  box-shadow:var(--ui-shadow)!important;
+}
+#moondoApp header:after{
+  content:"MOONDO"!important;
+  display:block!important;
+  position:absolute!important;
+  right:20px!important;
+  bottom:-20px!important;
+  color:rgba(255,255,255,.026)!important;
+  font-size:88px!important;
+  line-height:1!important;
+  font-weight:950!important;
+  letter-spacing:-.08em!important;
+  pointer-events:none!important;
+}
+#moondoApp header h1{font-size:26px!important;font-weight:900!important;letter-spacing:-.035em!important;}
+#moondoApp header h1:first-letter{color:var(--ui-green)!important;}
+#moondoApp header p{color:#9ba6af!important;font-size:12px!important;}
+#moondoApp .refresh-status{color:var(--ui-green)!important;}
+
+/* USER TITLE */
+#moondoApp .topbar{
+  padding:20px 2px 14px!important;
+  border:0!important;
+  background:transparent!important;
+}
+#moondoApp .topbar h2{font-size:24px!important;font-weight:900!important;color:#fff!important;}
+#moondoApp #lastUpdated{font-size:11px!important;color:#74818b!important;}
+
+/* TABS */
+#moondoApp .moondo-tabs{
+  gap:4px!important;
+  padding:5px!important;
+  margin:0 0 22px!important;
+  border:1px solid var(--ui-line)!important;
+  border-radius:12px!important;
+  background:#0d1318!important;
+}
+#moondoApp .moondo-tab{
+  flex:1!important;
+  min-height:42px!important;
+  padding:9px 16px!important;
+  border:0!important;
+  border-radius:8px!important;
+  color:#91a0aa!important;
+  font-size:13px!important;
+  font-weight:800!important;
+}
+#moondoApp .moondo-tab.active{
+  color:#0a1511!important;
+  background:linear-gradient(180deg,#67e7b8,#45bd94)!important;
+  box-shadow:0 7px 20px rgba(88,224,176,.13)!important;
+}
+
+/* SECTION TITLES */
+#moondoApp h2{
+  display:flex!important;
+  align-items:center!important;
+  gap:9px!important;
+  margin:24px 0 11px!important;
+  color:#eaf0f2!important;
+  font-size:16px!important;
+  font-weight:850!important;
+  letter-spacing:-.025em!important;
+}
+#moondoApp h2:before{
+  content:""!important;
+  display:block!important;
+  width:4px!important;
+  height:16px!important;
+  border-radius:99px!important;
+  background:var(--ui-green)!important;
+  box-shadow:0 0 14px rgba(88,224,176,.22)!important;
+}
+#moondoApp .topbar h2:before{display:none!important;}
+
+/* LIVE */
+#moondoApp .panel{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;}
+#moondoApp #liveState{
+  width:max-content!important;
+  margin:0 0 8px!important;
+  padding:5px 9px!important;
+  border:1px solid rgba(88,224,176,.24)!important;
+  border-radius:999px!important;
+  background:rgba(88,224,176,.08)!important;
+  color:#bff3dc!important;
+  font-size:11px!important;
+  font-weight:850!important;
+}
+#moondoApp .live-card{
+  grid-template-columns:minmax(190px,1fr) 80px 80px minmax(190px,1fr) 92px!important;
+  min-height:78px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:1px solid var(--ui-line)!important;
+  border-radius:12px!important;
+  background:linear-gradient(90deg,rgba(88,224,176,.045),transparent 28%),#11171c!important;
+  box-shadow:var(--ui-shadow)!important;
+}
+#moondoApp .live-name{
+  padding:0 20px!important;
+  font-size:16px!important;
+  font-weight:850!important;
+  color:#eef3f4!important;
+}
+#moondoApp .live-score{
+  height:78px!important;
+  font-size:35px!important;
+  font-weight:900!important;
+  color:var(--ui-green)!important;
+  background:#151d22!important;
+  border-left:1px solid var(--ui-line-soft)!important;
+}
+#moondoApp #liveOppScore{color:#f49aaa!important;border-left:1px solid var(--ui-line-soft)!important;}
+#moondoApp .live-time{
+  height:78px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:0 12px!important;
+  color:#9ca7af!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  border-left:1px solid var(--ui-line-soft)!important;
+}
+
+/* TODAY STAT CARDS */
+#moondoApp .today-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:10px!important;
+  border:0!important;
+  border-radius:0!important;
+  overflow:visible!important;
+  background:transparent!important;
+}
+#moondoApp .today-grid .stat,
+#moondoApp .today-grid .stat.compact{
+  position:relative!important;
+  min-height:116px!important;
+  padding:17px 17px 15px!important;
+  overflow:hidden!important;
+  border:1px solid var(--ui-line)!important;
+  border-radius:12px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.018),transparent),var(--ui-panel)!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.16)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:5px!important;
+}
+#moondoApp .today-grid .stat:before{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  left:0!important;
+  top:14px!important;
+  bottom:14px!important;
+  width:3px!important;
+  border-radius:0 99px 99px 0!important;
+  background:#45545d!important;
+}
+#moondoApp .today-grid .stat:after{
+  position:absolute!important;
+  right:14px!important;
+  top:13px!important;
+  width:28px!important;
+  height:28px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:9px!important;
+  background:#192228!important;
+  color:#798791!important;
+  font-size:14px!important;
+  font-weight:900!important;
+  opacity:.95!important;
+}
+#moondoApp .today-grid .stat:nth-child(1):after{content:"▣"!important;}
+#moondoApp .today-grid .stat:nth-child(2):after{content:"◆"!important;color:var(--ui-green)!important;}
+#moondoApp .today-grid .stat:nth-child(3):after{content:"="!important;color:var(--ui-blue)!important;}
+#moondoApp .today-grid .stat:nth-child(4):after{content:"×"!important;color:var(--ui-red)!important;}
+#moondoApp .today-grid .stat:nth-child(5):after{content:"●"!important;color:var(--ui-gold)!important;}
+#moondoApp .today-grid .stat:nth-child(6):after{content:"♛"!important;color:var(--ui-purple)!important;}
+#moondoApp .today-grid .stat:nth-child(7):after{content:"▥"!important;color:var(--ui-green)!important;}
+#moondoApp .today-grid .stat:nth-child(8):after{content:"#"!important;color:var(--ui-gold)!important;}
+#moondoApp .today-grid .stat:nth-child(2):before{background:var(--ui-green)!important;}
+#moondoApp .today-grid .stat:nth-child(3):before{background:var(--ui-blue)!important;}
+#moondoApp .today-grid .stat:nth-child(4):before{background:var(--ui-red)!important;}
+#moondoApp .today-grid .stat:nth-child(5):before{background:var(--ui-gold)!important;}
+#moondoApp .today-grid .stat:nth-child(6):before{background:var(--ui-purple)!important;}
+#moondoApp .today-grid .stat:nth-child(7):before{background:var(--ui-green)!important;}
+#moondoApp .today-grid .stat:nth-child(8):before{background:var(--ui-gold)!important;}
+#moondoApp .today-grid .stat .muted{
+  padding-right:34px!important;
+  color:#9aa7b0!important;
+  font-size:11px!important;
+  font-weight:800!important;
+}
+#moondoApp .today-grid .stat strong{
+  margin:2px 0 0!important;
+  color:#f3f7f8!important;
+  font-size:31px!important;
+  line-height:1.1!important;
+  font-weight:900!important;
+  letter-spacing:-.03em!important;
+}
+#moondoApp .today-grid .stat small{
+  margin:1px 0 0!important;
+  color:#78858f!important;
+  font-size:11px!important;
+  font-weight:750!important;
+}
+#moondoApp #todayWins{color:var(--ui-green)!important;}
+#moondoApp #todayDraws{color:var(--ui-blue)!important;}
+#moondoApp #todayLosses{color:var(--ui-red)!important;}
+#moondoApp #todayFc{color:var(--ui-gold)!important;}
+#moondoApp #todayTier{font-size:20px!important;line-height:1.25!important;word-break:keep-all!important;}
+#moondoApp #todayWinRate{color:#9fb0b8!important;}
+#moondoApp #todayWinRate:after{
+  content:""!important;
+  display:block!important;
+  width:68px!important;
+  height:4px!important;
+  margin-top:8px!important;
+  border-radius:99px!important;
+  background:linear-gradient(90deg,var(--ui-green) 54%,#263139 54%)!important;
+}
+
+/* TODAY EXTREMES */
+#moondoApp .today-extremes{
+  gap:12px!important;
+  margin:12px 0 4px!important;
+}
+#moondoApp .today-extreme-card{
+  padding:15px 16px!important;
+  border:1px solid var(--ui-line)!important;
+  border-radius:12px!important;
+  background:#0e1419!important;
+}
+#moondoApp .today-extreme-title{margin-bottom:12px!important;color:#a7b2ba!important;font-size:12px!important;font-weight:800!important;}
+#moondoApp .today-extreme-value span{font-size:10px!important;color:#6f7d87!important;}
+#moondoApp .today-extreme-value strong{font-size:15px!important;color:#dce3e6!important;}
+
+/* RECENT 20 */
+#moondoApp .form-strip{
+  margin:14px 0 0!important;
+  padding:13px 14px!important;
+  border:1px solid var(--ui-line)!important;
+  border-radius:12px!important;
+  background:#0e1419!important;
+}
+#moondoApp .form-head{margin-bottom:9px!important;}
+#moondoApp .form-title{font-size:12px!important;color:#d9e1e4!important;}
+#moondoApp .form-summary{font-size:11px!important;color:#9587d6!important;}
+#moondoApp .form-dots{display:flex!important;flex-wrap:nowrap!important;gap:5px!important;overflow-x:auto!important;padding-bottom:2px!important;scrollbar-width:none;}
+#moondoApp .form-dots::-webkit-scrollbar{display:none;}
+#moondoApp .form-dot{
+  width:29px!important;
+  height:27px!important;
+  min-height:27px!important;
+  flex:0 0 29px!important;
+  border-radius:6px!important;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+#moondoApp .form-dot.win{background:#12372b!important;border-color:#215b46!important;color:#73e5b7!important;}
+#moondoApp .form-dot.loss{background:#3b2028!important;border-color:#653541!important;color:#f09aab!important;}
+#moondoApp .form-dot.draw{background:#273038!important;border-color:#414c54!important;color:#c3ccd2!important;}
+
+/* TABLES */
+#moondoApp .table-wrap{
+  border:1px solid var(--ui-line)!important;
+  border-radius:12px!important;
+  overflow:hidden!important;
+  background:#0d1216!important;
+}
+#moondoApp table{min-width:760px!important;font-size:12px!important;}
+#moondoApp th{
+  padding:11px 10px!important;
+  background:#172027!important;
+  color:#8f9da7!important;
+  font-size:11px!important;
+  font-weight:800!important;
+}
+#moondoApp td{
+  padding:11px 10px!important;
+  color:#dfe5e8!important;
+  font-size:12px!important;
+  border-bottom:1px solid #202a31!important;
+}
+#moondoApp tbody tr:hover{background:rgba(88,224,176,.035)!important;}
+#moondoApp #recentMatchDetailList td:first-child{color:#bdc8ce!important;font-weight:700!important;}
+
+/* RANKING */
+#moondoApp #todayRankingHeading{justify-content:space-between!important;}
+#moondoApp #todayRankingToggle{
+  margin-left:auto!important;
+  min-height:34px!important;
+  padding:6px 10px!important;
+  border-radius:8px!important;
+  background:#14241e!important;
+  border:1px solid #29513f!important;
+  color:#88e9bd!important;
+  font-size:11px!important;
+}
+
+/* FOOTER / QUICK MENU */
+#moondoApp .footer-actions{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin-top:24px!important;
+}
+#moondoApp .footer-actions a,#moondoApp .footer-actions button,
+#moondoApp .remote-control-actions button{
+  min-width:0!important;
+  min-height:40px!important;
+  border:1px solid var(--ui-line)!important;
+  border-radius:9px!important;
+  background:#12191e!important;
+  color:#b7c3c9!important;
+  font-size:12px!important;
+  font-weight:800!important;
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:760px){
+  #moondoApp main{padding:12px 10px 76px!important;}
+
+  #moondoApp header{
+    min-height:0!important;
+    padding:16px 15px!important;
+    border-radius:14px!important;
+  }
+  #moondoApp header:after{font-size:46px!important;right:10px!important;bottom:-6px!important;}
+  #moondoApp header h1{font-size:19px!important;}
+
+  #moondoApp .topbar{padding:15px 2px 11px!important;}
+  #moondoApp .topbar h2{font-size:19px!important;}
+  #moondoApp #lastUpdated{font-size:10px!important;}
+
+  #moondoApp .moondo-tabs{margin-bottom:15px!important;padding:4px!important;border-radius:10px!important;}
+  #moondoApp .moondo-tab{min-height:38px!important;padding:7px 4px!important;font-size:11px!important;white-space:nowrap!important;}
+
+  #moondoApp h2{margin:18px 0 9px!important;font-size:15px!important;}
+  #moondoApp h2:before{width:3px!important;height:14px!important;}
+
+  /* 모바일 실시간 카드: 시간은 위 오른쪽, 불필요한 넓은 칸 제거 */
+  #moondoApp .live-card{
+    position:relative!important;
+    grid-template-columns:minmax(0,1fr) 46px 46px minmax(0,1fr)!important;
+    min-height:64px!important;
+    border-radius:11px!important;
+    overflow:visible!important;
+  }
+  #moondoApp .live-name{padding:0 8px!important;font-size:12px!important;line-height:1.25!important;}
+  #moondoApp .live-score{height:64px!important;font-size:26px!important;}
+  #moondoApp .live-time{
+    position:absolute!important;
+    right:8px!important;
+    top:-31px!important;
+    width:auto!important;
+    height:24px!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:#85929b!important;
+    font-size:10px!important;
+  }
+
+  /* 핵심: 모바일 오늘전적 2열 x 4행, 모든 카드 높이/간격 완전 동일 */
+  #moondoApp .today-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-auto-rows:106px!important;
+    gap:7px!important;
+  }
+  #moondoApp .today-grid .stat,
+  #moondoApp .today-grid .stat.compact,
+  #moondoApp .today-grid .stat:first-child,
+  #moondoApp .today-grid .stat:nth-child(n){
+    grid-column:auto!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    height:106px!important;
+    padding:12px 11px 10px!important;
+    border-radius:10px!important;
+    text-align:left!important;
+  }
+  #moondoApp .today-grid .stat:before{top:11px!important;bottom:11px!important;width:2px!important;}
+  #moondoApp .today-grid .stat:after{right:9px!important;top:9px!important;width:23px!important;height:23px!important;border-radius:7px!important;font-size:11px!important;}
+  #moondoApp .today-grid .stat .muted{padding-right:26px!important;font-size:9.5px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  #moondoApp .today-grid .stat strong,
+  #moondoApp .today-grid .stat.compact strong,
+  #moondoApp .today-grid .stat:first-child strong{
+    margin-top:2px!important;
+    font-size:24px!important;
+    line-height:1.08!important;
+  }
+  #moondoApp .today-grid .stat small{font-size:9.5px!important;line-height:1.2!important;}
+  #moondoApp #todayTier{font-size:15px!important;line-height:1.2!important;max-width:calc(100% - 4px)!important;}
+  #moondoApp #todayWinRate:after{width:52px!important;height:3px!important;margin-top:6px!important;}
+
+  /* 생성 시안처럼 모바일에서는 최고/최저 카드와 랭킹을 덜어내 핵심 정보에 집중 */
+  #moondoApp .today-extremes{display:none!important;}
+  #moondoApp #todayRankingHeading,
+  #moondoApp #todayRankingHeading + .table-wrap{display:none!important;}
+
+  /* 최근 20경기: 한 줄 좌우 스크롤 */
+  #moondoApp .form-strip{padding:11px 10px!important;border-radius:10px!important;}
+  #moondoApp .form-head{margin-bottom:7px!important;}
+  #moondoApp .form-title{font-size:11px!important;}
+  #moondoApp .form-summary{font-size:9px!important;max-width:54%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #moondoApp .form-dot{width:26px!important;height:25px!important;min-height:25px!important;flex-basis:26px!important;border-radius:5px!important;font-size:9px!important;}
+
+  /* 최근 10경기: 모바일도 '더보기' 없이 바로 표 전체 표시 */
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList){overflow:hidden!important;}
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) table,
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) thead,
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) tbody,
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) tr,
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) th,
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) td{
+    display:revert!important;
+  }
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) table{width:100%!important;min-width:0!important;table-layout:fixed!important;}
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) thead{display:table-header-group!important;}
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) tbody{display:table-row-group!important;}
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) tr{display:table-row!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;}
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) th,
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) td{
+    display:table-cell!important;
+    min-height:0!important;
+    padding:9px 5px!important;
+    border-right:0!important;
+    border-bottom:1px solid #202a31!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    font-size:10px!important;
+  }
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) th{font-size:9px!important;}
+  #moondoApp #recentMatchDetailList td:before{display:none!important;content:none!important;}
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) th:nth-child(1),
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) td:nth-child(1){width:30%!important;}
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) th:nth-child(2),
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) td:nth-child(2){width:32%!important;}
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) th:nth-child(3),
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) td:nth-child(3){width:16%!important;}
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) th:nth-child(4),
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) td:nth-child(4){width:22%!important;}
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) th:nth-child(n+5),
+  #moondoApp h2 + .table-wrap:has(#recentMatchDetailList) td:nth-child(n+5){display:none!important;}
+
+  #moondoApp .footer-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;}
+  #moondoApp .footer-actions a,#moondoApp .footer-actions button{min-height:39px!important;font-size:11px!important;border-radius:8px!important;}
+}
+
+@media(max-width:360px){
+  #moondoApp main{padding-left:8px!important;padding-right:8px!important;}
+  #moondoApp .today-grid{grid-auto-rows:100px!important;gap:6px!important;}
+  #moondoApp .today-grid .stat,#moondoApp .today-grid .stat.compact,#moondoApp .today-grid .stat:nth-child(n){height:100px!important;padding:11px 9px 9px!important;}
+  #moondoApp .today-grid .stat strong,#moondoApp .today-grid .stat.compact strong{font-size:22px!important;}
+  #moondoApp #todayTier{font-size:14px!important;}
+}
+</style>
