@@ -6453,11 +6453,11 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
 
 <style id="waggu-today-four-card-final-v6">
-/* 오늘 전적을 PC/모바일 공통 4카드 구조로 고정 */
+/* One full-width daily result, followed by three current-status cells. */
 #dashboard .dashboard-today-block > .today-grid.today-grid-four{
   flex:1 !important;
   display:grid !important;
-  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
   grid-template-rows:none !important;
   gap:7px !important;
   align-content:stretch !important;
@@ -6898,5 +6898,37 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
   #dashboard #recentMatchDetailList .recent-opponent{font-size:9px!important;}
   #dashboard .score-delta{min-width:34px!important;padding:0 3px!important;}
   #dashboard .rank-delta{min-width:41px!important;padding:0 3px!important;font-size:6.8px!important;}
+}
+</style>
+<style id="waggu-today-readable-results">
+#dashboard .dashboard-today-block > .today-grid.today-grid-four {
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-template-rows:auto auto!important;
+  align-content:start!important;
+  gap:8px!important;
+}
+#dashboard .dashboard-today-block > .today-grid.today-grid-four > .stat.today-overview-card {
+  grid-column:1 / -1!important;
+  min-height:154px!important;
+  padding:16px!important;
+}
+#dashboard .today-overview-card .today-main-line #todayMatches {font-size:34px!important;line-height:1.2!important;}
+#dashboard .today-overview-card .today-main-line #todayWinRate {font-size:12px!important;}
+#dashboard .today-overview-card .today-record-row {gap:8px!important;padding-top:12px!important;}
+#dashboard .today-overview-card .today-record-chip {
+  height:44px!important;gap:10px!important;font-size:14px!important;border-radius:6px!important;
+}
+#dashboard .today-overview-card .today-record-chip b {font-size:24px!important;line-height:1.2!important;}
+#dashboard .dashboard-today-block > .today-grid.today-grid-four > .stat {
+  border-radius:8px!important;letter-spacing:0!important;
+}
+#dashboard .dashboard-today-block > .today-grid.today-grid-four .stat .muted {font-size:12px!important;line-height:1.4!important;}
+#dashboard .dashboard-today-block > .today-grid.today-grid-four .stat strong {letter-spacing:0!important;}
+#dashboard .today-tier-card #todayTier {font-size:14px!important;overflow-wrap:anywhere!important;line-height:1.4!important;}
+@media(max-width:760px) {
+  #dashboard .dashboard-today-block > .today-grid.today-grid-four > .stat {padding:12px 8px!important;}
+  #dashboard .dashboard-today-block > .today-grid.today-grid-four .stat .muted {font-size:11px!important;}
+  #dashboard .today-tier-card #todayTier {font-size:12px!important;}
+  #dashboard .today-score-card #todayScore,#dashboard .today-rank-card #todayRank {font-size:22px!important;}
 }
 </style>
