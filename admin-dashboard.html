@@ -91,7 +91,7 @@
     <h2 id="deleteGameTitle">경기 기록 삭제</h2>
     <p id="deleteGameSummary"></p>
     <p>서버 경기 기록과 당일 승무패 집계를 함께 정정합니다.</p>
-    <label><input type="checkbox" id="macroStopped">해당 사용자 매크로를 종료했습니다.</label>
+    <p class="small">매크로 실행 중에도 삭제할 수 있습니다. 단, 매크로가 이전 승무패 합계를 다시 업로드하면 합계가 되돌아올 수 있습니다.</p>
     <p id="deleteGameError" role="alert"></p>
     <button id="cancelDeleteGame" type="button">취소</button>
     <button id="confirmDeleteGame" class="delete" type="button">기록 삭제</button>
@@ -327,7 +327,7 @@
     $('historyRows').onclick=event=>{
       const button=event.target.closest('[data-game-index]');if(!button||historyBusy)return;
       const row=historyRows[Number(button.dataset.gameIndex)];if(!row)return;
-      deletingGame={...row};$('macroStopped').checked=false;$('deleteGameError').textContent='';
+      deletingGame={...row};$('deleteGameError').textContent='';
       $('deleteGameSummary').textContent=`${row.username} / ${kstTime(row.created_at)} / ${row.opponent_nickname||'상대 미확인'} / ${resultNames[row.result]}`;
       $('deleteGameDialog').showModal();
     };
@@ -335,7 +335,6 @@
     $('deleteGameDialog').addEventListener('cancel',event=>{if(historyBusy)event.preventDefault();});
     $('confirmDeleteGame').onclick=async()=>{
       if(historyBusy||!deletingGame)return;
-      if(!$('macroStopped').checked){$('deleteGameError').textContent='매크로 종료 여부를 확인해주세요.';return;}
       historyBusy=true;$('confirmDeleteGame').disabled=true;$('cancelDeleteGame').disabled=true;
       try{
         const {data,error}=await db.rpc('waggu_admin_delete_game',{p_id:String(deletingGame.id),p_username:deletingGame.username});
