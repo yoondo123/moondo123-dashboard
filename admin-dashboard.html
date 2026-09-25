@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>MOONDO123 관리자 대시보드</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
@@ -23,6 +24,17 @@
     .small { font-size:12px; color:#cbd5e1; line-height:1.5; }
     .status { margin-top:10px; color:#fde68a; font-size:13px; }
     a { color:#93c5fd; }
+    #historyManager{border-radius:8px;background:#14191c;scroll-margin-top:16px}
+    .history-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+    .history-scroll{overflow:auto} #historyRows td{text-align:left;vertical-align:middle}
+    #historyManager button{cursor:pointer;border:1px solid #52626b;background:#24343b;color:#fff;min-height:40px}
+    #historyManager .history-delete{background:#512630;border-color:#a45465}
+    #historyManager input{background:#0d1114;color:#fff;border:1px solid #52626b;max-width:100%;box-sizing:border-box}
+    #historyManager .win{color:#79e3b9} #historyManager .loss{color:#f59aa9}
+    #deleteGameDialog{max-width:460px;width:calc(100% - 48px);background:#14191c;color:#fff;border:1px solid #53616a;border-radius:8px;padding:24px}
+    #deleteGameDialog::backdrop{background:#000a}
+    button:disabled{opacity:.45;cursor:wait!important}
+    @media(max-width:600px){body{padding:12px}.box{padding:12px}h1{font-size:23px}table{font-size:13px}.history-scroll table{min-width:580px}}
   </style>
 </head>
 <body>
@@ -56,8 +68,37 @@
     </table>
   </div>
 
+  <section class="box" id="historyManager" hidden>
+    <h2><span id="historyUsername"></span> · 전적 관리</h2>
+    <form id="historyAuth" class="history-controls">
+      <input id="historyEmail" type="email" autocomplete="username" placeholder="전적 관리 관리자 이메일" aria-label="관리자 이메일" required>
+      <input id="historyPassword" type="password" autocomplete="current-password" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호" required>
+      <button type="submit">전적 관리 인증</button>
+    </form>
+    <div class="history-controls">
+      <label>날짜 (한국 시간) <input id="historyDay" type="date"></label>
+      <button type="button" id="historyRefresh">조회</button>
+      <button type="button" id="historyAuthLogout">전적 관리 인증 해제</button>
+    </div>
+    <p id="historyMessage" role="status" aria-live="polite"></p>
+    <div class="history-scroll"><table>
+      <thead><tr><th>경기 시각</th><th>상대</th><th>결과</th><th>점수변동</th><th>스코어</th><th>관리</th></tr></thead>
+      <tbody id="historyRows"></tbody>
+    </table></div>
+    <div class="history-controls"><button id="historyPrev" type="button">이전</button><span id="historyPage"></span><button id="historyNext" type="button">다음</button></div>
+  </section>
+  <dialog id="deleteGameDialog" aria-labelledby="deleteGameTitle">
+    <h2 id="deleteGameTitle">경기 기록 삭제</h2>
+    <p id="deleteGameSummary"></p>
+    <p>서버 경기 기록과 당일 승무패 집계를 함께 정정합니다.</p>
+    <label><input type="checkbox" id="macroStopped">해당 사용자 매크로를 종료했습니다.</label>
+    <p id="deleteGameError" role="alert"></p>
+    <button id="cancelDeleteGame" type="button">취소</button>
+    <button id="confirmDeleteGame" class="delete" type="button">기록 삭제</button>
+  </dialog>
+
   <div class="box">
-    <h2>전적 등록</h2>
+    <h2>수동 전적 등록 (별도 match_history)</h2>
     <input id="matchNick" placeholder="닉네임">
     <select id="matchResult"><option value="승">승</option><option value="무">무</option><option value="패">패</option></select>
     <input id="scoreFor" type="number" placeholder="득점">
@@ -67,7 +108,7 @@
   </div>
 
   <div class="box">
-    <h2>전적 목록</h2>
+    <h2>수동 전적 목록 (별도 match_history)</h2>
     <table>
       <thead><tr><th>닉네임</th><th>결과</th><th>스코어</th><th>FC</th><th>날짜</th><th>관리</th></tr></thead>
       <tbody id="matchList"><tr><td colspan="6">불러오는 중...</td></tr></tbody>
@@ -112,6 +153,7 @@
           <td>${escapeHtml(user.status)}</td>
           <td>${user.created_at ? new Date(user.created_at).toLocaleString() : ''}</td>
           <td>
+            <button class="approve" data-action="manageHistory" data-username="${escapeHtml(user.username)}">전적 관리</button>
             <button class="approve" data-action="approve" data-id="${escapeHtml(user.id)}">승인</button>
             <button class="reject" data-action="reject" data-id="${escapeHtml(user.id)}">거절</button>
             <button class="reset-today" data-action="resetToday" data-id="${escapeHtml(user.id)}" data-username="${escapeHtml(user.username)}">오늘 초기화</button>
@@ -226,6 +268,7 @@
       if (!button) return;
       const { action, id, username } = button.dataset;
       try {
+        if (action === 'manageHistory') return openHistory(username);
         if (action === 'approve') return updateUserStatus(id, 'approved');
         if (action === 'reject') return updateUserStatus(id, 'rejected');
         if (action === 'resetToday') return resetTodayStats(id, username);
@@ -236,7 +279,74 @@
       } catch (err) { console.error(err); alert('버튼 실행 중 오류: ' + err.message); }
     });
 
-    $('logoutBtn').addEventListener('click', logout);
+    let historyUser='', historyOffset=0, historyRows=[], historyRequest=0, historyBusy=false, deletingGame=null;
+    const resultNames={win:'승',draw:'무',loss:'패'};
+    const kstTime=value=>new Date(value).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'});
+    $('historyDay').value=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
+    async function openHistory(username){
+      if(historyBusy)return;
+      historyUser=username;historyOffset=0;
+      $('historyUsername').textContent=username;$('historyManager').hidden=false;
+      $('historyManager').scrollIntoView({behavior:'smooth'});
+      await loadUserHistory();
+    }
+    async function loadUserHistory(){
+      if(!historyUser||!$('historyDay').value)return;
+      const request=++historyRequest;
+      historyRows=[];$('historyRows').replaceChildren();
+      $('historyMessage').textContent='조회 중...';
+      $('historyPrev').disabled=true;$('historyNext').disabled=true;
+      try{
+        const {data,error}=await db.rpc('waggu_admin_history',{p_username:historyUser,p_day:$('historyDay').value,p_offset:historyOffset});
+        if(request!==historyRequest)return;
+        if(error)throw error;
+        historyRows=(data||[]).slice(0,50);
+        $('historyMessage').textContent=historyRows.length?'':'해당 날짜의 경기 기록이 없습니다.';
+        $('historyRows').innerHTML=historyRows.map((row,i)=>{
+          let detail=row.match_details;try{if(typeof detail==='string')detail=JSON.parse(detail);}catch(_){detail=null;}
+          const score=detail?.score;
+          const text=score&&Number.isInteger(score.mine)&&Number.isInteger(score.opponent)?`${score.mine} : ${score.opponent}`:'미기록';
+          return `<tr><td>${escapeHtml(kstTime(row.created_at))}</td><td>${escapeHtml(row.opponent_nickname||'상대 미확인')}</td><td class="${['win','loss'].includes(row.result)?row.result:''}">${escapeHtml(resultNames[row.result]||row.result)}</td><td>${escapeHtml(row.score_change??'-')}</td><td>${escapeHtml(text)}</td><td><button class="history-delete" data-game-index="${i}">삭제</button></td></tr>`;
+        }).join('');
+        $('historyPage').textContent=`${Math.floor(historyOffset/50)+1}페이지`;
+        $('historyPrev').disabled=historyOffset===0;$('historyNext').disabled=(data||[]).length<=50;
+      }catch(error){if(request===historyRequest)$('historyMessage').textContent='조회 실패: '+error.message;}
+    }
+    $('historyAuth').addEventListener('submit',async event=>{
+      event.preventDefault();const button=event.submitter;button.disabled=true;
+      try{
+        const {error}=await db.auth.signInWithPassword({email:$('historyEmail').value.trim(),password:$('historyPassword').value});
+        $('historyPassword').value='';if(error)throw error;await loadUserHistory();
+      }catch(error){$('historyMessage').textContent='인증 실패: '+error.message;}finally{button.disabled=false;}
+    });
+    $('historyAuthLogout').onclick=async()=>{await db.auth.signOut();historyRequest++;historyRows=[];$('historyRows').replaceChildren();$('historyMessage').textContent='전적 관리 인증이 해제되었습니다.';};
+    $('historyRefresh').onclick=()=>{if(!historyBusy)loadUserHistory();};
+    $('historyDay').onchange=()=>{if(!historyBusy){historyOffset=0;loadUserHistory();}};
+    $('historyPrev').onclick=()=>{if(!historyBusy){historyOffset=Math.max(0,historyOffset-50);loadUserHistory();}};
+    $('historyNext').onclick=()=>{if(!historyBusy){historyOffset+=50;loadUserHistory();}};
+    $('historyRows').onclick=event=>{
+      const button=event.target.closest('[data-game-index]');if(!button||historyBusy)return;
+      const row=historyRows[Number(button.dataset.gameIndex)];if(!row)return;
+      deletingGame={...row};$('macroStopped').checked=false;$('deleteGameError').textContent='';
+      $('deleteGameSummary').textContent=`${row.username} / ${kstTime(row.created_at)} / ${row.opponent_nickname||'상대 미확인'} / ${resultNames[row.result]}`;
+      $('deleteGameDialog').showModal();
+    };
+    $('cancelDeleteGame').onclick=()=>{if(!historyBusy)$('deleteGameDialog').close();};
+    $('deleteGameDialog').addEventListener('cancel',event=>{if(historyBusy)event.preventDefault();});
+    $('confirmDeleteGame').onclick=async()=>{
+      if(historyBusy||!deletingGame)return;
+      if(!$('macroStopped').checked){$('deleteGameError').textContent='매크로 종료 여부를 확인해주세요.';return;}
+      historyBusy=true;$('confirmDeleteGame').disabled=true;$('cancelDeleteGame').disabled=true;
+      try{
+        const {data,error}=await db.rpc('waggu_admin_delete_game',{p_id:String(deletingGame.id),p_username:deletingGame.username});
+        if(error)throw error;
+        $('deleteGameDialog').close();await loadUserHistory();
+        $('historyMessage').textContent=data?.already_deleted?'이미 삭제된 기록입니다.':'경기 기록 삭제 및 당일 집계 정정 완료';
+      }catch(error){$('deleteGameError').textContent='삭제 결과 확인 필요: '+error.message+' (통신 오류라면 목록을 다시 조회해주세요.)';}
+      finally{historyBusy=false;$('confirmDeleteGame').disabled=false;$('cancelDeleteGame').disabled=false;}
+    };
+
+    $('logoutBtn').addEventListener('click', async()=>{await db.auth.signOut();logout();});
     $('addMatchBtn').addEventListener('click', addMatch);
     loadUsers();
     loadMatches();
