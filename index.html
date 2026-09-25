@@ -3977,55 +3977,14 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       return firstValidRank(row?.rank_after);
     }
 
-    function webRankKey(row) {
-      return String(row?.id || [row?.created_at, row?.opponent_nickname, row?.result, row?.score_after].join('|'));
-    }
 
-    function observeWebRank(username, profile, rows) {
-      const key = 'moondo_web_rank_v1:' + username;
-      let cache = {};
-      try { cache = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (_) {}
-      const pairs = cache.pairs && typeof cache.pairs === 'object' ? cache.pairs : {};
-      const rank = firstValidRank(profile?.current_rank, profile?.rank);
-      const scoreValue = profile?.current_score ?? profile?.score;
-      const score = scoreValue == null || scoreValue === '' ? NaN : Number(scoreValue);
-      const updated = Date.parse(profile?.updated_at);
-      const latest = rows[0];
-      const now = Date.now();
-      if (!latest || !Number.isInteger(rank) || !Number.isFinite(score) || !Number.isFinite(updated) || now - updated > 180000) return pairs;
-      const head = webRankKey(latest);
-      const baseline = cache.baseline;
-      const previousIndex = baseline ? rows.findIndex(row => webRankKey(row) === baseline.head) : -1;
-      const sameHead = baseline?.head === head;
-      const tier = profile.current_tier || profile.tier || '';
-      const finished = Date.parse(latest.created_at);
-      const afterScore = latest.score_after == null ? NaN : Number(latest.score_after);
-      // Compare consecutive observed matches only, never daily-best historical ranks.
-      const valid = baseline && previousIndex === 1 && baseline.tier === tier &&
-        now - baseline.observedAt <= 7200000 && baseline.observedAt < finished &&
-        updated > baseline.updated && afterScore === score &&
-        Number.isInteger(baseline.rank) && latest.score_change != null && Number.isFinite(Number(latest.score_change)) &&
-        score - baseline.score === Number(latest.score_change);
-      if (valid) {
-        pairs[head] = { before: baseline.rank, after: rank, before_at: baseline.observedAt / 1000,
-          after_at: now / 1000, source: 'web_observation' };
-      }
-      // Keep the old baseline while a just-finished game's stats upload is pending.
-      if (!baseline || sameHead || valid || previousIndex !== 1 || now - baseline.observedAt > 7200000) {
-        cache.baseline = { head, rank, score, tier, updated, observedAt: now };
-      }
-      cache.pairs = Object.fromEntries(Object.entries(pairs).slice(-100));
-      try { localStorage.setItem(key, JSON.stringify(cache)); } catch (_) {}
-      return cache.pairs;
-    }
-
-    function recentRankMovement(currentRow, webPairs = {}) {
+    function recentRankMovement(currentRow) {
       let detail = currentRow?.match_details;
       if (typeof detail === 'string') {
         try { detail = JSON.parse(detail); } catch (_) { detail = null; }
       }
-      const pair = detail?.rank_observation || webPairs[webRankKey(currentRow)];
-      const verified = ['match_lobby_ocr', 'web_observation'].includes(pair?.source) &&
+      const pair = detail?.rank_observation;
+      const verified = ['match_lobby_ocr', 'server_profile_ocr'].includes(pair?.source) &&
         Number.isFinite(pair.before_at) && Number.isFinite(pair.after_at) &&
         pair.after_at > pair.before_at && pair.after_at - pair.before_at <= 7200;
       const after = verified ? firstValidRank(pair.after) : gameRankAfter(currentRow);
@@ -4036,10 +3995,9 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         return { value: null, className: 'unknown', label: '순위 미확인' };
       }
       const movement = before - after;
-      const note = pair?.source === 'web_observation' ? ' · 웹 관측' : '';
-      if (movement > 0) return { value: movement, className: 'up', label: `↑${movement}등${note}` };
-      if (movement < 0) return { value: movement, className: 'down', label: `↓${Math.abs(movement)}등${note}` };
-      return { value: 0, className: 'same', label: '변동없음' + note };
+      if (movement > 0) return { value: movement, className: 'up', label: `↑${movement}등` };
+      if (movement < 0) return { value: movement, className: 'down', label: `↓${Math.abs(movement)}등` };
+      return { value: 0, className: 'same', label: '0등' };
     }
 
     function compactRecentTime(value) {
@@ -4048,7 +4006,26 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       return match ? match[1] : full;
     }
 
+    let rankHistoryBusy = false;
     async function loadRecentMatchDetails(statsMap = {}) {
+      if (rankHistoryBusy) return;
+      rankHistoryBusy = true;
+      try { await loadRecentMatchDetailsUnlocked(statsMap); }
+      finally { rankHistoryBusy = false; }
+    }
+
+    async function pollRankHistory() {
+      try {
+        const username = dashboardAccount()?.username;
+        if (username && !document.hidden && !rankHistoryBusy) {
+          await loadRecentMatchDetails();
+        }
+      } catch (error) { console.warn('[Rank history] refresh failed', error); }
+      finally { setTimeout(pollRankHistory, 10000); }
+    }
+    setTimeout(pollRankHistory, 10000);
+
+    async function loadRecentMatchDetailsUnlocked(statsMap = {}) {
       if (!dashboardAccount()) return;
       const tbody = document.getElementById('recentMatchDetailList');
       if (!tbody) return;
@@ -4067,7 +4044,6 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       }
 
       const rows = dedupeMatchDetails(data || [], 10);
-      const webPairs = observeWebRank(dashboardAccount().username, statsMap[dashboardAccount().username], rows);
       if (!rows.length) {
         tbody.innerHTML = '<tr><td colspan="7">최근 경기 상세 기록이 없습니다.</td></tr>';
         return;
@@ -4078,7 +4054,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         const result = normalizeResult(row.result);
         const delta = Number(row.score_change);
         const deltaClass = Number.isFinite(delta) ? (delta > 0 ? 'up' : (delta < 0 ? 'down' : 'same')) : 'same';
-        const rankMove = recentRankMovement(row, webPairs);
+        const rankMove = recentRankMovement(row);
         const fullTime = matchDetailDate(row.created_at);
         const shortTime = compactRecentTime(row.created_at);
         return `
