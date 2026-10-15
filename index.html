@@ -2021,6 +2021,10 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     </section>
 
     <section id="dashboard" class="hidden">
+      <section id="todayChampions" class="today-champions" aria-labelledby="todayChampionsTitle" data-tab-group="home">
+        <div class="champions-heading"><span class="champions-emblem" aria-hidden="true">SC</span><div><p id="todayChampionsDay"></p><h2 id="todayChampionsTitle">오늘의 슈퍼 챔피언스</h2></div></div>
+        <div id="todayChampionsList" class="champions-names" aria-live="polite">달성 기록을 불러오는 중입니다.</div>
+      </section>
       <div class="topbar">
         <div>
           <h2 style="margin:0;"><span id="helloName"></span> 님 전적</h2>
@@ -2095,7 +2099,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
               <span>최고 등수</span>
               <strong id="todayHighestRank">-</strong>
             </div>
-            <div class="today-extreme-value">
+            <div class="today-extreme-value" data-streak-layout="v2" style="display:block!important;visibility:visible!important">
               <span>최대 연승</span>
               <strong id="todayHighestWinStreak">-</strong>
             </div>
@@ -2116,7 +2120,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
               <span>최저 등수</span>
               <strong id="todayLowestRank">-</strong>
             </div>
-            <div class="today-extreme-value">
+            <div class="today-extreme-value" data-streak-layout="v2" style="display:block!important;visibility:visible!important">
               <span>최대 연패</span>
               <strong id="todayLowestLossStreak">-</strong>
             </div>
@@ -2158,8 +2162,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <div class="team-scorer-card">
           <div class="team-scorer-head">
             <div>
-              <h3>최근 10경기 팀 득점 TOP 5</h3>
-              <p>최근 10경기 · 인식된 내 팀 득점 기준</p>
+              <h3>오늘 하루 팀 득점 TOP 5</h3>
+              <p id="todayScorersDay">한국시간 00:00~24:00 · 인식된 내 팀 득점</p>
             </div>
           </div>
           <div class="team-scorer-table-head" aria-hidden="true">
@@ -3396,6 +3400,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         const remoteStatus = document.getElementById('remoteCommandStatus');
         if (remoteStatus) remoteStatus.innerText = '';
       }
+      document.dispatchEvent(new Event('waggu:account-change'));
     }
 
     async function login() {
@@ -3946,8 +3951,81 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       }).join('');
     }
 
+    function teamDayPeriod(now = Date.now()) {
+      const day = new Date(Number(now) + 9 * 3600000).toISOString().slice(0, 10);
+      const start = Date.parse(day + 'T00:00:00+09:00');
+      return { day, start: new Date(start).toISOString(), end: new Date(start + 86400000).toISOString(), next: start + 86400000 };
+    }
+
+    async function fetchTeamDayHistory(username, period) {
+      const rows = [];
+      for (let offset = 0; ; offset += 1000) {
+        let query = supabaseClient.from('game_history').select('*')
+          .in('result', ['win', 'draw', 'loss']).gte('created_at', period.start).lt('created_at', period.end);
+        query = applyCurrentAccountFilter(query, username);
+        const { data, error } = await query.order('created_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + 999);
+        if (error) throw error;
+        rows.push(...(data || []));
+        if (!data || data.length < 1000) return rows;
+      }
+    }
+
+    let teamScorerRequest = 0;
+    let championsRequest = 0;
+
+    function dailyChampions(history, sessions, profiles, day) {
+      const names = new Set();
+      const start = Date.parse(day + 'T00:00:00+09:00');
+      const inside = value => { const t = Date.parse(value); return t >= start && t < start + 86400000; };
+      function add(row, tiers) {
+        if (row.username && row.username !== '-' && tiers.some(isSuperChampionsTier)) names.add(row.username);
+      }
+      (history || []).filter(row => inside(row.created_at)).forEach(row => add(row, [tierWithRank(row.current_tier || row.tier, row.rank_after)]));
+      (sessions || []).filter(row => row.session_date === day).forEach(row => add(row, [
+        row.highest_tier, row.peak_tier, row.today_peak_tier,
+        tierWithRank(row.current_tier, row.current_rank), tierWithRank(row.end_tier, row.end_rank),
+        isSuperChampionsRank(row.best_rank) ? '슈퍼챔피언스 감독' : '',
+      ]));
+      (profiles || []).forEach(row => {
+        const tiers = [];
+        if (String(row.today_peak_updated || '').slice(0, 10) === day) tiers.push(row.today_peak_tier);
+        if (inside(row.updated_at)) tiers.push(tierWithRank(row.current_tier || row.tier, row.current_rank || row.rank));
+        add(row, tiers);
+      });
+      return [...names].sort((a, b) => a.localeCompare(b, 'ko'));
+    }
+
+    function championLinks(names) {
+      return names.map(name => `<a class="champion-name" href="?player=${encodeURIComponent(name)}"><span>${escapeHtml(name)}</span><small>슈퍼 챔피언스 감독</small></a>`).join('');
+    }
+
+    async function loadTodayChampions(statsMap) {
+      const request = ++championsRequest;
+      const period = teamDayPeriod();
+      const target = document.getElementById('todayChampionsList');
+      if (!target) return;
+      document.getElementById('todayChampionsDay').textContent = period.day.replaceAll('-', '.');
+      try {
+        const sessions = await fetchDailyAwardRows('daily_sessions', '*', period);
+        let profiles = Object.values(statsMap || {});
+        if (!statsMap) {
+          const {data, error} = await supabaseClient.from('player_stats').select('username,today_peak_tier,today_peak_updated,current_tier,current_rank,updated_at');
+          if (error) throw error;
+          profiles = data || [];
+        }
+        if (request !== championsRequest || period.day !== teamDayPeriod().day) return;
+        const names = dailyChampions([], sessions, profiles, period.day);
+        target.innerHTML = names.length ? championLinks(names) : '<p class="champions-empty">오늘의 첫 달성자를 기다리고 있습니다.</p>';
+      } catch (error) {
+        if (request === championsRequest) target.textContent = '오늘의 달성 기록을 불러오지 못했습니다.';
+      }
+    }
+
     async function loadTeamScorerStats() {
       if (!dashboardAccount()) return;
+      const username = dashboardAccount().username;
+      const request = ++teamScorerRequest;
+      const period = teamDayPeriod();
       const list10 = document.getElementById('scorer10List');
       const list100 = document.getElementById('scorer100List');
       if (!list10 && !list100) return;
@@ -3956,21 +4034,19 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         .from('game_history')
         .select('username, result, created_at, opponent_nickname, score_change, match_details')
         .in('result', ['win', 'draw', 'loss']);
-      query = applyCurrentAccountFilter(query, dashboardAccount().username);
-      const { data, error } = await query
-        .order('created_at', { ascending: false })
-        .limit(400);
-
-      if (error) {
-        const message = `<div class="team-scorer-empty">득점 기록 조회 오류: ${escapeHtml(error.message)}</div>`;
-        if (list10) list10.innerHTML = message;
-        if (list100) list100.innerHTML = message;
-        return;
-      }
-
-      const rows = data || [];
-      renderTeamScorerList('scorer10List', aggregateTeamScorers(rows, 10));
-      renderTeamScorerList('scorer100List', aggregateTeamScorers(rows, 100));
+      query = applyCurrentAccountFilter(query, username);
+      const results = await Promise.allSettled([
+        fetchTeamDayHistory(username, period),
+        query.order('created_at', { ascending: false }).limit(400).then(({data, error}) => { if (error) throw error; return data || []; }),
+      ]);
+      if (request !== teamScorerRequest || dashboardAccount()?.username !== username || period.day !== teamDayPeriod().day) return;
+      document.getElementById('todayScorersDay').textContent = period.day.replaceAll('-', '.') + ' · 인식된 내 팀 득점';
+      results.forEach((result, index) => {
+        const target = index === 0 ? list10 : list100;
+        if (!target) return;
+        if (result.status === 'fulfilled') renderTeamScorerList(target.id, aggregateTeamScorers(result.value, index === 0 ? Infinity : 100));
+        else target.innerHTML = '<div class="team-scorer-empty">득점 기록을 불러오지 못했습니다.</div>';
+      });
     }
 
     function gameRankAfter(row) {
@@ -4396,6 +4472,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       const statsMap = await loadPlayerStatsMap();
       await checkSuperChampionsAnnouncements();
       await Promise.allSettled([
+        loadTodayChampions(statsMap),
         loadRanking(statsMap, {
           tbodyId: 'rankingList',
           sinceIso: startOfTodayIso(),
@@ -5843,7 +5920,36 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 #todayRankingToggle:focus-visible { outline: 2px solid #80e6c4; outline-offset: 3px; }
 </style>
 <style id="waggu-daily-awards-style">
+#dashboard .today-champions { padding:18px 0; margin:0 0 18px; border-top:2px solid #e4c469; border-bottom:1px solid #796731; background:linear-gradient(100deg,#19251f,#151713 65%,#282415); }
+.champions-heading { display:flex; align-items:center; gap:14px; padding:0 16px; }
+.champions-heading p { color:#c4b679; font-size:11px; letter-spacing:0; }
+#dashboard #todayChampionsTitle { font-size:19px!important; margin:4px 0!important; color:#ffe29a; letter-spacing:0; }
+#todayChampionsTitle::before { display:none; }
+.champions-emblem { display:grid; place-items:center; width:46px; height:52px; flex:0 0 auto; border:2px solid #e4c469; color:#ffe29a; font-size:19px; font-weight:900; border-radius:6px; box-shadow:0 0 18px #e4c46926; }
+.champions-names { display:flex; flex-wrap:wrap; gap:10px; padding:14px 16px 0; }
+.champion-name { display:flex; flex-direction:column; gap:5px; max-width:100%; padding:10px 15px; border:1px solid #a38e4e; border-radius:6px; color:#fff3bd; background:#252a20; text-decoration:none; box-shadow:inset 0 1px #f8e4a02b,0 0 14px #e4c46918; }
+.champion-name span { overflow-wrap:anywhere; font-size:16px; font-weight:800; letter-spacing:0; }
+.champion-name small { font-size:10px; color:#a4cfb9; }
+.champion-name:hover { border-color:#ffe29a; background:#303a29; }
+.champion-name:focus-visible { outline:2px solid #fff3bd; outline-offset:3px; }
+.champions-empty { font-size:13px; color:#b6bfae; padding:4px 0; }
 #dailyAwardsDialog { box-sizing: border-box; width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); margin: auto; overflow-y: auto; padding: 24px; border: 1px solid #4c6359; border-radius: 8px; background: #11151b; color: #f4f6f8; box-shadow: 0 20px 70px #0008; letter-spacing: 0; }
+#dailyAwardsDialog .report-section { padding:16px 0; border-top:1px solid #303d38; }
+#dailyAwardsDialog .report-section h3 { font-size:14px; margin:0 0 12px; letter-spacing:0; color:#b9e8d5; }
+#dailyAwardsDialog .report-summary { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+#dailyAwardsDialog .report-summary strong { font-size:30px; color:#fff; }
+#dailyAwardsDialog .report-summary span { color:#b4c4bd; font-size:13px; }
+#dailyAwardsDialog .report-wdl { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+#dailyAwardsDialog .report-wdl div { padding:10px 0; border-bottom:2px solid #54615c; font-size:13px; }
+#dailyAwardsDialog .report-wdl b { font-size:20px; margin-left:6px; }
+#dailyAwardsDialog .report-wdl .win { color:#80e6c4; border-color:#80e6c4; }
+#dailyAwardsDialog .report-wdl .loss { color:#f0adba; border-color:#f0adba; }
+#dailyAwardsDialog .report-scorers { padding:0; margin:0; list-style:none; }
+#dailyAwardsDialog .report-scorers li { display:grid; grid-template-columns:26px minmax(0,1fr) auto; gap:8px; padding:9px 0; align-items:center; border-bottom:1px solid #ffffff0c; }
+#dailyAwardsDialog .report-scorers span { overflow-wrap:anywhere; }
+#dailyAwardsDialog .report-scorers b { color:#ffe29a; }
+#dailyAwardsDialog .champions-names { padding:0; }
+#dailyAwardsDialog .report-empty { font-size:13px; color:#a9b7b0; }
 #dailyAwardsDialog::backdrop { background: #000b; }
 #dailyAwardsDialog #dailyAwardsTitle { margin: 0 0 6px !important; font-size: 22px !important; }
 #dailyAwardsDialog #dailyAwardsDate { margin: 0 0 14px; color: #a9b7b0; font-size: 12px; }
@@ -5868,7 +5974,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 }
 </style>
 <dialog id="dailyAwardsDialog" aria-labelledby="dailyAwardsTitle" aria-describedby="dailyAwardsDate">
-  <h2 id="dailyAwardsTitle">어제의 기록</h2>
+  <h2 id="dailyAwardsTitle">하루 리포트</h2>
   <p id="dailyAwardsDate"></p>
   <div id="dailyAwardsContent" aria-live="polite"></div>
   <button type="button" id="dailyAwardsRetry" hidden>다시 불러오기</button>
@@ -5915,14 +6021,18 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       });
       p.sessions.matches = p.sessions.wins + p.sessions.draws + p.sessions.losses;
     });
-    const players = [...grouped.values()].map(p => ({ ...choosePeriodStats(p.history, p.sessions), username: p.username, maxLoss: p.maxLoss }))
-      .filter(p => p.matches >= 30);
-    players.forEach(p => { p.rate = p.wins / p.matches; });
+    const people = [...grouped.values()].map(p => {
+      const stats = choosePeriodStats(p.history, p.sessions);
+      return { ...stats, username: p.username, maxLoss: p.maxLoss, rate: stats.matches ? stats.wins / stats.matches : 0,
+        scorers: aggregateTeamScorers(rows.filter(row => row.username === p.username), Infinity).ranking.slice(0, 3) };
+    });
+    const players = people.filter(p => p.matches >= 30);
     function winners(key) {
       const value = Math.max(0, ...players.map(p => p[key]));
       return { value, names: value > 0 ? players.filter(p => Math.abs(p[key] - value) < 1e-10).map(p => p.username).sort((a,b) => a.localeCompare(b, 'ko')) : [] };
     }
-    return { day, playerCount: players.length, rate: winners('rate'), wins: winners('wins'), matches: winners('matches'), maxLoss: winners('maxLoss') };
+    return { day, people, champions: dailyChampions(history, sessions, [], day), playerCount: players.length,
+      rate: winners('rate'), wins: winners('wins'), matches: winners('matches'), maxLoss: winners('maxLoss') };
   }
 
   async function fetchDailyAwardRows(table, select, period) {
@@ -5959,52 +6069,53 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
   async function loadDailyAwards(period, includeRepeats = true) {
     try {
-      const cached = JSON.parse(localStorage.getItem('waggu_daily_awards_cache_v3_min30_' + period.day) || 'null');
-      if (cached?.day === period.day && cached.expires > Date.now() && (!includeRepeats || cached.data.repeatMessages)) return cached.data;
+      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v4_' + period.day) || 'null');
+      if (cached?.day === period.day && cached.expires > Date.now() && Array.isArray(cached.data.people)) return cached.data;
     } catch (_) {}
     const [history, sessions] = await Promise.all([
-      fetchDailyAwardRows('game_history', 'id,username,result,created_at,opponent_nickname,score_change', period),
-      fetchDailyAwardRows('daily_sessions', 'id,username,session_date,wins,draws,losses', period),
+      fetchDailyAwardRows('game_history', '*', period),
+      fetchDailyAwardRows('daily_sessions', '*', period),
     ]);
     const awards = computeDailyAwards(history, sessions, period.day);
-    if (includeRepeats && awards.playerCount) {
-      // Compare calendar days, not popup visits; missing days break the streak.
-      const previousDays = await Promise.all([1, 2].map(offset =>
-        loadDailyAwards(dailyAwardPeriod(Date.parse(period.end) - offset * 86400000), false)));
-      awards.repeatMessages = dailyAwardRepeatMessages(awards, previousDays);
-    }
     try {
-      const prefix = 'waggu_daily_awards_cache_v3_min30_';
+      const prefix = 'waggu_daily_report_v4_';
       const oldest = dailyAwardPeriod().day;
       const cutoff = new Date(Date.parse(oldest + 'T00:00:00Z') - 2 * 86400000).toISOString().slice(0, 10);
       for (const key of Object.keys(localStorage)) if (key.startsWith(prefix) && key.slice(prefix.length) < cutoff) localStorage.removeItem(key);
-      localStorage.setItem(prefix + period.day, JSON.stringify({ day: period.day, expires: Date.now() + 600000, data: awards }));
+      localStorage.setItem(prefix + period.day, JSON.stringify({ day: period.day, expires: Date.now() + 60000, data: awards }));
     } catch (_) {}
     return awards;
   }
 
-  function renderDailyAwards(awards) {
+  function renderDailyAwards(awards, username = dashboardAccount()?.username) {
     const content = document.getElementById('dailyAwardsContent');
-    if (!awards.playerCount) { content.textContent = '전날 총 30판 이상 플레이한 사람이 없습니다.'; return; }
-    const categories = [['rate', '오늘의 승률왕', value => (value * 100).toFixed(1) + '%'],
-      ['wins', '오늘의 다승왕', value => value + '승'], ['matches', '오늘의 판수왕', value => value + '판'],
-      ['maxLoss', '🔥💣 오늘의 연패대마왕 💣🔥', value => value + '연패']];
-    content.innerHTML = categories.map(([key, label, format]) => {
+    const person = (awards.people || []).find(p => p.username === username) || { ...emptyStats(), rate:0, scorers:[] };
+    const categories = [['rate', '승률왕', value => (value * 100).toFixed(1) + '%'],
+      ['wins', '다승왕', value => value + '승']];
+    const awardsHtml = categories.map(([key, label, format]) => {
       const award = awards[key];
-      const messages = (awards.repeatMessages?.[key] || []).map(message => `<p class="daily-award-message">${escapeHtml(message)}</p>`).join('');
-      return `<div class="daily-award-row"><div class="daily-award-label">${label}${award.names.length > 1 ? ' · 공동' : ''}</div><div class="daily-award-result"><div class="daily-award-names">${award.names.length ? award.names.map(name => escapeHtml(name) + '님').join('<br>') : '해당 없음'}</div><strong class="daily-award-value">${award.names.length ? format(award.value) : '-'}</strong></div>${messages}</div>`;
-    }).join('') + '<p class="daily-awards-note">전날 총 30판 이상(승·무·패 합계) 기준 · 연패는 해당 날짜 내 연속 패배</p>';
+      return `<div class="daily-award-row"><div class="daily-award-label">${label}${award.names.length > 1 ? ' · 공동' : ''}</div><div class="daily-award-result"><div class="daily-award-names">${award.names.length ? award.names.map(name => escapeHtml(name) + '님').join('<br>') : '해당 없음'}</div><strong class="daily-award-value">${award.names.length ? format(award.value) : '-'}</strong></div></div>`;
+    }).join('');
+    content.innerHTML = `<section class="report-section"><h3>${escapeHtml(username || '')}님의 하루</h3>
+      <div class="report-summary"><strong>${person.matches}판</strong><span>승률 ${(person.rate * 100).toFixed(1)}%</span></div>
+      <div class="report-wdl"><div class="win">승 <b>${person.wins}</b></div><div>무 <b>${person.draws}</b></div><div class="loss">패 <b>${person.losses}</b></div></div></section>
+      <section class="report-section"><h3>내 팀 득점왕 TOP 3</h3>${person.scorers.length
+        ? '<ol class="report-scorers">' + person.scorers.map((s,i) => `<li><b>${i+1}</b><span>${escapeHtml(s.player)}</span><strong>${s.goals}골</strong></li>`).join('') + '</ol>'
+        : '<p class="report-empty">인식된 득점 기록이 없습니다.</p>'}</section>
+      <section class="report-section"><h3>사용자 전체 시상</h3>${awardsHtml}<p class="daily-awards-note">해당 날짜 총 30판 이상 사용자 기준</p></section>
+      <section class="report-section"><h3>이날의 슈퍼 챔피언스</h3><div class="champions-names">${awards.champions?.length
+        ? championLinks(awards.champions) : '<p class="report-empty">달성 기록이 없습니다.</p>'}</div></section>`;
   }
 
   (function () {
     const popup = document.getElementById('dailyAwardsDialog');
-    const dismissKey = 'waggu_daily_awards_hidden_day';
+    const dismissKey = 'waggu_daily_report_hidden:';
     let shownDay = null;
     let busyDay = null;
     let timer;
     document.getElementById('dailyAwardsClose').addEventListener('click', () => popup.close());
     document.getElementById('dailyAwardsDismiss').addEventListener('click', () => {
-      try { localStorage.setItem(dismissKey, popup.dataset.displayDay); } catch (_) {}
+      try { localStorage.setItem(dismissKey + popup.dataset.username, popup.dataset.displayDay); } catch (_) {}
       popup.close();
     });
     document.getElementById('dailyAwardsRetry').addEventListener('click', () => { shownDay = null; check(); });
@@ -6012,34 +6123,63 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       const period = dailyAwardPeriod();
       clearTimeout(timer);
       timer = setTimeout(check, Math.max(1000, period.next - Date.now() + 100));
-      if (shownDay === period.today || busyDay === period.today) return;
+      const username = dashboardAccount()?.username;
+      if (!username) { if (popup.open) popup.close(); return; }
+      const key = period.today + ':' + username;
+      if (shownDay === key || busyDay === key) return;
       try {
-        if (localStorage.getItem(dismissKey) === period.today) {
+        if (localStorage.getItem(dismissKey + username) === period.today) {
           if (popup.open) popup.close();
           return;
         }
       } catch (_) {}
-      busyDay = period.today;
-      shownDay = period.today;
+      busyDay = key;
+      shownDay = key;
       popup.dataset.displayDay = period.today;
+      popup.dataset.username = username;
       document.getElementById('dailyAwardsDate').textContent = period.day.replaceAll('-', '.') + ' 전적 · 한국시간 00:00–24:00';
       document.getElementById('dailyAwardsContent').textContent = '전날 기록을 불러오는 중입니다.';
       document.getElementById('dailyAwardsRetry').hidden = true;
       if (!popup.open) popup.showModal();
       try {
         const awards = await loadDailyAwards(period);
-        if (popup.dataset.displayDay === period.today) renderDailyAwards(awards);
+        if (popup.dataset.displayDay === period.today && popup.dataset.username === username && dashboardAccount()?.username === username) renderDailyAwards(awards, username);
       } catch (error) {
-        if (popup.dataset.displayDay === period.today) {
+        if (popup.dataset.displayDay === period.today && popup.dataset.username === username) {
           document.getElementById('dailyAwardsContent').textContent = '전날 기록을 불러오지 못했습니다.';
           document.getElementById('dailyAwardsRetry').hidden = false;
         }
         console.warn('[Daily awards] Load failed', error);
-      } finally { if (busyDay === period.today) busyDay = null; }
+      } finally { if (busyDay === key) busyDay = null; }
     }
     document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+    document.addEventListener('waggu:account-change', check);
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', check);
     else check();
+  })();
+
+  (function () {
+    let day = teamDayPeriod().day;
+    let timer;
+    function checkDay() {
+      const period = teamDayPeriod();
+      clearTimeout(timer);
+      timer = setTimeout(checkDay, Math.max(100, period.next - Date.now() + 25));
+      if (day === period.day) return;
+      day = period.day;
+      teamScorerRequest++;
+      championsRequest++;
+      renderTeamScorerList('scorer10List', {ranking:[]});
+      document.getElementById('todayScorersDay').textContent = day.replaceAll('-', '.') + ' · 인식된 내 팀 득점';
+      document.getElementById('todayChampionsDay').textContent = day.replaceAll('-', '.');
+      document.getElementById('todayChampionsList').textContent = '오늘의 첫 달성자를 기다리고 있습니다.';
+      if (dashboardAccount()) {
+        void loadTeamScorerStats();
+        void loadTodayChampions();
+      }
+    }
+    checkDay();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) checkDay(); });
   })();
 </script>
 
@@ -6104,8 +6244,10 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 /* 오늘 최고/최저는 티어·점수·등수 3개만 시각적으로 표시 */
 #dashboard > .today-extremes{margin:12px 0 0!important;gap:10px!important;}
 #dashboard > .today-extremes .today-extreme-card{padding:13px 15px!important;border-radius:11px!important;}
-#dashboard > .today-extremes .today-extreme-values{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
-#dashboard > .today-extremes .today-extreme-value:nth-child(4){display:none!important;}
+#dashboard > .today-extremes .today-extreme-values{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+#dashboard > .today-extremes .today-extreme-value:nth-child(4){display:block!important;}
+#dashboard #todayHighestWinStreak{color:#72e5bc!important;}
+#dashboard #todayLowestLossStreak{color:#f29ca9!important;}
 #dashboard > .today-extremes .today-extreme-value{padding:0 12px!important;}
 #dashboard > .today-extremes .today-extreme-value:first-child{padding-left:0!important;}
 #dashboard > .today-extremes .today-extreme-value:nth-child(3){padding-right:0!important;}
@@ -6198,7 +6340,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
   #dashboard > .today-extremes{grid-template-columns:1fr!important;gap:7px!important;margin-top:10px!important;}
   #dashboard > .today-extremes .today-extreme-card{padding:11px 12px!important;}
-  #dashboard > .today-extremes .today-extreme-values{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+  #dashboard > .today-extremes .today-extreme-values{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px 8px!important;}
   #dashboard > .today-extremes .today-extreme-value,
   #dashboard > .today-extremes .today-extreme-value:nth-child(n){padding:0 8px!important;margin:0!important;border-top:0!important;}
   #dashboard > .today-extremes .today-extreme-value:first-child{padding-left:0!important;}
