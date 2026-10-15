@@ -6024,7 +6024,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     const people = [...grouped.values()].map(p => {
       const stats = choosePeriodStats(p.history, p.sessions);
       return { ...stats, username: p.username, maxLoss: p.maxLoss, rate: stats.matches ? stats.wins / stats.matches : 0,
-        scorers: aggregateTeamScorers(rows.filter(row => row.username === p.username), Infinity).ranking.slice(0, 3) };
+        scorers: aggregateTeamScorers(rows.filter(row => row.username === p.username), Infinity).ranking.slice(0, 5) };
     });
     const players = people.filter(p => p.matches >= 30);
     function winners(key) {
@@ -6069,7 +6069,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
   async function loadDailyAwards(period, includeRepeats = true) {
     try {
-      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v4_' + period.day) || 'null');
+      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v5_' + period.day) || 'null');
       if (cached?.day === period.day && cached.expires > Date.now() && Array.isArray(cached.data.people)) return cached.data;
     } catch (_) {}
     const [history, sessions] = await Promise.all([
@@ -6078,7 +6078,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     ]);
     const awards = computeDailyAwards(history, sessions, period.day);
     try {
-      const prefix = 'waggu_daily_report_v4_';
+      const prefix = 'waggu_daily_report_v5_';
       const oldest = dailyAwardPeriod().day;
       const cutoff = new Date(Date.parse(oldest + 'T00:00:00Z') - 2 * 86400000).toISOString().slice(0, 10);
       for (const key of Object.keys(localStorage)) if (key.startsWith(prefix) && key.slice(prefix.length) < cutoff) localStorage.removeItem(key);
@@ -6099,7 +6099,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     content.innerHTML = `<section class="report-section"><h3>${escapeHtml(username || '')}님의 하루</h3>
       <div class="report-summary"><strong>${person.matches}판</strong><span>승률 ${(person.rate * 100).toFixed(1)}%</span></div>
       <div class="report-wdl"><div class="win">승 <b>${person.wins}</b></div><div>무 <b>${person.draws}</b></div><div class="loss">패 <b>${person.losses}</b></div></div></section>
-      <section class="report-section"><h3>내 팀 득점왕 TOP 3</h3>${person.scorers.length
+      <section class="report-section"><h3>내 팀 득점왕 TOP 5</h3>${person.scorers.length
         ? '<ol class="report-scorers">' + person.scorers.map((s,i) => `<li><b>${i+1}</b><span>${escapeHtml(s.player)}</span><strong>${s.goals}골</strong></li>`).join('') + '</ol>'
         : '<p class="report-empty">인식된 득점 기록이 없습니다.</p>'}</section>
       <section class="report-section"><h3>사용자 전체 시상</h3>${awardsHtml}<p class="daily-awards-note">해당 날짜 총 30판 이상 사용자 기준</p></section>
