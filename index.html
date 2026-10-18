@@ -2162,6 +2162,20 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <div class="team-scorer-card">
           <div class="team-scorer-head">
             <div>
+              <h3>최근 5경기 팀 득점 TOP 5</h3>
+              <p>최근 5경기 · 인식된 내 팀 득점 기준</p>
+            </div>
+          </div>
+          <div class="team-scorer-table-head" aria-hidden="true">
+            <span>순위</span><span>선수명</span><span>득점</span><span>득점 비율</span>
+          </div>
+          <div class="team-scorer-list" id="scorerRecentList">
+            <div class="team-scorer-empty">득점 기록을 불러오는 중입니다.</div>
+          </div>
+        </div>
+          <div class="team-scorer-card">
+          <div class="team-scorer-head">
+            <div>
               <h3>오늘 하루 팀 득점 TOP 5</h3>
               <p id="todayScorersDay">한국시간 00:00~24:00 · 인식된 내 팀 득점</p>
             </div>
@@ -2170,20 +2184,6 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
             <span>순위</span><span>선수명</span><span>득점</span><span>득점 비율</span>
           </div>
           <div class="team-scorer-list" id="scorer10List">
-            <div class="team-scorer-empty">득점 기록을 불러오는 중입니다.</div>
-          </div>
-        </div>
-          <div class="team-scorer-card">
-          <div class="team-scorer-head">
-            <div>
-              <h3>최근 100경기 팀 득점 TOP 5</h3>
-              <p>최근 100경기 · 인식된 내 팀 득점 기준</p>
-            </div>
-          </div>
-          <div class="team-scorer-table-head" aria-hidden="true">
-            <span>순위</span><span>선수명</span><span>득점</span><span>득점 비율</span>
-          </div>
-          <div class="team-scorer-list" id="scorer100List">
             <div class="team-scorer-empty">득점 기록을 불러오는 중입니다.</div>
           </div>
         </div>
@@ -3977,21 +3977,24 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       const names = new Set();
       const start = Date.parse(day + 'T00:00:00+09:00');
       const inside = value => { const t = Date.parse(value); return t >= start && t < start + 86400000; };
-      function add(row, tiers) {
-        if (row.username && row.username !== '-' && tiers.some(isSuperChampionsTier)) names.add(row.username);
+      // Peak summaries can preserve a single OCR error. Require separate match observations.
+      const observations = new Map();
+      const seen = new Set();
+      for (const row of history || []) {
+        if (!inside(row.created_at) || !['win','draw','loss'].includes(row.result)) continue;
+        const tier = normalizeTierName(row.current_tier || row.tier);
+        const rank = Number(row.rank_after);
+        if (!row.username || row.username === '-' || !/^(슈퍼)?챔피언스?(감독)?$/.test(tier) ||
+            !Number.isInteger(rank) || !isSuperChampionsRank(rank)) continue;
+        const identity = row.username + ':' + (row.id || row.created_at);
+        if (seen.has(identity)) continue;
+        seen.add(identity);
+        const time = Date.parse(row.created_at);
+        const previous = observations.get(row.username) || { first:time, last:time };
+        const span = { first:Math.min(previous.first, time), last:Math.max(previous.last, time) };
+        if (span.last - span.first >= 60000) names.add(row.username);
+        observations.set(row.username, span);
       }
-      (history || []).filter(row => inside(row.created_at)).forEach(row => add(row, [tierWithRank(row.current_tier || row.tier, row.rank_after)]));
-      (sessions || []).filter(row => row.session_date === day).forEach(row => add(row, [
-        row.highest_tier, row.peak_tier, row.today_peak_tier,
-        tierWithRank(row.current_tier, row.current_rank), tierWithRank(row.end_tier, row.end_rank),
-        isSuperChampionsRank(row.best_rank) ? '슈퍼챔피언스 감독' : '',
-      ]));
-      (profiles || []).forEach(row => {
-        const tiers = [];
-        if (String(row.today_peak_updated || '').slice(0, 10) === day) tiers.push(row.today_peak_tier);
-        if (inside(row.updated_at)) tiers.push(tierWithRank(row.current_tier || row.tier, row.current_rank || row.rank));
-        add(row, tiers);
-      });
       return [...names].sort((a, b) => a.localeCompare(b, 'ko'));
     }
 
@@ -4006,15 +4009,9 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       if (!target) return;
       document.getElementById('todayChampionsDay').textContent = period.day.replaceAll('-', '.');
       try {
-        const sessions = await fetchDailyAwardRows('daily_sessions', '*', period);
-        let profiles = Object.values(statsMap || {});
-        if (!statsMap) {
-          const {data, error} = await supabaseClient.from('player_stats').select('username,today_peak_tier,today_peak_updated,current_tier,current_rank,updated_at');
-          if (error) throw error;
-          profiles = data || [];
-        }
+        const history = await fetchDailyAwardRows('game_history', 'id,username,result,created_at,tier,rank_after', period);
         if (request !== championsRequest || period.day !== teamDayPeriod().day) return;
-        const names = dailyChampions([], sessions, profiles, period.day);
+        const names = dailyChampions(history, [], [], period.day);
         target.innerHTML = names.length ? championLinks(names) : '<p class="champions-empty">오늘의 첫 달성자를 기다리고 있습니다.</p>';
       } catch (error) {
         if (request === championsRequest) target.textContent = '오늘의 달성 기록을 불러오지 못했습니다.';
@@ -4027,7 +4024,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       const request = ++teamScorerRequest;
       const period = teamDayPeriod();
       const list10 = document.getElementById('scorer10List');
-      const list100 = document.getElementById('scorer100List');
+      const list100 = document.getElementById('scorerRecentList');
       if (!list10 && !list100) return;
 
       let query = supabaseClient
@@ -4037,14 +4034,14 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       query = applyCurrentAccountFilter(query, username);
       const results = await Promise.allSettled([
         fetchTeamDayHistory(username, period),
-        query.order('created_at', { ascending: false }).limit(400).then(({data, error}) => { if (error) throw error; return data || []; }),
+        query.order('created_at', { ascending: false }).limit(40).then(({data, error}) => { if (error) throw error; return data || []; }),
       ]);
       if (request !== teamScorerRequest || dashboardAccount()?.username !== username || period.day !== teamDayPeriod().day) return;
       document.getElementById('todayScorersDay').textContent = period.day.replaceAll('-', '.') + ' · 인식된 내 팀 득점';
       results.forEach((result, index) => {
         const target = index === 0 ? list10 : list100;
         if (!target) return;
-        if (result.status === 'fulfilled') renderTeamScorerList(target.id, aggregateTeamScorers(result.value, index === 0 ? Infinity : 100));
+        if (result.status === 'fulfilled') renderTeamScorerList(target.id, aggregateTeamScorers(result.value, index === 0 ? Infinity : 5));
         else target.innerHTML = '<div class="team-scorer-empty">득점 기록을 불러오지 못했습니다.</div>';
       });
     }
@@ -6026,7 +6023,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       return { ...stats, username: p.username, maxLoss: p.maxLoss, rate: stats.matches ? stats.wins / stats.matches : 0,
         scorers: aggregateTeamScorers(rows.filter(row => row.username === p.username), Infinity).ranking.slice(0, 5) };
     });
-    const players = people.filter(p => p.matches >= 30);
+    const players = people.filter(p => p.matches >= 50);
     function winners(key) {
       const value = Math.max(0, ...players.map(p => p[key]));
       return { value, names: value > 0 ? players.filter(p => Math.abs(p[key] - value) < 1e-10).map(p => p.username).sort((a,b) => a.localeCompare(b, 'ko')) : [] };
@@ -6069,7 +6066,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
   async function loadDailyAwards(period, includeRepeats = true) {
     try {
-      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v5_' + period.day) || 'null');
+      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v6_' + period.day) || 'null');
       if (cached?.day === period.day && cached.expires > Date.now() && Array.isArray(cached.data.people)) return cached.data;
     } catch (_) {}
     const [history, sessions] = await Promise.all([
@@ -6078,7 +6075,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     ]);
     const awards = computeDailyAwards(history, sessions, period.day);
     try {
-      const prefix = 'waggu_daily_report_v5_';
+      const prefix = 'waggu_daily_report_v6_';
       const oldest = dailyAwardPeriod().day;
       const cutoff = new Date(Date.parse(oldest + 'T00:00:00Z') - 2 * 86400000).toISOString().slice(0, 10);
       for (const key of Object.keys(localStorage)) if (key.startsWith(prefix) && key.slice(prefix.length) < cutoff) localStorage.removeItem(key);
@@ -6099,10 +6096,11 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     content.innerHTML = `<section class="report-section"><h3>${escapeHtml(username || '')}님의 하루</h3>
       <div class="report-summary"><strong>${person.matches}판</strong><span>승률 ${(person.rate * 100).toFixed(1)}%</span></div>
       <div class="report-wdl"><div class="win">승 <b>${person.wins}</b></div><div>무 <b>${person.draws}</b></div><div class="loss">패 <b>${person.losses}</b></div></div></section>
-      <section class="report-section"><h3>내 팀 득점왕 TOP 5</h3>${person.scorers.length
+      <section class="report-section"><h3>내 팀 득점왕 TOP 5</h3>${person.matches < 50
+        ? '<p class="report-empty">해당 날짜 50판 이상부터 집계됩니다.</p>' : person.scorers.length
         ? '<ol class="report-scorers">' + person.scorers.map((s,i) => `<li><b>${i+1}</b><span>${escapeHtml(s.player)}</span><strong>${s.goals}골</strong></li>`).join('') + '</ol>'
         : '<p class="report-empty">인식된 득점 기록이 없습니다.</p>'}</section>
-      <section class="report-section"><h3>사용자 전체 시상</h3>${awardsHtml}<p class="daily-awards-note">해당 날짜 총 30판 이상 사용자 기준</p></section>
+      <section class="report-section"><h3>사용자 전체 시상</h3>${awardsHtml}<p class="daily-awards-note">해당 날짜 총 50판 이상 사용자 기준</p></section>
       <section class="report-section"><h3>이날의 슈퍼 챔피언스</h3><div class="champions-names">${awards.champions?.length
         ? championLinks(awards.champions) : '<p class="report-empty">달성 기록이 없습니다.</p>'}</div></section>`;
   }
