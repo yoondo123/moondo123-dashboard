@@ -2341,6 +2341,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
               <th>경기수</th>
               <th>승률</th>
               <th>FC</th>
+              <th>최고 점수</th>
+              <th>최고 등수</th>
             </tr>
           </thead>
           <tbody id="recentList"></tbody>
@@ -3751,6 +3753,31 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       renderRecentPeriodSummary(safeRows.slice(-7), tier, 'recent7');
     }
 
+    function recentDailyPeaks(historyRows, sessionRows) {
+      const peaks = {};
+      const add = (day, scores, ranks) => {
+        if (!day) return;
+        const peak = peaks[day] ||= { score:null, rank:null };
+        for (const raw of scores) {
+          const value = firstValidNumber(raw);
+          if (value !== null && Number.isInteger(value)) peak.score = peak.score === null ? value : Math.max(peak.score, value);
+        }
+        for (const raw of ranks) {
+          const value = firstValidRank(raw);
+          if (value !== null && Number.isInteger(value)) peak.rank = peak.rank === null ? value : Math.min(peak.rank, value);
+        }
+      };
+      for (const row of historyRows || []) {
+        const time = Date.parse(row.created_at);
+        if (!Number.isFinite(time) || !['win','draw','loss'].includes(normalizeResult(row.result))) continue;
+        add(new Date(time + 9*3600000).toISOString().slice(0,10), [row.score_after], [row.rank_after]);
+      }
+      for (const row of sessionRows || []) add(row.session_date,
+        [row.highest_score,row.start_score,row.score_start,row.score_end,row.end_score,row.current_score],
+        [row.best_rank,row.current_rank,row.end_rank]);
+      return peaks;
+    }
+
     async function loadRecent() {
       if (!dashboardAccount()) return;
       const tbody = document.getElementById('recentList');
@@ -3771,7 +3798,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       if (historyRes.error && sessionRows.length === 0) {
         const message = historyRes.error.message;
         renderRecent14Summary([], recentTier);
-        tbody.innerHTML = `<tr><td colspan="5">오류: ${message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7">오류: ${escapeHtml(message)}</td></tr>`;
         return;
       }
 
@@ -3785,6 +3812,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       // result가 null인 미판정 경기는 loadUserHistory 단계에서 제외됩니다.
 
       renderRecent14Summary(rows, recentTier);
+      const peaks = recentDailyPeaks(historyRows, sessionRows);
 
       tbody.innerHTML = rows.map(row => `
         <tr>
@@ -3793,6 +3821,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <td>${row.matches}</td>
           <td>${winRate(row)}%</td>
           <td>${fcFromWins(row.wins, recentTier)}</td>
+          <td>${peaks[row.dateKey]?.score != null ? peaks[row.dateKey].score.toLocaleString('ko-KR') + '점' : '-'}</td>
+          <td>${peaks[row.dateKey]?.rank != null ? peaks[row.dateKey].rank.toLocaleString('ko-KR') + '등' : '-'}</td>
         </tr>
       `).join('');
     }
@@ -6044,6 +6074,37 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 .champion-name:hover { border-color:#ffe29a; background:#303a29; }
 .champion-name:focus-visible { outline:2px solid #fff3bd; outline-offset:3px; }
 .champions-empty { font-size:13px; color:#b6bfae; padding:4px 0; }
+/* Compact honors strip; keep the awards readable without pushing the dashboard down. */
+#dashboard .today-champions { padding:10px 0; margin-bottom:12px; }
+#dashboard .today-champions .champions-heading { gap:8px; padding:0 12px; }
+#dashboard .today-champions .champions-heading::after { font-size:17px; padding:0; }
+#dashboard .today-champions .champions-emblem { width:28px; height:32px; font-size:12px; border-radius:3px 3px 9px 9px; }
+#dashboard .today-champions #todayChampionsTitle { font-size:14px!important; margin:2px 0!important; }
+#dashboard .today-champions .champions-heading p { margin:0; font-size:10px; }
+#dashboard .today-champions .champions-names { gap:5px 12px; padding:8px 12px 0; }
+#dashboard .today-champions .champion-name { flex:0 1 auto; display:block; border:0; border-left:2px solid #e7cb82; padding:3px 7px; background:transparent; box-shadow:none; border-radius:0; }
+#dashboard .today-champions .champion-name span { font-size:13px; }
+#dashboard .today-champions .champion-name small { display:none; }
+#dashboard .today-champions .honor-heading { min-height:32px; gap:7px; padding:0 12px; }
+#dashboard .today-champions .honor-heading h2 { font-size:13px; }
+#dashboard .today-champions .honor-heading h2 { font-size:13px!important; line-height:1.3!important; }
+#dashboard .today-champions .honor-heading p { font-size:9px; margin:0 0 2px; }
+#dashboard .today-champions .honor-mark { width:23px; height:27px; font-size:17px; }
+#dashboard .today-champions .honor-winner { padding:7px 12px 0; }
+#dashboard .today-champions .honor-value { font-size:22px; margin-bottom:4px; }
+#dashboard .today-champions .honor-people { gap:3px; }
+#dashboard .today-champions .honor-people a { font-size:12px; }
+#dashboard .today-champions .honor-winner small { margin-top:3px; font-size:10px; }
+#dashboard .today-champions .champions-empty { margin:0; font-size:11px; }
+@media(max-width:900px) {
+  #dashboard .today-champions .champion-honor { padding-bottom:9px; }
+  #dashboard .today-champions .rate-honor,#dashboard .today-champions .wins-honor { padding-top:9px; }
+  #dashboard .today-champions .honor-heading { min-height:0; }
+  #dashboard .today-champions .honor-mark { display:none; }
+  #dashboard .today-champions .honor-winner { padding-top:5px; }
+  #dashboard .today-champions .honor-value { font-size:20px!important; line-height:1.1!important; }
+  #dashboard .today-champions .honor-people a { font-size:11px!important; line-height:1.4!important; }
+}
 #dailyAwardsDialog { box-sizing: border-box; width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); margin: auto; overflow-y: auto; padding: 24px; border: 1px solid #4c6359; border-radius: 8px; background: #11151b; color: #f4f6f8; box-shadow: 0 20px 70px #0008; letter-spacing: 0; }
 #dailyAwardsDialog .report-section { padding:16px 0; border-top:1px solid #303d38; }
 #dailyAwardsDialog .report-section h3 { font-size:14px; margin:0 0 12px; letter-spacing:0; color:#b9e8d5; }
