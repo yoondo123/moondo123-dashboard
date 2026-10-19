@@ -3995,6 +3995,17 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         if (span.last - span.first >= 60000) names.add(row.username);
         observations.set(row.username, span);
       }
+      // Older clients omit per-match ranks. Cross-check a fresh profile with today's summary.
+      for (const profile of profiles || []) {
+        const tier = normalizeTierName(profile.current_tier || profile.tier);
+        const rank = Number(profile.current_rank ?? profile.rank);
+        if (!profile.username || !inside(profile.updated_at) ||
+            !/^(슈퍼)?챔피언스?(감독)?$/.test(tier) || !Number.isInteger(rank) || !isSuperChampionsRank(rank)) continue;
+        const corroborated = (sessions || []).some(row => row.username === profile.username && row.session_date === day &&
+          (isSuperChampionsTier(row.highest_tier || row.peak_tier || row.today_peak_tier) ||
+           (Number.isInteger(Number(row.best_rank)) && isSuperChampionsRank(row.best_rank))));
+        if (corroborated) names.add(profile.username);
+      }
       return [...names].sort((a, b) => a.localeCompare(b, 'ko'));
     }
 
@@ -4009,12 +4020,27 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       if (!target) return;
       document.getElementById('todayChampionsDay').textContent = period.day.replaceAll('-', '.');
       try {
-        const history = await fetchDailyAwardRows('game_history', 'id,username,result,created_at,tier,rank_after', period);
+        const results = await Promise.allSettled([
+          fetchDailyAwardRows('game_history', 'id,username,result,created_at,tier,rank_after', period),
+          fetchDailyAwardRows('daily_sessions', '*', period),
+          statsMap ? Promise.resolve(Object.values(statsMap)) : supabaseClient.from('player_stats')
+            .select('username,current_tier,current_rank,updated_at').then(({data,error}) => { if (error) throw error; return data || []; }),
+        ]);
         if (request !== championsRequest || period.day !== teamDayPeriod().day) return;
-        const names = dailyChampions(history, [], [], period.day);
-        target.innerHTML = names.length ? championLinks(names) : '<p class="champions-empty">오늘의 첫 달성자를 기다리고 있습니다.</p>';
+        if (results.every(result => result.status === 'rejected')) throw new Error('champion sources unavailable');
+        const [history,sessions,profiles] = results.map(result => result.status === 'fulfilled' ? result.value : []);
+        const names = dailyChampions(history, sessions, profiles, period.day);
+        const signature = JSON.stringify(names);
+        if (target.dataset.names !== signature || target.dataset.day !== period.day) {
+          target.innerHTML = names.length ? championLinks(names) : '<p class="champions-empty">오늘 확인된 슈퍼 챔피언스가 아직 없습니다.</p>';
+          target.dataset.names = signature;
+          target.dataset.day = period.day;
+        }
       } catch (error) {
-        if (request === championsRequest) target.textContent = '오늘의 달성 기록을 불러오지 못했습니다.';
+        if (request === championsRequest) {
+          delete target.dataset.names;
+          target.textContent = '오늘의 달성 기록을 불러오지 못했습니다.';
+        }
       }
     }
 
@@ -5918,6 +5944,31 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 </style>
 <style id="waggu-daily-awards-style">
 #dashboard .today-champions { padding:18px 0; margin:0 0 18px; border-top:2px solid #e4c469; border-bottom:1px solid #796731; background:linear-gradient(100deg,#19251f,#151713 65%,#282415); }
+#dashboard .today-champions { position:relative; isolation:isolate; overflow:hidden; padding:24px 0; border-top:2px solid #ffe7a6; border-bottom:1px solid #b4a05f; background:#101b1c; box-shadow:inset 0 1px 0 #fff8d433,0 8px 30px #0003; }
+#dashboard .today-champions::after { content:''; position:absolute; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(110deg,transparent 30%,#fff3c518 46%,#fffbe43d 50%,transparent 65%); transform:translateX(-110%); animation:champion-shimmer 2.8s ease-out 1; }
+#dashboard .today-champions .champions-heading::after { content:'✦'; margin-left:auto; padding:0 12px; color:#ffe7a6; font-size:30px; text-shadow:0 0 16px #f1d88180; animation:champion-arrive .8s ease-out both; }
+#dashboard .today-champions .champions-emblem { border-radius:4px 4px 18px 18px; width:54px; height:62px; background:#f4d580; border-color:#fff0bc; color:#202c27; box-shadow:0 0 0 4px #d6ba7020,0 0 26px #f0d18130; }
+#dashboard .today-champions #todayChampionsTitle { font-size:22px!important; color:#fff1c7; text-shadow:0 2px 14px #e8c26630; }
+#dashboard .today-champions .champions-names { gap:12px; padding-top:20px; }
+#dashboard .today-champions .champion-name { position:relative; min-width:0; flex:0 1 240px; padding:15px 18px; border:1px solid #d6bc73; background:#173532; box-shadow:inset 3px 0 #ffe7a6,inset 0 1px #f9e6aa40; animation:champion-arrive .65s ease-out both; }
+#dashboard .today-champions .champion-name:nth-child(2) { animation-delay:.1s; }
+#dashboard .today-champions .champion-name:nth-child(3) { animation-delay:.2s; }
+#dashboard .today-champions .champion-name span { font-size:18px; color:#fff3cc; }
+#dashboard .today-champions .champion-name small { color:#9ae5cd; }
+#dashboard .today-champions .champion-name:hover { background:#204740; border-color:#fff2c2; }
+@keyframes champion-shimmer { to { transform:translateX(110%); } }
+@keyframes champion-arrive { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@media(max-width:480px) {
+  #dashboard .today-champions { padding:18px 0; }
+  #dashboard .today-champions #todayChampionsTitle { font-size:18px!important; overflow-wrap:anywhere; }
+  #dashboard .today-champions .champions-heading { gap:10px; }
+  #dashboard .today-champions .champions-heading::after { font-size:20px; padding:0; }
+  #dashboard .today-champions .champions-emblem { width:42px; height:50px; }
+  #dashboard .today-champions .champion-name { flex-basis:100%; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #dashboard .today-champions::after,#dashboard .today-champions .champion-name,#dashboard .today-champions .champions-heading::after { animation:none; }
+}
 .champions-heading { display:flex; align-items:center; gap:14px; padding:0 16px; }
 .champions-heading p { color:#c4b679; font-size:11px; letter-spacing:0; }
 #dashboard #todayChampionsTitle { font-size:19px!important; margin:4px 0!important; color:#ffe29a; letter-spacing:0; }
