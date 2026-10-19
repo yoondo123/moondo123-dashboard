@@ -2022,8 +2022,16 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
     <section id="dashboard" class="hidden">
       <section id="todayChampions" class="today-champions" aria-labelledby="todayChampionsTitle" data-tab-group="home">
+        <div class="today-honors-grid"><section class="today-honor champion-honor">
         <div class="champions-heading"><span class="champions-emblem" aria-hidden="true">SC</span><div><p id="todayChampionsDay"></p><h2 id="todayChampionsTitle">오늘의 슈퍼 챔피언스</h2></div></div>
         <div id="todayChampionsList" class="champions-names" aria-live="polite">달성 기록을 불러오는 중입니다.</div>
+        </section><section class="today-honor rate-honor" aria-labelledby="todayRateTitle">
+          <div class="honor-heading"><span class="honor-mark" aria-hidden="true">%</span><div><p>오늘 50판 이상</p><h2 id="todayRateTitle">오늘의 승률왕</h2></div></div>
+          <div id="todayRateWinner" class="honor-winner" aria-live="polite">집계 중입니다.</div>
+        </section><section class="today-honor wins-honor" aria-labelledby="todayWinsTitle">
+          <div class="honor-heading"><span class="honor-mark" aria-hidden="true">W</span><div><p>오늘 50판 이상</p><h2 id="todayWinsTitle">오늘의 다승왕</h2></div></div>
+          <div id="todayWinsWinner" class="honor-winner" aria-live="polite">집계 중입니다.</div>
+        </section></div>
       </section>
       <div class="topbar">
         <div>
@@ -4006,11 +4014,34 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
            (Number.isInteger(Number(row.best_rank)) && isSuperChampionsRank(row.best_rank))));
         if (corroborated) names.add(profile.username);
       }
+      // A verified daily achievement remains visible after the player's rank drops.
+      for (const session of sessions || []) {
+        const best = Number(session.best_rank);
+        if (session.session_date !== day || !session.username || !Number.isInteger(best) || !isSuperChampionsRank(best)) continue;
+        const matching = (history || []).some(row => row.username === session.username && inside(row.created_at) &&
+          ['win','draw','loss'].includes(row.result) && Number(row.rank_after) === best &&
+          (!normalizeTierName(row.current_tier || row.tier) || /^(슈퍼)?챔피언스?(감독)?$/.test(normalizeTierName(row.current_tier || row.tier))));
+        if (matching) names.add(session.username);
+      }
       return [...names].sort((a, b) => a.localeCompare(b, 'ko'));
     }
 
     function championLinks(names) {
       return names.map(name => `<a class="champion-name" href="?player=${encodeURIComponent(name)}"><span>${escapeHtml(name)}</span><small>슈퍼 챔피언스 감독</small></a>`).join('');
+    }
+
+    function renderTodayLeaders(history, sessions, day) {
+      const awards = computeDailyAwards(history, sessions, day);
+      for (const [id, award, value] of [
+        ['todayRateWinner', awards.rate, (awards.rate.value * 100).toFixed(1) + '%'],
+        ['todayWinsWinner', awards.wins, awards.wins.value + '승'],
+      ]) {
+        const target = document.getElementById(id);
+        if (!target) continue;
+        target.innerHTML = award.names.length ? `<strong class="honor-value">${value}</strong><div class="honor-people">${award.names.map(name =>
+          `<a href="?player=${encodeURIComponent(name)}">${escapeHtml(name)}</a>`).join('')}</div>${award.names.length > 1 ? '<small>공동 수상</small>' : ''}`
+          : '<p class="champions-empty">오늘 50판 이상 기록이 아직 없습니다.</p>';
+      }
     }
 
     async function loadTodayChampions(statsMap) {
@@ -4021,7 +4052,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       document.getElementById('todayChampionsDay').textContent = period.day.replaceAll('-', '.');
       try {
         const results = await Promise.allSettled([
-          fetchDailyAwardRows('game_history', 'id,username,result,created_at,tier,rank_after', period),
+          fetchDailyAwardRows('game_history', '*', period),
           fetchDailyAwardRows('daily_sessions', '*', period),
           statsMap ? Promise.resolve(Object.values(statsMap)) : supabaseClient.from('player_stats')
             .select('username,current_tier,current_rank,updated_at').then(({data,error}) => { if (error) throw error; return data || []; }),
@@ -4029,6 +4060,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         if (request !== championsRequest || period.day !== teamDayPeriod().day) return;
         if (results.every(result => result.status === 'rejected')) throw new Error('champion sources unavailable');
         const [history,sessions,profiles] = results.map(result => result.status === 'fulfilled' ? result.value : []);
+        if (results[0].status === 'fulfilled' && results[1].status === 'fulfilled') renderTodayLeaders(history, sessions, period.day);
+        else for (const id of ['todayRateWinner','todayWinsWinner']) document.getElementById(id).textContent = '오늘의 전적을 불러오지 못했습니다.';
         const names = dailyChampions(history, sessions, profiles, period.day);
         const signature = JSON.stringify(names);
         if (target.dataset.names !== signature || target.dataset.day !== period.day) {
@@ -4040,6 +4073,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         if (request === championsRequest) {
           delete target.dataset.names;
           target.textContent = '오늘의 달성 기록을 불러오지 못했습니다.';
+          for (const id of ['todayRateWinner','todayWinsWinner']) document.getElementById(id).textContent = '오늘의 전적을 불러오지 못했습니다.';
         }
       }
     }
@@ -5956,6 +5990,35 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 #dashboard .today-champions .champion-name span { font-size:18px; color:#fff3cc; }
 #dashboard .today-champions .champion-name small { color:#9ae5cd; }
 #dashboard .today-champions .champion-name:hover { background:#204740; border-color:#fff2c2; }
+.today-honors-grid { display:grid; grid-template-columns:1.4fr 1fr 1fr; }
+.today-honor { min-width:0; }
+.today-honor + .today-honor { border-left:1px solid #d4d7b62b; }
+.honor-heading { display:flex; align-items:center; gap:12px; padding:0 18px; min-height:62px; }
+.honor-heading p { margin:0 0 5px; color:#a4b9b4; font-size:11px; }
+#dashboard .honor-heading h2 { margin:0; font-size:18px; letter-spacing:0; }
+#dashboard .honor-heading h2::before { display:none; }
+.honor-mark { display:grid; place-items:center; width:40px; height:44px; flex:0 0 auto; font-size:23px; font-weight:900; color:#93edcc; border-bottom:2px solid currentColor; }
+.wins-honor .honor-mark { color:#a5d5ff; }
+.honor-winner { padding:18px 18px 0; }
+.honor-value { display:block; color:#93edcc; font-size:32px; line-height:1.2; margin-bottom:10px; }
+.wins-honor .honor-value { color:#a5d5ff; }
+.honor-people { display:flex; flex-direction:column; gap:7px; }
+.honor-people a { color:#f5f8f1; font-weight:750; font-size:15px; overflow-wrap:anywhere; text-decoration:none; }
+.honor-people a:hover { text-decoration:underline; }
+.honor-winner small { display:block; margin-top:8px; color:#b6c7bf; }
+@media(max-width:900px) {
+  .today-honors-grid { grid-template-columns:1fr 1fr; }
+  .champion-honor { grid-column:1/-1; padding-bottom:20px; }
+  .today-honor.rate-honor { border-left:0; }
+  .rate-honor,.wins-honor { border-top:1px solid #d4d7b62b; padding-top:18px; }
+}
+@media(max-width:480px) {
+  .honor-heading { padding:0 12px; gap:7px; }
+  #dashboard .honor-heading h2 { font-size:15px; }
+  .honor-mark { width:25px; font-size:20px; }
+  .honor-winner { padding:14px 12px 0; }
+  .honor-value { font-size:27px; }
+}
 @keyframes champion-shimmer { to { transform:translateX(110%); } }
 @keyframes champion-arrive { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 @media(max-width:480px) {
@@ -6117,7 +6180,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
   async function loadDailyAwards(period, includeRepeats = true) {
     try {
-      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v6_' + period.day) || 'null');
+      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v7_' + period.day) || 'null');
       if (cached?.day === period.day && cached.expires > Date.now() && Array.isArray(cached.data.people)) return cached.data;
     } catch (_) {}
     const [history, sessions] = await Promise.all([
@@ -6126,7 +6189,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     ]);
     const awards = computeDailyAwards(history, sessions, period.day);
     try {
-      const prefix = 'waggu_daily_report_v6_';
+      const prefix = 'waggu_daily_report_v7_';
       const oldest = dailyAwardPeriod().day;
       const cutoff = new Date(Date.parse(oldest + 'T00:00:00Z') - 2 * 86400000).toISOString().slice(0, 10);
       for (const key of Object.keys(localStorage)) if (key.startsWith(prefix) && key.slice(prefix.length) < cutoff) localStorage.removeItem(key);
@@ -6222,6 +6285,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       document.getElementById('todayScorersDay').textContent = day.replaceAll('-', '.') + ' · 인식된 내 팀 득점';
       document.getElementById('todayChampionsDay').textContent = day.replaceAll('-', '.');
       document.getElementById('todayChampionsList').textContent = '오늘의 첫 달성자를 기다리고 있습니다.';
+      for (const id of ['todayRateWinner','todayWinsWinner']) document.getElementById(id).textContent = '오늘의 기록을 불러오는 중입니다.';
       if (dashboardAccount()) {
         void loadTeamScorerStats();
         void loadTodayChampions();
