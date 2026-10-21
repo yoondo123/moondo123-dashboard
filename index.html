@@ -2411,6 +2411,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <h3 id="periodSearchTitle"></h3>
           <div class="period-search-stats" id="periodSearchStats"></div>
           <p id="periodFcNote" class="muted"></p>
+          <h3>챔피언스 승급 기록</h3>
+          <ul id="periodPromotionList" class="muted" style="padding-left:20px;font-size:13px;line-height:1.8;overflow-wrap:anywhere"></ul>
         </section>
         <p id="playerSearchMessage" class="muted search-record-message"></p>
 
@@ -5267,6 +5269,40 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       end: new Date(Date.parse(end + 'T00:00:00+09:00') + 86400000).toISOString() };
   }
 
+  async function loadPeriodPromotions(nickname, bounds) {
+    const list = document.getElementById('periodPromotionList');
+    list.replaceChildren();
+    function item(text) {
+      const li = document.createElement('li'); li.textContent = text; list.append(li);
+    }
+    try {
+      const seen = new Set();
+      for (let offset = 0; ; offset += 500) {
+        const {data, error} = await supabaseClient.from('tier_promotions')
+          .select('id, from_tier, to_tier, promoted_at').eq('username', nickname)
+          .gte('promoted_at', bounds.start).lt('promoted_at', bounds.end)
+          .order('promoted_at', {ascending:false}).order('id', {ascending:false})
+          .range(offset, offset + 499);
+        if (error) throw error;
+        for (const row of data || []) {
+          const from = String(row.from_tier || '').replace(/\s+/g, '');
+          const to = String(row.to_tier || '').replace(/\s+/g, '');
+          if (!/챌린|월드클래스|프로|아마추어|유망주/.test(from) || !/챔피언/.test(to) || seen.has(row.id)) continue;
+          seen.add(row.id);
+          const date = new Date(row.promoted_at);
+          if (!Number.isFinite(date.getTime())) continue;
+          item(date.toLocaleString('ko-KR', {timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}) +
+            ` · ${row.from_tier} → ${row.to_tier}`);
+        }
+        if (!data || data.length < 500) break;
+      }
+      if (!list.children.length) item('선택한 기간에 저장된 승급 기록이 없습니다.');
+    } catch (_) {
+      list.replaceChildren();
+      item('승급 기록을 불러오지 못했습니다. 저장 테이블·조회 권한을 확인해주세요.');
+    }
+  }
+
   async function searchPeriodRecord(event) {
     event.preventDefault();
     const status = document.getElementById('periodSearchStatus');
@@ -5323,6 +5359,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         (stats.unknown ? ` · 티어 미확인 ${stats.unknown}승은 FC 계산 제외` : '');
       box.hidden = false;
       status.textContent = total ? `${total.toLocaleString()}경기 조회 완료` : '선택한 기간에 저장된 전적이 없습니다.';
+      await loadPeriodPromotions(nickname, bounds);
     } catch (error) {
       status.textContent = '조회 실패: ' + (error.message || '잠시 후 다시 시도해주세요.');
     } finally {
