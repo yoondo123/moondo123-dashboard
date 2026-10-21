@@ -2375,13 +2375,44 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         </div>
       </div>
 
+      <style>
+        .period-search-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; gap: 10px; align-items: end; margin-top: 12px; }
+        .period-search-row label { display: grid; gap: 6px; min-width: 0; font-size: 12px; color: #b8c3ca; }
+        #periodSearchForm input { width: 100% !important; max-width: 100%; min-width: 0 !important; box-sizing: border-box; color-scheme: dark; padding: 10px 8px; font-size: 12px; }
+        .period-search-row button { min-height: 42px; }
+        #periodSearchResult { border-top: 1px solid #334047; margin-top: 12px; padding-top: 12px; }
+        #periodSearchTitle { font-size: 14px; overflow-wrap: anywhere; }
+        .period-search-stats { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 8px; }
+        .period-search-stats div { padding: 10px 4px; border-bottom: 1px solid #334047; min-width: 0; }
+        .period-search-stats span { display: block; font-size: 12px; color: #b8c3ca; }
+        .period-search-stats strong { display: block; font-size: 20px; overflow-wrap: anywhere; margin-top: 5px; }
+        .period-search-stats .period-win { color: #66ddbb; }
+        .period-search-stats .period-loss { color: #f18b98; }
+        #periodFcNote, #periodSearchStatus { font-size: 12px; overflow-wrap: anywhere; }
+        @media(max-width:600px) {
+          .period-search-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+          .period-search-row button { grid-column: 1 / -1; }
+          .period-search-stats { grid-template-columns: repeat(3,minmax(0,1fr)); }
+        }
+      </style>
       <h2 data-search-section>전적 검색</h2>
       <div class="panel search-record-panel" data-search-section>
         <div class="search-record-row">
           <input id="playerSearchInput" placeholder="닉네임 입력" onkeydown="if(event.key === 'Enter') searchPlayerRecord();">
           <button type="button" onclick="searchPlayerRecord()">검색</button>
         </div>
-        <p id="playerSearchMessage" class="muted search-record-message">닉네임을 검색하면 오늘 전적과 최근 20판 흐름을 보여줍니다.</p>
+        <form id="periodSearchForm" class="period-search-row">
+          <label>시작일<input type="date" id="periodStart" required aria-label="조회 시작일"></label>
+          <label>종료일<input type="date" id="periodEnd" required aria-label="조회 종료일"></label>
+          <button type="submit" id="periodSearchButton">기간 조회</button>
+        </form>
+        <p id="periodSearchStatus" class="muted" role="status" aria-live="polite"></p>
+        <section id="periodSearchResult" hidden aria-label="기간 전적">
+          <h3 id="periodSearchTitle"></h3>
+          <div class="period-search-stats" id="periodSearchStats"></div>
+          <p id="periodFcNote" class="muted"></p>
+        </section>
+        <p id="playerSearchMessage" class="muted search-record-message"></p>
 
         <div id="playerSearchResult" class="hidden">
           <div class="search-record-title">
@@ -5216,6 +5247,85 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         </tr>
       `;
     }).join('');
+  }
+
+  function periodBounds(start, end) {
+    const valid = value => /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+      Number.isFinite(Date.parse(value + 'T00:00:00Z')) &&
+      new Date(value + 'T00:00:00Z').toISOString().slice(0, 10) === value;
+    if (!valid(start) || !valid(end) || start > end) throw new Error('시작일과 종료일을 확인해주세요.');
+    return { start: new Date(start + 'T00:00:00+09:00').toISOString(),
+      end: new Date(Date.parse(end + 'T00:00:00+09:00') + 86400000).toISOString() };
+  }
+
+  async function searchPeriodRecord(event) {
+    event.preventDefault();
+    const status = document.getElementById('periodSearchStatus');
+    const box = document.getElementById('periodSearchResult');
+    const button = document.getElementById('periodSearchButton');
+    if (button.disabled) return;
+    box.hidden = true;
+    button.disabled = true;
+    status.textContent = '기간 전적 조회 중...';
+    try {
+      const nickname = normalizeUsername(document.getElementById('playerSearchInput').value);
+      if (!nickname) throw new Error('검색할 닉네임을 입력해주세요.');
+      const start = document.getElementById('periodStart').value;
+      const end = document.getElementById('periodEnd').value;
+      const bounds = periodBounds(start, end);
+      const stats = { win: 0, draw: 0, loss: 0, fc: 0, unknown: 0 };
+      const seen = new Set();
+      // Page through the complete interval instead of the REST default row cap.
+      for (let offset = 0; ; offset += 500) {
+        const response = await supabaseClient.from('game_history')
+          .select('id, result, created_at, tier, current_tier')
+          .eq('username', nickname).in('result', ['win', 'draw', 'loss'])
+          .gte('created_at', bounds.start).lt('created_at', bounds.end)
+          .order('created_at', { ascending: true }).order('id', { ascending: true })
+          .range(offset, offset + 499);
+        if (response.error) throw response.error;
+        const rows = response.data || [];
+        for (const row of rows) {
+          if (seen.has(row.id)) continue;
+          seen.add(row.id);
+          if (!['win', 'draw', 'loss'].includes(row.result)) continue;
+          stats[row.result] += 1;
+          if (row.result === 'win') {
+            const tier = row.tier || row.current_tier;
+            if (!tier || tier === '-') stats.unknown += 1;
+            else stats.fc += fcPerWinByTier(tier);
+          }
+        }
+        if (rows.length < 500) break;
+      }
+      const total = stats.win + stats.draw + stats.loss;
+      document.getElementById('periodSearchTitle').textContent = `${nickname} · ${start} ~ ${end}`;
+      const items = [['총 판수', total, ''], ['승', stats.win, 'period-win'],
+        ['무', stats.draw, ''], ['패', stats.loss, 'period-loss'],
+        ['승률', (total ? stats.win / total * 100 : 0).toFixed(1) + '%', ''],
+        ['FC 채굴량 (추정)', stats.fc.toLocaleString() + ' FC', '']];
+      document.getElementById('periodSearchStats').replaceChildren(...items.map(([label, value, cls]) => {
+        const item = document.createElement('div');
+        const title = document.createElement('span'); title.textContent = label;
+        const number = document.createElement('strong'); number.textContent = value; number.className = cls;
+        item.append(title, number); return item;
+      }));
+      document.getElementById('periodFcNote').textContent = '한국 시간 · 저장된 개별 전적 기준 · FC는 경기 당시 티어별 승리 보상 추정치' +
+        (stats.unknown ? ` · 티어 미확인 ${stats.unknown}승은 FC 계산 제외` : '');
+      box.hidden = false;
+      status.textContent = total ? `${total.toLocaleString()}경기 조회 완료` : '선택한 기간에 저장된 전적이 없습니다.';
+    } catch (error) {
+      status.textContent = '조회 실패: ' + (error.message || '잠시 후 다시 시도해주세요.');
+    } finally {
+      button.disabled = false;
+    }
+  }
+  const periodForm = document.getElementById('periodSearchForm');
+  if (periodForm) {
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+    document.getElementById('periodStart').value = today;
+    document.getElementById('periodEnd').value = today;
+    periodForm.addEventListener('submit', searchPeriodRecord);
   }
 
   window.searchPlayerRecord = async function searchPlayerRecord() {
