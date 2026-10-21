@@ -6278,6 +6278,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 #dailyAwardsDialog .report-scorers li { display:grid; grid-template-columns:26px minmax(0,1fr) auto; gap:8px; padding:9px 0; align-items:center; border-bottom:1px solid #ffffff0c; }
 #dailyAwardsDialog .report-scorers span { overflow-wrap:anywhere; }
 #dailyAwardsDialog .report-scorers b { color:#ffe29a; }
+#dailyAwardsDialog .report-scorers strong { text-align:right; }
+#dailyAwardsDialog .scorer-change { display:inline-block; font-size:12px; margin-left:5px; white-space:nowrap; }
 #dailyAwardsDialog .champions-names { padding:0; }
 #dailyAwardsDialog .report-empty { font-size:13px; color:#a9b7b0; }
 #dailyAwardsDialog::backdrop { background: #000b; }
@@ -6355,9 +6357,10 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       const stats = choosePeriodStats(p.history, p.sessions);
       const wins = rows.filter(row => row.username === p.username && normalizeResult(row.result) === 'win');
       const fcKnown = wins.length === stats.wins && wins.every(row => (row.tier || row.current_tier) && (row.tier || row.current_tier) !== '-');
+      const scorerRanking = aggregateTeamScorers(rows.filter(row => row.username === p.username), Infinity).ranking;
       return { ...stats, username: p.username, maxLoss: p.maxLoss, rate: stats.matches ? stats.wins / stats.matches : 0,
         fc: fcKnown ? wins.reduce((sum, row) => sum + fcPerWinByTier(row.tier || row.current_tier), 0) : null,
-        scorers: aggregateTeamScorers(rows.filter(row => row.username === p.username), Infinity).ranking.slice(0, 5) };
+        scorerRanking, scorers: scorerRanking.slice(0, 5) };
     });
     const players = people.filter(p => p.matches >= 50);
     function winners(key) {
@@ -6402,7 +6405,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
   async function loadDailyAwards(period, includeRepeats = true) {
     try {
-      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v8_' + period.day) || 'null');
+      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v9_' + period.day) || 'null');
       if (cached?.day === period.day && cached.expires > Date.now() && Array.isArray(cached.data.people)) return cached.data;
     } catch (_) {}
     const [history, sessions] = await Promise.all([
@@ -6411,7 +6414,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     ]);
     const awards = computeDailyAwards(history, sessions, period.day);
     try {
-      const prefix = 'waggu_daily_report_v8_';
+      const prefix = 'waggu_daily_report_v9_';
       const oldest = dailyAwardPeriod().day;
       const cutoff = new Date(Date.parse(oldest + 'T00:00:00Z') - 2 * 86400000).toISOString().slice(0, 10);
       for (const key of Object.keys(localStorage)) if (key.startsWith(prefix) && key.slice(prefix.length) < cutoff) localStorage.removeItem(key);
@@ -6431,7 +6434,20 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     return `<p class="daily-awards-note">${escapeHtml(previousDay)} 대비</p><div class="report-wdl report-comparison">` +
       delta('승률', (person.rate - previous.rate) * 100, '%p', 1) +
       delta('승리', person.wins - previous.wins, '승') +
-      delta('FC (추정)', Number.isFinite(person.fc) && Number.isFinite(previous.fc) ? person.fc - previous.fc : null, ' FC') + '</div>';
+      (Number.isFinite(person.fc) && Number.isFinite(previous.fc)
+        ? delta('FC (추정)', person.fc - previous.fc, ' FC')
+        : delta('총 판수', person.matches - previous.matches, '판')) + '</div>';
+  }
+
+  function dailyScorerChange(scorer, previousPerson) {
+    if (!previousPerson?.matches || !Array.isArray(previousPerson.scorerRanking) || !previousPerson.scorerRanking.length)
+      return '<small class="scorer-change" style="color:#b8c3ca">(비교 기록 없음)</small>';
+    const normalize = name => String(name || '').normalize('NFC').replace(/\s+/g, '').toLowerCase();
+    const prior = previousPerson.scorerRanking.filter(row => normalize(row.player) === normalize(scorer.player))
+      .reduce((sum, row) => sum + Number(row.goals || 0), 0);
+    const change = Number(scorer.goals) - prior;
+    const color = change > 0 ? '#66ddbb' : change < 0 ? '#f18b98' : '#b8c3ca';
+    return `<small class="scorer-change" style="color:${color}">(${change > 0 ? '+' : ''}${change})</small>`;
   }
 
   function renderDailyAwards(awards, username = dashboardAccount()?.username, previousAwards = null) {
@@ -6450,7 +6466,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       ${previousAwards ? dailyReportComparison(person, previousAwards.people.find(p => p.username === username), previousAwards.day) : '<p class="report-empty">이전 날짜 비교 정보를 불러오지 못했습니다.</p>'}</section>
       <section class="report-section"><h3>내 팀 득점왕 TOP 5</h3>${person.matches < 50
         ? '<p class="report-empty">해당 날짜 50판 이상부터 집계됩니다.</p>' : person.scorers.length
-        ? '<ol class="report-scorers">' + person.scorers.map((s,i) => `<li><b>${i+1}</b><span>${escapeHtml(s.player)}</span><strong>${s.goals}골</strong></li>`).join('') + '</ol>'
+        ? '<ol class="report-scorers">' + person.scorers.map((s,i) => `<li><b>${i+1}</b><span>${escapeHtml(s.player)}</span><strong>${s.goals}골${dailyScorerChange(s, previousAwards?.people.find(p => p.username === username))}</strong></li>`).join('') + '</ol><p class="daily-awards-note">괄호는 전날 대비 인식된 득점 수 증감입니다.</p>'
         : '<p class="report-empty">인식된 득점 기록이 없습니다.</p>'}</section>
       <section class="report-section"><h3>사용자 전체 시상</h3>${awardsHtml}<p class="daily-awards-note">해당 날짜 총 50판 이상 사용자 기준</p></section>
       <section class="report-section"><h3>이날의 슈퍼 챔피언스</h3><div class="champions-names">${awards.champions?.length
