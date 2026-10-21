@@ -5249,6 +5249,15 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }).join('');
   }
 
+  function periodFcReward(row) {
+    const tier = [row.tier, row.current_tier].map(value => String(value || '').replace(/\s+/g, '')).find(value => value && value !== '-');
+    if (!tier) return null;
+    if (/슈퍼챔피언/.test(tier)) return 20;
+    if (/챔피언/.test(tier)) return 15;
+    if (/챌린|월드클래스|프로|아마추어|유망주/.test(tier)) return 0;
+    return null;
+  }
+
   function periodBounds(start, end) {
     const valid = value => /^\d{4}-\d{2}-\d{2}$/.test(value) &&
       Number.isFinite(Date.parse(value + 'T00:00:00Z')) &&
@@ -5273,7 +5282,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       const start = document.getElementById('periodStart').value;
       const end = document.getElementById('periodEnd').value;
       const bounds = periodBounds(start, end);
-      const stats = { win: 0, draw: 0, loss: 0, fc: 0, unknown: 0 };
+      const stats = { win: 0, draw: 0, loss: 0, fc: 0, unknown: 0, rewards: {0: 0, 15: 0, 20: 0} };
       const seen = new Set();
       // Page through the complete interval instead of the REST default row cap.
       for (let offset = 0; ; offset += 500) {
@@ -5291,9 +5300,9 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           if (!['win', 'draw', 'loss'].includes(row.result)) continue;
           stats[row.result] += 1;
           if (row.result === 'win') {
-            const tier = row.tier || row.current_tier;
-            if (!tier || tier === '-') stats.unknown += 1;
-            else stats.fc += fcPerWinByTier(tier);
+            const reward = periodFcReward(row);
+            if (reward === null) stats.unknown += 1;
+            else { stats.fc += reward; stats.rewards[reward] += 1; }
           }
         }
         if (rows.length < 500) break;
@@ -5310,7 +5319,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
         const number = document.createElement('strong'); number.textContent = value; number.className = cls;
         item.append(title, number); return item;
       }));
-      document.getElementById('periodFcNote').textContent = '한국 시간 · 저장된 개별 전적 기준 · FC는 경기 당시 티어별 승리 보상 추정치' +
+      document.getElementById('periodFcNote').textContent = `경기 당시 티어 기준 · 슈퍼챌린지 이하 ${stats.rewards[0]}승 × 0 FC + 챔피언스 ${stats.rewards[15]}승 × 15 FC + 슈퍼챔피언스 ${stats.rewards[20]}승 × 20 FC` +
         (stats.unknown ? ` · 티어 미확인 ${stats.unknown}승은 FC 계산 제외` : '');
       box.hidden = false;
       status.textContent = total ? `${total.toLocaleString()}경기 조회 완료` : '선택한 기간에 저장된 전적이 없습니다.';
@@ -6224,6 +6233,8 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 #dailyAwardsDialog .report-wdl { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 #dailyAwardsDialog .report-wdl div { padding:10px 0; border-bottom:2px solid #54615c; font-size:13px; }
 #dailyAwardsDialog .report-wdl b { font-size:20px; margin-left:6px; }
+#dailyAwardsDialog .report-comparison span { display:block; font-size:12px; }
+#dailyAwardsDialog .report-comparison b { display:block; font-size:16px; margin:6px 0 0; overflow-wrap:anywhere; }
 #dailyAwardsDialog .report-wdl .win { color:#80e6c4; border-color:#80e6c4; }
 #dailyAwardsDialog .report-wdl .loss { color:#f0adba; border-color:#f0adba; }
 #dailyAwardsDialog .report-scorers { padding:0; margin:0; list-style:none; }
@@ -6305,7 +6316,10 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     });
     const people = [...grouped.values()].map(p => {
       const stats = choosePeriodStats(p.history, p.sessions);
+      const wins = rows.filter(row => row.username === p.username && normalizeResult(row.result) === 'win');
+      const fcKnown = wins.length === stats.wins && wins.every(row => (row.tier || row.current_tier) && (row.tier || row.current_tier) !== '-');
       return { ...stats, username: p.username, maxLoss: p.maxLoss, rate: stats.matches ? stats.wins / stats.matches : 0,
+        fc: fcKnown ? wins.reduce((sum, row) => sum + fcPerWinByTier(row.tier || row.current_tier), 0) : null,
         scorers: aggregateTeamScorers(rows.filter(row => row.username === p.username), Infinity).ranking.slice(0, 5) };
     });
     const players = people.filter(p => p.matches >= 50);
@@ -6351,7 +6365,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
   async function loadDailyAwards(period, includeRepeats = true) {
     try {
-      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v7_' + period.day) || 'null');
+      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v8_' + period.day) || 'null');
       if (cached?.day === period.day && cached.expires > Date.now() && Array.isArray(cached.data.people)) return cached.data;
     } catch (_) {}
     const [history, sessions] = await Promise.all([
@@ -6360,7 +6374,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     ]);
     const awards = computeDailyAwards(history, sessions, period.day);
     try {
-      const prefix = 'waggu_daily_report_v7_';
+      const prefix = 'waggu_daily_report_v8_';
       const oldest = dailyAwardPeriod().day;
       const cutoff = new Date(Date.parse(oldest + 'T00:00:00Z') - 2 * 86400000).toISOString().slice(0, 10);
       for (const key of Object.keys(localStorage)) if (key.startsWith(prefix) && key.slice(prefix.length) < cutoff) localStorage.removeItem(key);
@@ -6369,7 +6383,21 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     return awards;
   }
 
-  function renderDailyAwards(awards, username = dashboardAccount()?.username) {
+  function dailyReportComparison(person, previous, previousDay) {
+    if (!person.matches || !previous?.matches) return '<p class="report-empty">비교할 날짜의 경기 기록이 부족합니다.</p>';
+    function delta(label, value, unit, digits = 0) {
+      if (value === null) return `<div><span>${label}</span><b>비교 불가</b></div>`;
+      const rounded = Number(value.toFixed(digits));
+      const color = rounded > 0 ? '#66ddbb' : rounded < 0 ? '#f18b98' : '#b8c3ca';
+      return `<div><span>${label}</span><b style="color:${color}">${rounded > 0 ? '+' : ''}${rounded.toFixed(digits)}${unit}</b></div>`;
+    }
+    return `<p class="daily-awards-note">${escapeHtml(previousDay)} 대비</p><div class="report-wdl report-comparison">` +
+      delta('승률', (person.rate - previous.rate) * 100, '%p', 1) +
+      delta('승리', person.wins - previous.wins, '승') +
+      delta('FC (추정)', Number.isFinite(person.fc) && Number.isFinite(previous.fc) ? person.fc - previous.fc : null, ' FC') + '</div>';
+  }
+
+  function renderDailyAwards(awards, username = dashboardAccount()?.username, previousAwards = null) {
     const content = document.getElementById('dailyAwardsContent');
     const person = (awards.people || []).find(p => p.username === username) || { ...emptyStats(), rate:0, scorers:[] };
     const categories = [['rate', '승률왕', value => (value * 100).toFixed(1) + '%'],
@@ -6380,7 +6408,9 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     }).join('');
     content.innerHTML = `<section class="report-section"><h3>${escapeHtml(username || '')}님의 하루</h3>
       <div class="report-summary"><strong>${person.matches}판</strong><span>승률 ${(person.rate * 100).toFixed(1)}%</span></div>
-      <div class="report-wdl"><div class="win">승 <b>${person.wins}</b></div><div>무 <b>${person.draws}</b></div><div class="loss">패 <b>${person.losses}</b></div></div></section>
+      <div class="report-wdl"><div class="win">승 <b>${person.wins}</b></div><div>무 <b>${person.draws}</b></div><div class="loss">패 <b>${person.losses}</b></div></div>
+      <p class="daily-awards-note">FC 채굴량 (추정): ${Number.isFinite(person.fc) ? person.fc.toLocaleString() + ' FC' : '티어·경기 기록 부족'}</p>
+      ${previousAwards ? dailyReportComparison(person, previousAwards.people.find(p => p.username === username), previousAwards.day) : '<p class="report-empty">이전 날짜 비교 정보를 불러오지 못했습니다.</p>'}</section>
       <section class="report-section"><h3>내 팀 득점왕 TOP 5</h3>${person.matches < 50
         ? '<p class="report-empty">해당 날짜 50판 이상부터 집계됩니다.</p>' : person.scorers.length
         ? '<ol class="report-scorers">' + person.scorers.map((s,i) => `<li><b>${i+1}</b><span>${escapeHtml(s.player)}</span><strong>${s.goals}골</strong></li>`).join('') + '</ol>'
@@ -6425,8 +6455,11 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       document.getElementById('dailyAwardsRetry').hidden = true;
       if (!popup.open) popup.showModal();
       try {
-        const awards = await loadDailyAwards(period);
-        if (popup.dataset.displayDay === period.today && popup.dataset.username === username && dashboardAccount()?.username === username) renderDailyAwards(awards, username);
+        const previousPeriod = dailyAwardPeriod(Date.parse(period.start));
+        const [awards, previousAwards] = await Promise.all([
+          loadDailyAwards(period), loadDailyAwards(previousPeriod).catch(() => null)
+        ]);
+        if (popup.dataset.displayDay === period.today && popup.dataset.username === username && dashboardAccount()?.username === username) renderDailyAwards(awards, username, previousAwards);
       } catch (error) {
         if (popup.dataset.displayDay === period.today && popup.dataset.username === username) {
           document.getElementById('dailyAwardsContent').textContent = '전날 기록을 불러오지 못했습니다.';
