@@ -91,7 +91,13 @@
     <input id="adminId" type="email" placeholder="관리자 이메일" aria-label="관리자 이메일" autocomplete="username">
     <input id="adminPw" type="password" placeholder="&#48708;&#48128;&#48264;&#54840;" autocomplete="current-password">
     <button type="button" id="loginBtn">&#47196;&#44536;&#51064;</button>
-    <p id="msg" class="msg"></p>
+    <button type="button" id="resetEmailBtn">비밀번호 재설정 메일 보내기</button>
+    <form id="recoveryForm" hidden>
+      <input id="newPassword" type="password" autocomplete="new-password" placeholder="새 비밀번호 (12자 이상)" aria-label="새 비밀번호" minlength="12" required>
+      <input id="confirmPassword" type="password" autocomplete="new-password" placeholder="새 비밀번호 확인" aria-label="새 비밀번호 확인" minlength="12" required>
+      <button id="savePassword" type="submit">새 비밀번호 저장</button>
+    </form>
+    <p id="msg" class="msg" role="status"></p>
     <p class="build">관리자 이메일 로그인 · 2026-10-23</p>
     <a href="./index.html">&#51068;&#48152; &#45824;&#49884;&#48372;&#46300;&#47196; &#51060;&#46041;</a>
   </div>
@@ -327,6 +333,48 @@
     }
 
     loginBtn.addEventListener("click", login);
+    const recoveryForm=document.getElementById('recoveryForm');
+    let recoveryReady=false;
+    const recoveryHint=new URLSearchParams(location.hash.slice(1)).get('type')==='recovery';
+    function showRecovery(){
+      recoveryReady=true;recoveryForm.hidden=false;loginBtn.hidden=true;
+      document.getElementById('adminPw').hidden=true;
+      document.getElementById('resetEmailBtn').hidden=true;
+      setMsg('새 비밀번호를 입력해주세요.',true);
+    }
+    supabaseClient?.auth.onAuthStateChange((event,session)=>{
+      if(session && (event==='PASSWORD_RECOVERY'||(event==='INITIAL_SESSION'&&recoveryHint)))showRecovery();
+    });
+    if(new URLSearchParams(location.hash.slice(1)).has('error')){
+      setMsg('복구 링크가 유효하지 않거나 만료되었습니다. 새 메일을 요청해주세요.');
+      history.replaceState(null,'',location.pathname+location.search);
+    }
+    document.getElementById('resetEmailBtn').onclick=async function(){
+      this.disabled=true;
+      try{
+        const email=document.getElementById('adminId').value.trim();
+        if(!email.includes('@'))throw new Error('관리자 이메일을 먼저 입력해주세요.');
+        if(!supabaseClient)throw new Error(TEXT.noConfig);
+        const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:'https://yoondo123.github.io/moondo123-dashboard/admin.html'});
+        if(error)throw error;
+        setMsg('메일을 확인해주세요. 가장 최근에 받은 복구 링크를 사용하세요.',true);
+      }catch(error){setMsg(error.message);}finally{this.disabled=false;}
+    };
+    recoveryForm.onsubmit=async event=>{
+      event.preventDefault();const button=document.getElementById('savePassword');button.disabled=true;
+      try{
+        if(!recoveryReady)throw new Error('새 복구 메일을 요청해주세요.');
+        const password=document.getElementById('newPassword').value;
+        if(password.length<12||password!==document.getElementById('confirmPassword').value)throw new Error('12자 이상으로 입력하고 두 비밀번호를 동일하게 맞춰주세요.');
+        const {error}=await supabaseClient.auth.updateUser({password});if(error)throw error;
+        recoveryForm.reset();recoveryReady=false;recoveryForm.hidden=true;
+        localStorage.removeItem('admin_login');
+        await supabaseClient.auth.signOut();
+        history.replaceState(null,'',location.pathname+location.search);
+        loginBtn.hidden=false;document.getElementById('adminPw').hidden=false;document.getElementById('resetEmailBtn').hidden=false;
+        setMsg('비밀번호를 변경했습니다. 새 비밀번호로 로그인해주세요.',true);
+      }catch(error){setMsg(error.message);}finally{button.disabled=false;}
+    };
     document.getElementById("adminPw").addEventListener("keydown", function(e) {
       if (e.key === "Enter") login();
     });
