@@ -2395,7 +2395,23 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           .period-search-stats { grid-template-columns: repeat(3,minmax(0,1fr)); }
         }
       </style>
-      <h2 data-search-section>전적 검색</h2>
+<style id="release-library-style">
+.release-library{margin-top:20px;padding-top:16px;border-top:1px solid #405057;min-width:0;color:#e7eeee}
+.release-library h2{font-size:18px}.release-library h3{font-size:15px}
+.release-library form{display:grid;gap:10px;margin:12px 0}
+.release-library label{display:grid;gap:5px;font-size:13px;min-width:0}
+.release-library input,.release-library textarea{box-sizing:border-box;width:100%;min-width:0!important;max-width:100%;margin:0;padding:10px;background:#101719;color:#fff;border:1px solid #526267;border-radius:6px}
+.release-library textarea{resize:vertical;min-height:80px}
+.release-library button,.release-library a{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;min-height:40px;box-sizing:border-box;border:1px solid #526267;border-radius:6px;background:#253d38;color:#d0ffed;cursor:pointer;text-decoration:none}
+.release-library button:disabled{opacity:.5;cursor:wait}.release-library button{justify-self:start}
+.release-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:14px 0;border-bottom:1px solid #344148}
+.release-entry h3{margin:0 0 5px;overflow-wrap:anywhere}.release-entry p{margin:4px 0;font-size:12px;color:#b6c4cb}
+.release-entry pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:13px;grid-column:1/-1;margin:0}
+.release-status{font-size:13px;color:#b6c4cb;overflow-wrap:anywhere}.release-library [hidden]{display:none!important}
+@media(max-width:480px){.release-entry{grid-template-columns:minmax(0,1fr)}.release-entry a{justify-self:start}.release-library input{font-size:14px}}
+
+</style>
+      <h2 data-search-section>전적 검색 · 자료실</h2>
       <div class="panel search-record-panel" data-search-section>
         <div class="search-record-row">
           <input id="playerSearchInput" placeholder="닉네임 입력" onkeydown="if(event.key === 'Enter') searchPlayerRecord();">
@@ -2415,6 +2431,90 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           <ul id="periodPromotionList" class="muted" style="padding-left:20px;font-size:13px;line-height:1.8;overflow-wrap:anywhere"></ul>
         </section>
         <p id="playerSearchMessage" class="muted search-record-message"></p>
+        <section id="downloadLibrary" class="release-library" data-release-library="public" aria-label="프로그램 다운로드 자료실"></section>
+<script id="release-library-script">
+document.addEventListener('DOMContentLoaded', function () {
+(() => {
+  'use strict';
+  const root = document.querySelector('[data-release-library]');
+  if (!root) return;
+  const db = window.supabaseClient;
+  const admin = root.dataset.releaseLibrary === 'admin';
+  const bucket = 'waggu-releases';
+  const el = (tag, text, cls) => { const node = document.createElement(tag); if(text)node.textContent=text;if(cls)node.className=cls;return node; };
+  root.append(el('h2', admin ? '자료실 관리' : '자료실'));
+  const status = el('p', '', 'release-status');status.setAttribute('role','status');root.append(status);
+  const list = el('div');
+  let offset=0, busy=false;
+  const more=el('button','더 보기');more.type='button';more.hidden=true;
+  const refresh=el('button','새로고침');refresh.type='button';
+  async function load(reset=true) {
+    if(busy)return;busy=true;refresh.disabled=true;more.disabled=true;
+    if(reset){offset=0;list.replaceChildren();}
+    try {
+      const {data,error}=await db.from('waggu_releases').select('*').order('created_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+19);
+      if(error)throw error;
+      for(const row of data||[]) {
+        if(!/^[0-9a-f-]{36}\.zip$/.test(row.object_path))continue;
+        const item=el('article','','release-entry');const info=el('div');
+        info.append(el('h3',(offset===0&&list.children.length===0?'최신 · ':'')+row.version));
+        info.append(el('p',new Date(row.created_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})+' · '+(row.size_bytes/1048576).toFixed(1)+' MB · '+row.file_name));
+        const {data:urlData}=db.storage.from(bucket).getPublicUrl(row.object_path,{download:row.file_name});
+        const link=el('a','ZIP 다운로드');link.href=urlData.publicUrl;link.rel='noopener';link.setAttribute('download',row.file_name);
+        item.append(info,link,el('pre',row.notes));list.append(item);
+      }
+      offset+=(data||[]).length;more.hidden=(data||[]).length<20;
+      status.textContent=list.children.length?'':'등록된 자료가 없습니다.';
+    } catch(error) {status.textContent='자료실 조회 실패: '+(error.message||'저장소 설치 상태를 확인해주세요.');}
+    finally{busy=false;refresh.disabled=false;more.disabled=false;}
+  }
+  refresh.onclick=()=>load();more.onclick=()=>load(false);
+  if(admin) {
+    function field(form,label,type){const wrapper=el('label',label);const input=el('input');input.type=type;input.required=true;wrapper.append(input);form.append(wrapper);return input;}
+    const authNotice=el('p','관리자 권한 확인 중...','release-status');root.append(authNotice);
+    const loginLink=el('a','관리자 로그인');loginLink.href='./admin.html';loginLink.hidden=true;root.append(loginLink);
+    const upload=el('form');upload.hidden=true;
+    const version=field(upload,'버전명','text');version.maxLength=80;
+    const label=el('label','업데이트 내용');const notes=el('textarea');notes.maxLength=4000;label.append(notes);upload.append(label);
+    const file=field(upload,'ZIP 파일 (최대 50 MB)','file');file.accept='.zip,application/zip';
+    const publish=el('button','업로드 및 공개');publish.type='submit';upload.append(publish);root.append(upload);
+    async function check(){
+      let allowed=false;
+      try{const {data,error}=await db.rpc('waggu_release_admin');allowed=!error&&data===true;}catch{}
+      upload.hidden=!allowed;loginLink.hidden=allowed;
+      authNotice.textContent=allowed?'':'관리자 세션이 없거나 만료되었습니다. 관리자 로그인 페이지에서 로그인해주세요.';
+      return allowed;
+    }
+    upload.onsubmit=async event=>{
+      event.preventDefault();if(publish.disabled)return;publish.disabled=true;
+      try {
+        const selected=file.files[0];const title=version.value.trim();
+        if(!title||!selected||!selected.name.toLowerCase().endsWith('.zip')||selected.size===0||selected.size>52428800)throw new Error('버전명과 50 MB 이하 ZIP 파일을 확인해주세요.');
+        const signature=new Uint8Array(await selected.slice(0,4).arrayBuffer());
+        if(signature[0]!==80||signature[1]!==75||!((signature[2]===3&&signature[3]===4)||(signature[2]===5&&signature[3]===6)))throw new Error('ZIP 형식의 파일이 아닙니다.');
+        if(!await check())throw new Error('관리자 인증이 필요합니다.');
+        const id=crypto.randomUUID();const objectPath=id+'.zip';
+        status.textContent='파일 업로드 중입니다. 창을 닫지 마세요.';
+        const {error:uploadError}=await db.storage.from(bucket).upload(objectPath,selected,{contentType:'application/zip',upsert:false});
+        if(uploadError)throw uploadError;
+        const payload={id,version:title,notes:notes.value.trim(),file_name:selected.name,object_path:objectPath,size_bytes:selected.size};
+        const {error}=await db.from('waggu_releases').insert(payload);
+        if(error){
+          // Do not delete a file after an ambiguous response: its release may
+          // already have committed. Check the stable ID before reporting failure.
+          const checkResult=await db.from('waggu_releases').select('id').eq('id',id).maybeSingle();
+          if(checkResult.error||!checkResult.data)throw new Error('파일은 업로드됐지만 목록 등록을 확인하지 못했습니다. 새로고침 후 확인해주세요. 파일 ID: '+id);
+        }
+        upload.reset();await load();status.textContent='공개 완료. 사용자가 자료실에서 다운로드할 수 있습니다.';
+      }catch(error){status.textContent='업로드 실패: '+error.message;}finally{publish.disabled=false;}
+    };
+    db.auth.onAuthStateChange(()=>{setTimeout(check,0);});check();
+  }
+  root.append(refresh,list,more);load();
+})();
+
+});
+</script>
 
         <div id="playerSearchResult" class="hidden">
           <div class="search-record-title">
@@ -3982,7 +4082,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       return goals.map(goal => ({ player: goal.player.trim(), minute: String(goal.minute) }));
     }
 
-    function aggregateTeamScorers(rows, matchLimit) {
+    function aggregateTeamScorers(rows, matchLimit, rankingLimit = 5) {
       const matches = dedupeMatchDetails(rows || [], matchLimit);
       const counts = new Map();
       matches.forEach(row => {
@@ -3998,7 +4098,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
           share: totalRecognizedGoals ? goals / totalRecognizedGoals : 0,
         }))
         .sort((a, b) => b.goals - a.goals || a.player.localeCompare(b.player, 'ko'))
-        .slice(0, 5);
+        .slice(0, rankingLimit);
       return { matches: matches.length, totalRecognizedGoals, ranking };
     }
 
@@ -5521,7 +5621,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     if (!dashboard || !tabs) return;
 
     if (!tabs.querySelector('[data-tab="search"]')) {
-      tabs.insertAdjacentHTML('beforeend', '<button type="button" class="moondo-tab" data-tab="search">전적 검색</button>');
+      tabs.insertAdjacentHTML('beforeend', '<button type="button" class="moondo-tab" data-tab="search">전적 검색 · 자료실</button>');
     }
 
     dashboard.querySelectorAll('[data-search-section]').forEach(el => {
@@ -6357,7 +6457,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       const stats = choosePeriodStats(p.history, p.sessions);
       const wins = rows.filter(row => row.username === p.username && normalizeResult(row.result) === 'win');
       const fcKnown = wins.length === stats.wins && wins.every(row => (row.tier || row.current_tier) && (row.tier || row.current_tier) !== '-');
-      const scorerRanking = aggregateTeamScorers(rows.filter(row => row.username === p.username), Infinity).ranking;
+      const scorerRanking = aggregateTeamScorers(rows.filter(row => row.username === p.username), Infinity, Infinity).ranking;
       return { ...stats, username: p.username, maxLoss: p.maxLoss, rate: stats.matches ? stats.wins / stats.matches : 0,
         fc: fcKnown ? wins.reduce((sum, row) => sum + fcPerWinByTier(row.tier || row.current_tier), 0) : null,
         scorerRanking, scorers: scorerRanking.slice(0, 5) };
@@ -6405,7 +6505,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 
   async function loadDailyAwards(period, includeRepeats = true) {
     try {
-      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v9_' + period.day) || 'null');
+      const cached = JSON.parse(localStorage.getItem('waggu_daily_report_v10_' + period.day) || 'null');
       if (cached?.day === period.day && cached.expires > Date.now() && Array.isArray(cached.data.people)) return cached.data;
     } catch (_) {}
     const [history, sessions] = await Promise.all([
@@ -6414,7 +6514,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
     ]);
     const awards = computeDailyAwards(history, sessions, period.day);
     try {
-      const prefix = 'waggu_daily_report_v9_';
+      const prefix = 'waggu_daily_report_v10_';
       const oldest = dailyAwardPeriod().day;
       const cutoff = new Date(Date.parse(oldest + 'T00:00:00Z') - 2 * 86400000).toISOString().slice(0, 10);
       for (const key of Object.keys(localStorage)) if (key.startsWith(prefix) && key.slice(prefix.length) < cutoff) localStorage.removeItem(key);
