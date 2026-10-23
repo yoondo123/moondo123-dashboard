@@ -92,11 +92,15 @@
     <input id="adminPw" type="password" placeholder="&#48708;&#48128;&#48264;&#54840;" autocomplete="current-password">
     <button type="button" id="loginBtn">&#47196;&#44536;&#51064;</button>
     <p id="msg" class="msg"></p>
-    <p class="build">LOGIN FIX 2026-06-20</p>
+    <p class="build">관리자 이메일 로그인 · 2026-10-23</p>
     <a href="./index.html">&#51068;&#48152; &#45824;&#49884;&#48372;&#46300;&#47196; &#51060;&#46041;</a>
   </div>
 
   <script>
+  // Older config.js files declare top-level consts, not window properties.
+  if (!window.supabaseClient && typeof supabaseClient !== 'undefined') window.supabaseClient = supabaseClient;
+  if (!window.SUPABASE_URL && typeof SUPABASE_URL !== 'undefined') window.SUPABASE_URL = SUPABASE_URL;
+  if (!window.SUPABASE_KEY && typeof SUPABASE_KEY !== 'undefined') window.SUPABASE_KEY = SUPABASE_KEY;
   (() => {
     const TEXT = {
       missing: "\uc544\uc774\ub514\uc640 \ube44\ubc00\ubc88\ud638\ub97c \uc785\ub825\ud574 \uc8fc\uc138\uc694.",
@@ -282,6 +286,10 @@
 
       if (!id || !pw) {
         setMsg(TEXT.missing);
+        return;
+      }
+      if (!id.includes('@')) {
+        setMsg('아이디 admin 대신 관리자 이메일로 로그인해주세요.');
         return;
       }
 
