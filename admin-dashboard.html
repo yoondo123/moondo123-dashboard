@@ -73,15 +73,10 @@
 
   <section class="box" id="historyManager" hidden>
     <h2><span id="historyUsername"></span> · 전적 관리</h2>
-    <form id="historyAuth" class="history-controls">
-      <input id="historyEmail" type="email" autocomplete="username" placeholder="전적 관리 관리자 이메일" aria-label="관리자 이메일" required>
-      <input id="historyPassword" type="password" autocomplete="current-password" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호" required>
-      <button type="submit">전적 관리 인증</button>
-    </form>
     <div class="history-controls">
       <label>날짜 (한국 시간) <input id="historyDay" type="date"></label>
       <button type="button" id="historyRefresh">조회</button>
-      <button type="button" id="historyAuthLogout">전적 관리 인증 해제</button>
+      <a href="./admin.html" id="historyLoginLink" hidden>관리자 다시 로그인</a>
     </div>
     <p id="historyMessage" role="status" aria-live="polite"></p>
     <div class="history-scroll"><table>
@@ -300,7 +295,9 @@
       $('historyMessage').textContent='조회 중...';
       $('historyPrev').disabled=true;$('historyNext').disabled=true;
       try{
-        const {data,error}=await db.rpc('waggu_admin_history',{p_username:historyUser,p_day:$('historyDay').value,p_offset:historyOffset});
+        const token=sessionStorage.getItem('waggu_admin_session');
+        if(!token){$('historyLoginLink').hidden=false;throw new Error('변경된 관리자 로그인 페이지에서 한 번 다시 로그인해주세요.');}
+        const {data,error}=await db.rpc('waggu_admin_history_session',{p_token:token,p_username:historyUser,p_day:$('historyDay').value,p_offset:historyOffset});
         if(request!==historyRequest)return;
         if(error)throw error;
         historyRows=(data||[]).slice(0,50);
@@ -315,14 +312,6 @@
         $('historyPrev').disabled=historyOffset===0;$('historyNext').disabled=(data||[]).length<=50;
       }catch(error){if(request===historyRequest)$('historyMessage').textContent='조회 실패: '+error.message;}
     }
-    $('historyAuth').addEventListener('submit',async event=>{
-      event.preventDefault();const button=event.submitter;button.disabled=true;
-      try{
-        const {error}=await db.auth.signInWithPassword({email:$('historyEmail').value.trim(),password:$('historyPassword').value});
-        $('historyPassword').value='';if(error)throw error;await loadUserHistory();
-      }catch(error){$('historyMessage').textContent='인증 실패: '+error.message;}finally{button.disabled=false;}
-    });
-    $('historyAuthLogout').onclick=async()=>{await db.auth.signOut();historyRequest++;historyRows=[];$('historyRows').replaceChildren();$('historyMessage').textContent='전적 관리 인증이 해제되었습니다.';};
     $('historyRefresh').onclick=()=>{if(!historyBusy)loadUserHistory();};
     $('historyDay').onchange=()=>{if(!historyBusy){historyOffset=0;loadUserHistory();}};
     $('historyPrev').onclick=()=>{if(!historyBusy){historyOffset=Math.max(0,historyOffset-50);loadUserHistory();}};
@@ -340,7 +329,7 @@
       if(historyBusy||!deletingGame)return;
       historyBusy=true;$('confirmDeleteGame').disabled=true;$('cancelDeleteGame').disabled=true;
       try{
-        const {data,error}=await db.rpc('waggu_admin_delete_game',{p_id:String(deletingGame.id),p_username:deletingGame.username});
+        const {data,error}=await db.rpc('waggu_admin_delete_game_session',{p_token:sessionStorage.getItem('waggu_admin_session'),p_id:String(deletingGame.id),p_username:deletingGame.username});
         if(error)throw error;
         $('deleteGameDialog').close();await loadUserHistory();
         $('historyMessage').textContent=data?.already_deleted?'이미 삭제된 기록입니다.':'경기 기록 삭제 및 당일 집계 정정 완료';
@@ -348,7 +337,10 @@
       finally{historyBusy=false;$('confirmDeleteGame').disabled=false;$('cancelDeleteGame').disabled=false;}
     };
 
-    $('logoutBtn').addEventListener('click', async()=>{await db.auth.signOut();logout();});
+    $('logoutBtn').addEventListener('click', async()=>{
+      const token=sessionStorage.getItem('waggu_admin_session');sessionStorage.removeItem('waggu_admin_session');
+      try{if(token)await db.rpc('waggu_admin_session_logout',{p_token:token});}finally{logout();}
+    });
     $('addMatchBtn').addEventListener('click', addMatch);
     loadUsers();
     loadMatches();
