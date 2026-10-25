@@ -2035,7 +2035,7 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
       </section>
       <div class="topbar">
         <div>
-          <h2 style="margin:0;"><span id="helloName"></span> 님 전적</h2>
+          <h2 style="margin:0;"><a id="helloName" target="_blank" rel="noopener noreferrer"></a> 님 전적</h2>
           <p id="lastUpdated" class="muted"></p>
         </div>
       </div>
@@ -5874,6 +5874,9 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
 })();
 </script>
 <style id="waggu-fcinfo-click-final-style">
+#helloName { color:inherit; cursor:pointer; }
+#helloName:hover { color:#70f2d2; text-decoration:underline; text-underline-offset:4px; }
+#helloName:focus-visible { outline:2px solid #70f2d2; outline-offset:4px; border-radius:2px; }
 #rankingList td.ranking-name-cell,
 #weeklyRankingList td.ranking-name-cell { position: relative !important; z-index: 6 !important; cursor: pointer !important; pointer-events: auto !important; }
 #rankingList td.ranking-name-cell:hover,
@@ -5891,6 +5894,15 @@ h2::before { background: linear-gradient(180deg,#6A5A82,#8FA592) !important; box
   }
 
   function markCells() {
+    var headerName = document.getElementById('helloName');
+    var headerUsername = String(headerName ? headerName.textContent : '').trim();
+    if (headerName && headerUsername) {
+      headerName.href = fcInfoUrl(headerUsername);
+      headerName.title = 'FC INFO에서 ' + headerUsername + ' 전적 보기 (새 탭)';
+    } else if (headerName) {
+      headerName.removeAttribute('href');
+      headerName.removeAttribute('title');
+    }
     document.querySelectorAll('#rankingList td.ranking-name-cell, #weeklyRankingList td.ranking-name-cell').forEach(function (cell) {
       var username = usernameFromCell(cell);
       if (!username) return;
